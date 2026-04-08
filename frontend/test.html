@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>看盤助手 - 測試頁面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 { color: #1a5f7a; }
+        .test-section {
+            background: #f5f5f5;
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 8px;
+        }
+        .test-link {
+            display: block;
+            padding: 12px;
+            background: #1a5f7a;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 8px 0;
+            text-align: center;
+        }
+        .test-link.secondary {
+            background: #6c757d;
+        }
+        .note {
+            color: #666;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>看盤助手 v3 測試頁面</h1>
+    
+    <div class="test-section">
+        <h2>測試情境</h2>
+        
+        <a href="index.html" class="test-link">情境 1：正常載入（讀取 sample 資料）</a>
+        <p class="note">預設讀取當天日期，若 sample 中有對應檔案會顯示</p>
+        
+        <a href="index.html?date=2026-04-08" class="test-link">情境 2：指定日期（2026-04-08）</a>
+        <p class="note">讀取 sample/2026-04-08-lite.json，應顯示 5 檔股票</p>
+        
+        <a href="index.html?date=1999-01-01" class="test-link secondary">情境 3：錯誤狀態（不存在的日期）</a>
+        <p class="note">應顯示「找不到報告檔案」的錯誤 Modal</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>功能檢查清單</h2>
+        <ul>
+            <li>頂部顯示標題、日期、市場摘要</li>
+            <li>摘要區顯示可留意/觀察/暫不考慮數量</li>
+            <li>篩選按鈕可過濾全部/可留意/觀察/偏保守/暫不考慮</li>
+            <li>股票卡片顯示代號、名稱、名次、分數、等級、行動建議</li>
+            <li>點擊卡片可展開理由、風險、技術數據</li>
+            <li>底部顯示總檔數、可留意數、暫不考慮數</li>
+            <li>錯誤時顯示 Modal 提示</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>測試資料內容</h2>
+        <p>sample/2026-04-08-lite.json 包含：</p>
+        <ul>
+            <li>2330 台積電 - 78分 A/強 - 可留意</li>
+            <li>2317 鴻海 - 62分 B/中等 - 觀察</li>
+            <li>2454 聯發科 - 52分 C/普通 - 偏保守</li>
+            <li>2303 聯電 - 46分 C/普通 - 暫不考慮</li>
+            <li>2881 富邦金 - 38分 D/弱 - 暫不考慮</li>
+        </ul>
+    </div>
+</body>
+</html>

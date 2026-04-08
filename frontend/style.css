@@ -1,0 +1,700 @@
+/* 看盤助手 v4 - PWA 版樣式 */
+
+/* 基礎重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding-bottom: 80px;
+}
+
+/* 頂部區 */
+.header {
+    background: linear-gradient(135deg, #1a5f7a 0%, #2c8da8 100%);
+    color: white;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.app-title {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.reload-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.reload-btn:active {
+    background: rgba(255,255,255,0.3);
+    transform: scale(0.95);
+}
+
+/* 日期選擇區 */
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.date-label {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.date-dropdown {
+    flex: 1;
+    min-width: 140px;
+    padding: 10px 14px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.date-badge {
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.date-badge.latest {
+    background: #28a745;
+    color: white;
+}
+
+.date-badge.history {
+    background: #ffc107;
+    color: #333;
+}
+
+.market-summary {
+    font-size: 15px;
+    background: rgba(255,255,255,0.15);
+    padding: 10px 14px;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+/* 摘要區 */
+.summary-section {
+    padding: 16px;
+    background: white;
+    margin-bottom: 8px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.summary-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px 8px;
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.summary-card.top-picks {
+    border-color: #28a745;
+    background: #e8f5e9;
+}
+
+.summary-card.watchlist {
+    border-color: #ffc107;
+    background: #fff8e1;
+}
+
+.summary-card.avoid-list {
+    border-color: #dc3545;
+    background: #ffebee;
+}
+
+.summary-label {
+    font-size: 15px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.summary-count {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.summary-list {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+    max-height: 40px;
+    overflow: hidden;
+}
+
+/* 篩選列 */
+.filter-bar {
+    background: white;
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-btn {
+    flex: 0 0 auto;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    background: white;
+    color: #555;
+    cursor: pointer;
+    white-space: nowrap;
+    min-width: 80px;
+    transition: all 0.2s;
+}
+
+.filter-btn:active {
+    transform: scale(0.95);
+}
+
+.filter-btn.active {
+    background: #1a5f7a;
+    color: white;
+    border-color: #1a5f7a;
+}
+
+/* 股票列表 */
+.stock-list {
+    padding: 12px 16px;
+}
+
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 18px;
+    color: #666;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-top-color: #1a5f7a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-state-text {
+    font-size: 18px;
+}
+
+/* 股票卡片 */
+.stock-card {
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.stock-card:active {
+    transform: scale(0.99);
+}
+
+.stock-card.hidden {
+    display: none;
+}
+
+.stock-header {
+    padding: 20px;
+    cursor: pointer;
+    position: relative;
+}
+
+.stock-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.stock-info {
+    flex: 1;
+}
+
+.stock-symbol {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1a5f7a;
+    margin-bottom: 4px;
+}
+
+.stock-name {
+    font-size: 17px;
+    color: #555;
+}
+
+.stock-rank {
+    text-align: center;
+    padding: 0 16px;
+}
+
+.rank-number {
+    font-size: 36px;
+    font-weight: bold;
+    color: #888;
+    line-height: 1;
+}
+
+.rank-label {
+    font-size: 13px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.stock-score {
+    text-align: right;
+    min-width: 80px;
+}
+
+.score-value {
+    font-size: 42px;
+    font-weight: bold;
+    color: #333;
+    line-height: 1;
+}
+
+.score-grade {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 12px;
+    margin-top: 4px;
+}
+
+/* 分數等級顏色 */
+.grade-A { background: #28a745; color: white; }
+.grade-B { background: #6c757d; color: white; }
+.grade-C { background: #ffc107; color: #333; }
+.grade-D { background: #dc3545; color: white; }
+
+/* 行動建議標籤 */
+.action-bias {
+    display: inline-block;
+    font-size: 17px;
+    font-weight: bold;
+    padding: 8px 20px;
+    border-radius: 20px;
+    margin-top: 12px;
+}
+
+.bias-可留意 { background: #d4edda; color: #155724; border: 2px solid #28a745; }
+.bias-觀察 { background: #fff3cd; color: #856404; border: 2px solid #ffc107; }
+.bias-偏保守 { background: #ffe0b2; color: #e65100; border: 2px solid #ff9800; }
+.bias-暫不考慮 { background: #f8d7da; color: #721c24; border: 2px solid #dc3545; }
+
+/* 一句話摘要 */
+.one-line-summary {
+    font-size: 16px;
+    color: #444;
+    margin-top: 16px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #1a5f7a;
+    line-height: 1.6;
+}
+
+/* 展開按鈕 */
+.expand-hint {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+    color: #888;
+}
+
+.expand-icon {
+    font-size: 20px;
+    margin-left: 4px;
+}
+
+/* 展開內容 */
+.stock-details {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+}
+
+.stock-details.expanded {
+    display: block;
+}
+
+.details-section {
+    margin-top: 16px;
+}
+
+.details-title {
+    font-size: 17px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.details-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: #1a5f7a;
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+.details-title.risk::before {
+    background: #dc3545;
+}
+
+.details-list {
+    list-style: none;
+    padding: 0;
+}
+
+.details-list li {
+    font-size: 15px;
+    color: #555;
+    padding: 10px 0;
+    padding-left: 24px;
+    position: relative;
+    border-bottom: 1px solid #eee;
+    line-height: 1.6;
+}
+
+.details-list li:last-child {
+    border-bottom: none;
+}
+
+.details-list li::before {
+    content: '•';
+    position: absolute;
+    left: 8px;
+    color: #1a5f7a;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.details-list.risk-list li::before {
+    color: #dc3545;
+}
+
+/* 技術指標區 */
+.indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.indicator-item {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.indicator-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.indicator-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 底部列 */
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 16px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+    z-index: 100;
+}
+
+.footer-item {
+    text-align: center;
+}
+
+.footer-label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.footer-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+.highlight-good {
+    color: #28a745;
+}
+
+.highlight-bad {
+    color: #dc3545;
+}
+
+/* Modal 通用樣式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+}
+
+.modal-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.modal-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.modal-message {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-btn.primary {
+    background: #1a5f7a;
+    color: white;
+}
+
+.modal-btn.secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+/* 錯誤 Modal */
+.error-modal, .empty-modal {
+    composes: modal-overlay;
+}
+
+.error-content, .empty-content {
+    composes: modal-content;
+}
+
+.error-icon, .empty-icon {
+    composes: modal-icon;
+}
+
+.error-title, .empty-title {
+    composes: modal-title;
+}
+
+.error-message, .empty-message {
+    composes: modal-message;
+}
+
+.error-actions {
+    composes: modal-actions;
+}
+
+.error-btn {
+    composes: modal-btn;
+}
+
+.empty-btn {
+    composes: modal-btn primary;
+    width: 100%;
+}
+
+/* 響應式調整 */
+@media (max-width: 360px) {
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stock-main {
+        flex-wrap: wrap;
+    }
+    
+    .stock-rank {
+        order: -1;
+        padding: 0;
+        margin-bottom: 8px;
+    }
+    
+    .filter-btn {
+        padding: 10px 16px;
+        font-size: 15px;
+    }
+    
+    .date-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .date-dropdown {
+        width: 100%;
+    }
+}
+
+/* PWA 安裝提示 */
+.install-prompt {
+    position: fixed;
+    bottom: 100px;
+    left: 16px;
+    right: 16px;
+    background: #1a5f7a;
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 200;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.install-prompt-text {
+    font-size: 15px;
+}
+
+.install-prompt-btn {
+    background: white;
+    color: #1a5f7a;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
