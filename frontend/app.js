@@ -466,46 +466,50 @@ function renderFooter() {
 }
 
 function renderLastUpdated() {
-    // 優先順序：metadata.last_updated > created_at > generated_at > date
-    const lastUpdated = reportData.metadata?.last_updated 
-        || reportData.created_at 
-        || reportData.generated_at 
-        || reportData.date 
-        || null;
     const element = document.getElementById('lastUpdated');
     
-    if (lastUpdated) {
+    // 優先嘗試有時間資訊的欄位（created_at / generated_at / metadata.last_updated）
+    const timeValue = reportData.metadata?.last_updated 
+        || reportData.created_at 
+        || reportData.generated_at 
+        || null;
+    
+    if (timeValue) {
         try {
-            const date = new Date(lastUpdated);
-            // 檢查是否為有效日期
-            if (isNaN(date.getTime())) {
-                // 若無法解析為日期，直接顯示原始值
-                element.textContent = `最後更新: ${lastUpdated}`;
+            const date = new Date(timeValue);
+            if (!isNaN(date.getTime())) {
+                const twDate = new Date(date.getTime() + (date.getTimezoneOffset() + 480) * 60000);
+                const formatted = twDate.toLocaleString('zh-TW', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                element.textContent = `最後更新: ${formatted}`;
+                
+                // 如果是當天更新，加上特殊樣式
+                const today = getTodayString();
+                const updateDate = twDate.toISOString().split('T')[0];
+                if (updateDate === today) {
+                    element.classList.add('today');
+                }
                 return;
             }
-            const twDate = new Date(date.getTime() + (date.getTimezoneOffset() + 480) * 60000);
-            const formatted = twDate.toLocaleString('zh-TW', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-            element.textContent = `最後更新: ${formatted}`;
-            
-            // 如果是當天更新，加上特殊樣式
-            const today = getTodayString();
-            const updateDate = twDate.toISOString().split('T')[0];
-            if (updateDate === today) {
-                element.classList.add('today');
-            }
         } catch (e) {
-            element.textContent = `最後更新: ${lastUpdated}`;
+            // fall through to date fallback
         }
-    } else {
-        element.textContent = '最後更新: --';
     }
+    
+    // fallback 到只有日期的欄位，只顯示日期不顯示時間（避免假時間）
+    const dateValue = reportData.date;
+    if (dateValue) {
+        element.textContent = `最後更新: ${dateValue}`;
+        return;
+    }
+    
+    element.textContent = '最後更新: --';
 }
 
 // ============================================
