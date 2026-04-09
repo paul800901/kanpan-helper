@@ -1,4 +1,4 @@
-/* 看盤助手 v4 - PWA 版樣式 */
+/* 看盤助手 v6 - PWA 版樣式 */
 
 /* 基礎重置 */
 * {
@@ -40,6 +40,15 @@ body {
     font-size: 26px;
     font-weight: bold;
     letter-spacing: 2px;
+}
+
+.version-tag {
+    font-size: 14px;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    vertical-align: middle;
 }
 
 .reload-btn {
@@ -111,6 +120,45 @@ body {
     color: #333;
 }
 
+/* AI 總結區（v6） */
+.ai-summary-section {
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 0;
+    backdrop-filter: blur(10px);
+}
+
+.ai-one-liner {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.ai-focus-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ai-focus-item {
+    background: rgba(255,255,255,0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: white;
+}
+
+.ai-focus-item::before {
+    content: '•';
+    margin-right: 6px;
+    color: #ffd700;
+}
+
+/* 傳統市場總覽 */
 .market-summary {
     font-size: 15px;
     background: rgba(255,255,255,0.15);
@@ -134,7 +182,101 @@ body {
     text-shadow: 0 0 4px rgba(255,255,255,0.5);
 }
 
-/* 摘要區 */
+/* v6 分群區塊 */
+.ai-groups-section {
+    padding: 16px;
+    background: #f0f4f8;
+}
+
+.ai-group {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.group-icon {
+    font-size: 24px;
+}
+
+.group-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.group-desc {
+    font-size: 14px;
+    color: #666;
+    margin-left: auto;
+}
+
+.group-stocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.group-stock-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.group-stock-tag:active {
+    transform: scale(0.95);
+}
+
+.group-stock-tag .symbol {
+    font-weight: bold;
+}
+
+.group-stock-tag .name {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+/* 各組顏色 */
+.group-strongest .group-stock-tag {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #4caf50;
+}
+
+.group-caution .group-stock-tag {
+    background: #fff8e1;
+    color: #f57f17;
+    border: 1px solid #ffc107;
+}
+
+.group-risky .group-stock-tag {
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ff9800;
+}
+
+.group-avoid .group-stock-tag {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef5350;
+}
+
+/* v5 摘要區 */
 .summary-section {
     padding: 16px;
     background: white;
@@ -387,6 +529,37 @@ body {
 .bias-偏保守 { background: #ffe0b2; color: #e65100; border: 2px solid #ff9800; }
 .bias-暫不考慮 { background: #f8d7da; color: #721c24; border: 2px solid #dc3545; }
 
+/* AI 分析區塊（v6） */
+.ai-analysis-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.ai-section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1a5f7a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-section-title::before {
+    content: '✦';
+}
+
+.ai-section-content {
+    font-size: 15px;
+    color: #444;
+    line-height: 1.6;
+}
+
+.ai-risk { color: #c62828; }
+.ai-change { color: #1565c0; }
+
 /* 一句話摘要 */
 .one-line-summary {
     font-size: 16px;
@@ -399,7 +572,7 @@ body {
     line-height: 1.6;
 }
 
-/* 展開按鈕 */
+/* 展開按 */
 .expand-hint {
     text-align: center;
     margin-top: 12px;
@@ -551,7 +724,7 @@ body {
 }
 
 /* Modal 通用樣式 */
-.modal-overlay {
+.error-modal, .empty-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -565,7 +738,7 @@ body {
     padding: 20px;
 }
 
-.modal-content {
+.error-content, .empty-content {
     background: white;
     border-radius: 16px;
     padding: 32px 24px;
@@ -574,31 +747,31 @@ body {
     width: 100%;
 }
 
-.modal-icon {
+.error-icon, .empty-icon {
     font-size: 48px;
     margin-bottom: 16px;
 }
 
-.modal-title {
+.error-title, .empty-title {
     font-size: 20px;
     font-weight: bold;
     color: #333;
     margin-bottom: 12px;
 }
 
-.modal-message {
+.error-message, .empty-message {
     font-size: 15px;
     color: #666;
     margin-bottom: 24px;
     line-height: 1.6;
 }
 
-.modal-actions {
+.error-actions {
     display: flex;
     gap: 12px;
 }
 
-.modal-btn {
+.error-btn, .empty-btn {
     flex: 1;
     padding: 12px 20px;
     font-size: 16px;
@@ -608,48 +781,14 @@ body {
     cursor: pointer;
 }
 
-.modal-btn.primary {
+.error-btn:last-child, .empty-btn {
     background: #1a5f7a;
     color: white;
 }
 
-.modal-btn.secondary {
+.error-btn:first-child {
     background: #e0e0e0;
     color: #333;
-}
-
-/* 錯誤 Modal */
-.error-modal, .empty-modal {
-    composes: modal-overlay;
-}
-
-.error-content, .empty-content {
-    composes: modal-content;
-}
-
-.error-icon, .empty-icon {
-    composes: modal-icon;
-}
-
-.error-title, .empty-title {
-    composes: modal-title;
-}
-
-.error-message, .empty-message {
-    composes: modal-message;
-}
-
-.error-actions {
-    composes: modal-actions;
-}
-
-.error-btn {
-    composes: modal-btn;
-}
-
-.empty-btn {
-    composes: modal-btn primary;
-    width: 100%;
 }
 
 /* 響應式調整 */
@@ -680,6 +819,10 @@ body {
     
     .date-dropdown {
         width: 100%;
+    }
+    
+    .ai-focus-list {
+        flex-direction: column;
     }
 }
 

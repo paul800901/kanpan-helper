@@ -21,7 +21,7 @@ from backend.config import get_today_str
 from backend.fetch_data import fetch_all_stocks, load_cached_data
 from backend.calc_indicators import calculate_all_indicators, StockIndicators
 from backend.ranking import rank_stocks, StockScore
-from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports
+from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled
 
 
 def fetch_data_with_stats(
@@ -65,7 +65,7 @@ def run_pipeline(
     use_cache: bool = False, 
     date_str: Optional[str] = None,
     symbols: Optional[List[str]] = None
-) -> str:
+) -> Tuple[str, str, Optional[str]]:
     """
     執行完整分析流程
     
@@ -75,7 +75,7 @@ def run_pipeline(
         symbols: 指定股票列表
         
     Returns:
-        報告檔案路徑
+        (完整報告路徑, 精簡報告路徑, AI報告路徑或None)
     """
     print("=" * 60)
     print("Kanpan Helper - 每日股票分析")
@@ -158,6 +158,16 @@ def run_pipeline(
     print(f"   Top N: {full_report['top_n']}")
     print(f"   版本: {full_report['report_version']}")
     
+    # Step 5: 生成 AI 分析報告（v6，選用）
+    print("\n[Step 5] 生成 AI 分析報告 (v6)")
+    print("-" * 40)
+    
+    ai_path = generate_ai_report_if_enabled(full_report, report_date)
+    if ai_path:
+        print(f"[OK] AI 報告已生成: {ai_path}")
+    else:
+        print("[INFO] AI 分析未啟用或失敗，略過此步驟")
+    
     # 顯示摘要
     print("\n[報告摘要]")
     print("-" * 40)
@@ -172,7 +182,7 @@ def run_pipeline(
     print("流程完成！")
     print("=" * 60)
     
-    return full_path, lite_path
+    return full_path, lite_path, ai_path
 
 
 def main():
@@ -225,7 +235,7 @@ def main():
         test_symbols = ["2330", "2317", "2454"]
     
     try:
-        full_path, lite_path = run_pipeline(
+        full_path, lite_path, ai_path = run_pipeline(
             use_cache=args.use_cache,
             date_str=args.date,
             symbols=test_symbols
@@ -233,6 +243,8 @@ def main():
         print(f"\n報告位置:")
         print(f"   完整版: {os.path.abspath(full_path)}")
         print(f"   精簡版: {os.path.abspath(lite_path)}")
+        if ai_path:
+            print(f"   AI版: {os.path.abspath(ai_path)}")
         
     except KeyboardInterrupt:
         print("\n\n使用者中斷")

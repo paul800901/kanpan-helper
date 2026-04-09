@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a5f7a">
-    <meta name="description" content="看盤助手 - 每日股票分析報告">
-    <title>看盤助手</title>
+    <meta name="description" content="看盤助手 v6 - AI 智能股票分析">
+    <title>看盤助手 v6</title>
     
     <!-- PWA 支援 -->
     <link rel="manifest" href="manifest.json">
@@ -17,7 +17,7 @@
     <!-- 頂部區 -->
     <header class="header">
         <div class="header-top">
-            <h1 class="app-title">看盤助手</h1>
+            <h1 class="app-title">看盤助手 <span class="version-tag">v6</span></h1>
             <button class="reload-btn" id="reloadBtn" title="載入最新報告">🔄</button>
         </div>
         
@@ -30,13 +30,62 @@
             <span class="date-badge" id="dateBadge"></span>
         </div>
         
+        <!-- AI 總結區（v6 新增） -->
+        <div class="ai-summary-section" id="aiSummarySection" style="display: none;">
+            <div class="ai-one-liner" id="aiOneLiner">--</div>
+            <div class="ai-focus-list" id="aiFocusList"></div>
+        </div>
+        
+        <!-- 傳統市場總覽（v5 兼容，無 AI 時顯示） -->
         <div class="market-summary" id="marketSummary">--</div>
         
         <!-- 最後更新時間 -->
         <div class="last-updated" id="lastUpdated">--</div>
     </header>
 
-    <!-- 摘要區 -->
+    <!-- v6 分群區塊 -->
+    <section class="ai-groups-section" id="aiGroupsSection" style="display: none;">
+        <!-- 最值得先看 -->
+        <div class="ai-group group-strongest">
+            <div class="group-header">
+                <span class="group-icon">🔥</span>
+                <span class="group-title">最值得先看 5 檔</span>
+                <span class="group-desc" id="strongestDesc">--</span>
+            </div>
+            <div class="group-stocks" id="strongestStocks"></div>
+        </div>
+        
+        <!-- 轉強觀察 -->
+        <div class="ai-group group-caution">
+            <div class="group-header">
+                <span class="group-icon">👀</span>
+                <span class="group-title">轉強觀察 5 檔</span>
+                <span class="group-desc" id="cautionDesc">--</span>
+            </div>
+            <div class="group-stocks" id="cautionStocks"></div>
+        </div>
+        
+        <!-- 高分但有風險 -->
+        <div class="ai-group group-risky">
+            <div class="group-header">
+                <span class="group-icon">⚠️</span>
+                <span class="group-title">高分但有風險 5 檔</span>
+            </div>
+            <div class="group-stocks" id="riskyStocks"></div>
+        </div>
+        
+        <!-- 今日先不要碰 -->
+        <div class="ai-group group-avoid">
+            <div class="group-header">
+                <span class="group-icon">🚫</span>
+                <span class="group-title">今日先不要碰 5 檔</span>
+                <span class="group-desc" id="avoidDesc">--</span>
+            </div>
+            <div class="group-stocks" id="avoidStocks"></div>
+        </div>
+    </section>
+
+    <!-- v5 摘要區（兼容模式） -->
     <section class="summary-section" id="summarySection">
         <div class="summary-grid">
             <div class="summary-card top-picks">
@@ -57,7 +106,7 @@
         </div>
     </section>
 
-    <!-- 篩選列 -->
+    <!-- 篩選列（v5 兼容） -->
     <nav class="filter-bar" id="filterBar">
         <button class="filter-btn active" data-filter="all">全部</button>
         <button class="filter-btn" data-filter="可留意">可留意</button>

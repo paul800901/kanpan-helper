@@ -1,0 +1,119 @@
+name: Daily Report with AI Analysis (v6)
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '指定報告日期（YYYY-MM-DD），留空表示今天'
+        required: false
+        default: ''
+
+# AI workflow 只需要寫入 contents（commit AI 報告）
+permissions:
+  contents: write
+
+# 確保同時間只有一個 AI 報告在執行
+concurrency:
+  group: "daily-report-ai"
+  cancel-in-progress: false
+
+jobs:
+  generate-ai-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Determine target date
+        id: target_date
+        run: |
+          INPUT_DATE="${{ github.event.inputs.date }}"
+          if [ -n "$INPUT_DATE" ]; then
+            TODAY="$INPUT_DATE"
+          else
+            TODAY=$(date -d '8 hours' +%Y-%m-%d)
+          fi
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+          echo "目標日期: $TODAY"
+
+      - name: Verify v5 report exists
+        id: verify_v5
+        run: |
+          TODAY="${{ steps.target_date.outputs.today }}"
+          V5_REPORT="reports/${TODAY}.json"
+
+          if [ ! -f "$V5_REPORT" ]; then
+            echo "Error: 找不到 v5 報告 ${V5_REPORT}"
+            echo "請先執行 v5 workflow（daily-report.yml）產生正式報告，再執行 AI workflow。"
+            exit 1
+          fi
+
+          # 驗證 JSON 格式正確
+          python -m json.tool "$V5_REPORT" > /dev/null
+          echo "✓ v5 報告驗證通過：$V5_REPORT"
+
+      - name: Generate AI report
+        id: generate_ai
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ENABLE_AI_ANALYSIS: "true"
+        run: |
+          # 驗證 API KEY
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "Error: DEEPSEEK_API_KEY 未設定"
+            exit 1
+          fi
+
+          TODAY="${{ steps.target_date.outputs.today }}"
+          echo "執行 AI 分析，日期: $TODAY"
+
+          # main_ai.py 只讀既有 v5 報告、只產生 -ai.json、不碰 v5 報告
+          python main_ai.py --date "$TODAY"
+
+          # 確認 AI 報告已生成
+          AI_REPORT="reports/${TODAY}-ai.json"
+          if [ ! -f "$AI_REPORT" ]; then
+            echo "Error: AI 報告生成失敗，找不到 ${AI_REPORT}"
+            exit 1
+          fi
+
+          # 驗證 JSON 格式正確
+          python -m json.tool "$AI_REPORT" > /dev/null
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+          echo "✓ AI 報告生成成功：$AI_REPORT"
+
+      - name: Commit and push AI report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          TODAY="${{ steps.generate_ai.outputs.today }}"
+          AI_REPORT="reports/${TODAY}-ai.json"
+
+          # 只 add AI 報告，不碰 v5 報告
+          git add "$AI_REPORT"
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit（AI 報告無變動）"
+          else
+            git commit -m "chore: add AI analysis report ${TODAY}"
+            git push
+            echo "✓ AI 報告已 commit 並推送"
+          fi
+

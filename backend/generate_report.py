@@ -498,6 +498,36 @@ def save_both_reports(
     return full_path, lite_path
 
 
+def generate_ai_report_if_enabled(full_report: Dict, date_str: Optional[str] = None) -> Optional[str]:
+    """
+    v6: 產生 AI 分析報告（如果環境變數啟用）
+
+    Fail-fast 策略：
+    - ENABLE_AI_ANALYSIS=false（預設）：return None，不執行 AI
+    - ENABLE_AI_ANALYSIS=true：任何錯誤都直接 raise，不可略過
+
+    Returns:
+        AI 報告檔案路徑，或 None（如果未啟用）
+    """
+    # 檢查是否啟用 AI 分析
+    enable_ai = os.environ.get("ENABLE_AI_ANALYSIS", "").lower() in ["true", "1", "yes"]
+
+    if not enable_ai:
+        print("[INFO] AI 分析未啟用（設定 ENABLE_AI_ANALYSIS=true 以啟用）")
+        return None
+
+    # ENABLE_AI_ANALYSIS=true：任何錯誤都直接 raise，不可略過
+    from backend.ai_analyzer import AIAnalyzer, save_ai_report
+
+    print("[v6] 啟動 DeepSeek AI 分析...")
+    analyzer = AIAnalyzer()
+    ai_report = analyzer.generate_ai_report(full_report)
+
+    ai_path = save_ai_report(ai_report, date_str)
+    print(f"[v6] AI 報告已儲存: {ai_path}")
+    return ai_path
+
+
 def load_report(date_str: Optional[str] = None, lite: bool = False) -> Optional[Dict]:
     """
     載入報告

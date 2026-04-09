@@ -45,12 +45,12 @@ timeout /t 2 >nul
 cls
 
 REM ====================
-REM 步驟 2: 啟動伺服器
+REM 步驟 2: 啟動伺服器（從專案根目錄）
 REM ====================
 echo [步驟 2/3] 啟動前端伺服器...
 echo.
-
-cd frontend
+echo 從專案根目錄啟動，可正確存取 /frontend 與 /reports
+echo.
 
 REM 取得可用埠號
 set PORT=8080
@@ -72,22 +72,21 @@ echo.
 echo ============================================
 echo  看盤助手已就緒！
 echo.
-echo  網址: http://localhost:%PORT%
+echo  網址: http://localhost:%PORT%/frontend/
 echo.
 echo  請在瀏覽器中檢視報告
 echo ============================================
 echo.
 
-REM 開啟瀏覽器
-start http://localhost:%PORT%
+REM 開啟瀏覽器（連到 /frontend 子目錄）
+start http://localhost:%PORT%/frontend/
 
-REM 啟動伺服器
+REM 啟動伺服器（從專案根目錄，讓 /frontend 與 /reports 都可存取）
 echo 按 Ctrl+C 停止伺服器
 echo.
-python -m http.server %PORT%
+python -m http.server %PORT% --directory .
 
 REM 結束
 echo.
 echo 伺服器已停止
-cd ..
 pause
