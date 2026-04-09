@@ -66,24 +66,74 @@ class AIAnalyzer:
                 max_tokens=2000
             )
             content = response.choices[0].message.content
-            if not content:
-                raise AIAnalyzerError("DeepSeek 回傳空內容")
+            if not content or not content.strip():
+                raise AIAnalyzerError("DeepSeek 回傳空內容（空字串或純空白）")
             return content
         except Exception as e:
             raise AIAnalyzerError(f"DeepSeek API 呼叫失敗: {e}")
     
-    def _parse_json_response(self, response: str, required_fields: List[str]) -> Dict:
-        """解析 JSON 回應 - 失敗時直接 raise"""
+    def _parse_json_response(self, raw: str, required_fields: List[str]) -> Dict:
+        """
+        解析 DeepSeek JSON 回應 - 失敗時直接 raise，附 raw 前 500 字供除錯。
+
+        清洗順序：
+        1. 確認非空
+        2. 剝掉 ```json ... ``` 或 ``` ... ``` code fence
+        3. 若前面仍有說明文字，跳到第一個 {
+        4. 截斷最後一個 } 之後的多餘內容
+        5. json.loads；失敗就 raise（含 raw 前 500 字）
+        6. 驗證必要欄位；缺少就 raise
+        """
+        if not raw or not raw.strip():
+            raise AIAnalyzerError(
+                "DeepSeek 回傳空字串，無法解析 JSON。"
+                f"原始回應前500字：{raw[:500]!r}"
+            )
+
+        text = raw.strip()
+
+        # 剝掉 code fence（```json 或 ```）
+        if text.startswith("```"):
+            first_newline = text.find("\n")
+            if first_newline != -1:
+                text = text[first_newline + 1:]
+            else:
+                text = text[3:]  # 只有開頭 ``` 沒有換行
+            if text.endswith("```"):
+                text = text[: text.rfind("```")]
+            text = text.strip()
+
+        # 若仍有前置說明文字，跳到第一個 {
+        if not text.startswith("{"):
+            brace_idx = text.find("{")
+            if brace_idx == -1:
+                raise AIAnalyzerError(
+                    f"回應中找不到 JSON 物件起始 {{。"
+                    f"原始回應前500字：{raw[:500]!r}"
+                )
+            text = text[brace_idx:]
+
+        # 截斷最後一個 } 之後的多餘內容
+        last_brace = text.rfind("}")
+        if last_brace != -1:
+            text = text[: last_brace + 1]
+
         try:
-            result = json.loads(response.strip())
+            result = json.loads(text)
         except json.JSONDecodeError as e:
-            raise AIAnalyzerError(f"AI 回應不是有效 JSON: {e}")
-        
-        # 檢查必要欄位
+            raise AIAnalyzerError(
+                f"AI 回應 JSON parse 失敗: {e}。"
+                f"原始回應前500字：{raw[:500]!r}"
+            )
+
+        # 驗證必要欄位
         missing = [f for f in required_fields if f not in result]
         if missing:
-            raise AIAnalyzerError(f"AI 回應缺少必要欄位: {missing}")
-        
+            raise AIAnalyzerError(
+                f"AI 回應缺少必要欄位: {missing}。"
+                f"原始回應前500字：{raw[:500]!r}"
+            )
+
         return result
     
     def _build_market_prompt(self, stocks: List[Dict], summary: Dict) -> str:
