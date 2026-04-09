@@ -77,7 +77,7 @@ jobs:
           TODAY=$(date -d '8 hours' +%Y-%m-%d)
           echo "today=$TODAY" >> $GITHUB_OUTPUT
 
-          # 驗證 v5 報告
+          # 驗證所有報告
           if [ ! -f "reports/${TODAY}.json" ]; then
             echo "Error: v5 報告生成失敗，找不到 reports/${TODAY}.json"
             exit 1
@@ -90,22 +90,14 @@ jobs:
             echo "Error: 索引更新失敗，找不到 reports/index.json"
             exit 1
           fi
-          python -m json.tool reports/${TODAY}.json > /dev/null
-          python -m json.tool reports/${TODAY}-lite.json > /dev/null
-          python -m json.tool reports/index.json > /dev/null
-          echo "✓ v5 報告驗證完成"
-
-          # Step 2: 產生 v6 AI 報告（fail-fast，任何錯誤都中止）
-          echo "產生 v6 AI 報告..."
-          python main_ai.py --date "$TODAY"
-
-          # 驗證 AI 報告
           if [ ! -f "reports/${TODAY}-ai.json" ]; then
             echo "Error: AI 報告生成失敗，找不到 reports/${TODAY}-ai.json"
             exit 1
           fi
+          python -m json.tool reports/${TODAY}.json > /dev/null
+          python -m json.tool reports/${TODAY}-lite.json > /dev/null
+          python -m json.tool reports/index.json > /dev/null
           python -m json.tool reports/${TODAY}-ai.json > /dev/null
-          echo "✓ v6 AI 報告驗證完成"
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports
