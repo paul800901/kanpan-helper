@@ -466,12 +466,23 @@ function renderFooter() {
 }
 
 function renderLastUpdated() {
-    const lastUpdated = reportData.metadata?.last_updated || reportData.created_at || null;
+    // 優先順序：metadata.last_updated > created_at > generated_at > date
+    const lastUpdated = reportData.metadata?.last_updated 
+        || reportData.created_at 
+        || reportData.generated_at 
+        || reportData.date 
+        || null;
     const element = document.getElementById('lastUpdated');
     
     if (lastUpdated) {
         try {
             const date = new Date(lastUpdated);
+            // 檢查是否為有效日期
+            if (isNaN(date.getTime())) {
+                // 若無法解析為日期，直接顯示原始值
+                element.textContent = `最後更新: ${lastUpdated}`;
+                return;
+            }
             const twDate = new Date(date.getTime() + (date.getTimezoneOffset() + 480) * 60000);
             const formatted = twDate.toLocaleString('zh-TW', {
                 year: 'numeric',

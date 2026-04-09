@@ -432,6 +432,7 @@ def generate_lite_report(full_report: Dict) -> Dict:
     return {
         "report_version": "v2-lite",
         "date": full_report["date"],
+        "created_at": full_report.get("last_updated") or full_report.get("generated_at"),
         "top_n": full_report["top_n"],
         "summary": {
             "market_overview": full_report["summary"]["market_overview"],
