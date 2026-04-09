@@ -1,174 +1,101 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1a5f7a">
+    <meta name="theme-color" content="#0d1b2a">
     <meta name="description" content="看盤助手 v6 - AI 智能股票分析">
     <title>看盤助手 v6</title>
-    
-    <!-- PWA 支援 -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 頂部區 -->
+
+    <!-- 頂部 Header -->
     <header class="header">
         <div class="header-top">
-            <h1 class="app-title">看盤助手 <span class="version-tag">v6</span></h1>
-            <button class="reload-btn" id="reloadBtn" title="載入最新報告">🔄</button>
+            <div class="app-brand">
+                <span class="app-title">看盤助手</span>
+                <span class="version-badge">v6 AI</span>
+            </div>
+            <button class="reload-btn" id="reloadBtn" title="重新載入最新報告">↻</button>
         </div>
-        
-        <!-- 日期選擇區 -->
-        <div class="date-selector">
-            <span class="date-label">目前報告：</span>
-            <select class="date-dropdown" id="dateDropdown">
+        <div class="date-row">
+            <select class="date-select" id="dateDropdown">
                 <option value="">載入中...</option>
             </select>
             <span class="date-badge" id="dateBadge"></span>
         </div>
-        
-        <!-- AI 總結區（v6 新增） -->
-        <div class="ai-summary-section" id="aiSummarySection" style="display: none;">
-            <div class="ai-one-liner" id="aiOneLiner">--</div>
-            <div class="ai-focus-list" id="aiFocusList"></div>
-        </div>
-        
-        <!-- 傳統市場總覽（v5 兼容，無 AI 時顯示） -->
-        <div class="market-summary" id="marketSummary">--</div>
-        
-        <!-- 最後更新時間 -->
-        <div class="last-updated" id="lastUpdated">--</div>
     </header>
 
-    <!-- v6 分群區塊 -->
-    <section class="ai-groups-section" id="aiGroupsSection" style="display: none;">
-        <!-- 最值得先看 -->
-        <div class="ai-group group-strongest">
-            <div class="group-header">
-                <span class="group-icon">🔥</span>
-                <span class="group-title">最值得先看 5 檔</span>
-                <span class="group-desc" id="strongestDesc">--</span>
-            </div>
-            <div class="group-stocks" id="strongestStocks"></div>
-        </div>
-        
-        <!-- 轉強觀察 -->
-        <div class="ai-group group-caution">
-            <div class="group-header">
-                <span class="group-icon">👀</span>
-                <span class="group-title">轉強觀察 5 檔</span>
-                <span class="group-desc" id="cautionDesc">--</span>
-            </div>
-            <div class="group-stocks" id="cautionStocks"></div>
-        </div>
-        
-        <!-- 高分但有風險 -->
-        <div class="ai-group group-risky">
-            <div class="group-header">
-                <span class="group-icon">⚠️</span>
-                <span class="group-title">高分但有風險 5 檔</span>
-            </div>
-            <div class="group-stocks" id="riskyStocks"></div>
-        </div>
-        
-        <!-- 今日先不要碰 -->
-        <div class="ai-group group-avoid">
-            <div class="group-header">
-                <span class="group-icon">🚫</span>
-                <span class="group-title">今日先不要碰 5 檔</span>
-                <span class="group-desc" id="avoidDesc">--</span>
-            </div>
-            <div class="group-stocks" id="avoidStocks"></div>
-        </div>
-    </section>
+    <!-- 主內容 -->
+    <main id="mainContent">
 
-    <!-- v5 摘要區（兼容模式） -->
-    <section class="summary-section" id="summarySection">
-        <div class="summary-grid">
-            <div class="summary-card top-picks">
-                <div class="summary-label">可留意</div>
-                <div class="summary-count" id="topPicksCount">0</div>
-                <div class="summary-list" id="topPicksList">--</div>
-            </div>
-            <div class="summary-card watchlist">
-                <div class="summary-label">觀察</div>
-                <div class="summary-count" id="watchlistCount">0</div>
-                <div class="summary-list" id="watchlistList">--</div>
-            </div>
-            <div class="summary-card avoid-list">
-                <div class="summary-label">暫不考慮</div>
-                <div class="summary-count" id="avoidCount">0</div>
-                <div class="summary-list" id="avoidList">--</div>
-            </div>
+        <!-- 載入狀態 -->
+        <div class="loading-state" id="loadingState">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">載入 AI 報告中...</div>
         </div>
-    </section>
 
-    <!-- 篩選列（v5 兼容） -->
-    <nav class="filter-bar" id="filterBar">
-        <button class="filter-btn active" data-filter="all">全部</button>
-        <button class="filter-btn" data-filter="可留意">可留意</button>
-        <button class="filter-btn" data-filter="觀察">觀察</button>
-        <button class="filter-btn" data-filter="偏保守">偏保守</button>
-        <button class="filter-btn" data-filter="暫不考慮">暫不考慮</button>
-    </nav>
+        <!-- AI 市場總覽 -->
+        <section class="ai-overview" id="aiOverview" style="display:none">
+            <div class="overview-text" id="marketOverviewAI"></div>
+            <div class="focus-list" id="focusList"></div>
+        </section>
 
-    <!-- 股票列表區 -->
-    <main class="stock-list" id="stockList">
-        <div class="loading">載入報告中...</div>
+        <!-- 分群說明 -->
+        <section class="group-section" id="groupSection" style="display:none">
+            <div class="group-card group-strong">
+                <div class="group-label">🔥 強勢可留意</div>
+                <div class="group-ai-text" id="strongestGroupAI"></div>
+                <div class="group-tags" id="strongestTags"></div>
+            </div>
+            <div class="group-card group-watch">
+                <div class="group-label">👀 轉強觀察</div>
+                <div class="group-ai-text" id="cautionGroupAI"></div>
+                <div class="group-tags" id="cautionTags"></div>
+            </div>
+            <div class="group-card group-avoid">
+                <div class="group-label">🚫 今日迴避</div>
+                <div class="group-ai-text" id="avoidGroupAI"></div>
+                <div class="group-tags" id="avoidTags"></div>
+            </div>
+        </section>
+
+        <!-- 個股卡片 -->
+        <section class="stock-section" id="stockSection" style="display:none">
+            <div class="section-title">個股 AI 分析</div>
+            <div id="stockList"></div>
+        </section>
+
     </main>
 
     <!-- 底部資訊列 -->
-    <footer class="footer">
-        <div class="footer-item">
-            <span class="footer-label">報告日期</span>
-            <span class="footer-value" id="footerDate">--</span>
-        </div>
-        <div class="footer-item">
-            <span class="footer-label">總檔數</span>
-            <span class="footer-value" id="totalCount">0</span>
-        </div>
-        <div class="footer-item">
-            <span class="footer-label">可留意</span>
-            <span class="footer-value highlight-good" id="goodCount">0</span>
-        </div>
+    <footer class="footer" id="footerBar" style="display:none">
+        <span id="footerDate">--</span>
+        <span>共 <b id="totalCount">0</b> 檔</span>
+        <span>可留意 <b class="good" id="goodCount">0</b></span>
     </footer>
 
-    <!-- 錯誤提示 Modal -->
-    <div class="error-modal" id="errorModal" style="display: none;">
-        <div class="error-content">
-            <div class="error-icon">⚠️</div>
-            <div class="error-title" id="errorTitle">載入失敗</div>
-            <div class="error-message" id="errorMessage">無法讀取報告</div>
-            <div class="error-actions">
-                <button class="error-btn secondary" id="errorCloseBtn">關閉</button>
-                <button class="error-btn" id="errorRetryBtn">重新整理</button>
+    <!-- 錯誤 Modal -->
+    <div class="modal-overlay" id="errorModal" style="display:none">
+        <div class="modal-box">
+            <div class="modal-icon">⚠️</div>
+            <div class="modal-title" id="errorTitle">載入失敗</div>
+            <div class="modal-msg" id="errorMsg"></div>
+            <div class="modal-actions">
+                <button onclick="document.getElementById('errorModal').style.display='none'">關閉</button>
+                <button onclick="reloadLatest()">重新整理</button>
             </div>
-        </div>
-    </div>
-
-    <!-- 無報告提示 -->
-    <div class="empty-modal" id="emptyModal" style="display: none;">
-        <div class="empty-content">
-            <div class="empty-icon">📊</div>
-            <div class="empty-title">尚未產生任何報告</div>
-            <div class="empty-message">
-                請先執行後端分析程式產生報告<br>
-                或使用測試資料
-            </div>
-            <button class="empty-btn" onclick="loadSampleData()">載入測試資料</button>
         </div>
     </div>
 
     <script src="app.js"></script>
     <script>
-        // 註冊 Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
-                .then(reg => console.log('Service Worker 註冊成功'))
-                .catch(err => console.log('Service Worker 註冊失敗:', err));
+                .catch(err => console.log('SW 錯誤:', err));
         }
     </script>
 </body>

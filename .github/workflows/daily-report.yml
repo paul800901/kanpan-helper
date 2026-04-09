@@ -51,11 +51,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Generate daily report
+      - name: Generate daily report (v5 + v6 AI)
         id: generate_report
         env:
           FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ENABLE_AI_ANALYSIS: "true"
         run: |
+          # 驗證必要 secrets
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "Error: DEEPSEEK_API_KEY 未設定"
+            exit 1
+          fi
+
+          # Step 1: 產生 v5 基礎報告
           if [ "${{ github.event.inputs.mode }}" = "test" ]; then
             echo "Running in test mode..."
             python main.py --test
@@ -63,33 +72,41 @@ jobs:
             echo "Running in full mode..."
             python main.py
           fi
-          
+
           # 取得今天的日期字串 (台灣時間)
           TODAY=$(date -d '8 hours' +%Y-%m-%d)
           echo "today=$TODAY" >> $GITHUB_OUTPUT
-          
-          # 檢查報告是否成功生成
+
+          # 驗證 v5 報告
           if [ ! -f "reports/${TODAY}.json" ]; then
-            echo "Error: 報告生成失敗，找不到 reports/${TODAY}.json"
+            echo "Error: v5 報告生成失敗，找不到 reports/${TODAY}.json"
             exit 1
           fi
-          
           if [ ! -f "reports/${TODAY}-lite.json" ]; then
-            echo "Error: 報告生成失敗，找不到 reports/${TODAY}-lite.json"
+            echo "Error: 精簡報告生成失敗，找不到 reports/${TODAY}-lite.json"
             exit 1
           fi
-          
           if [ ! -f "reports/index.json" ]; then
             echo "Error: 索引更新失敗，找不到 reports/index.json"
             exit 1
           fi
-          
-          # 驗證 JSON 格式正確
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
-          
-          echo "✓ 報告生成成功並驗證格式正確"
+          echo "✓ v5 報告驗證完成"
+
+          # Step 2: 產生 v6 AI 報告（fail-fast，任何錯誤都中止）
+          echo "產生 v6 AI 報告..."
+          python main_ai.py --date "$TODAY"
+
+          # 驗證 AI 報告
+          if [ ! -f "reports/${TODAY}-ai.json" ]; then
+            echo "Error: AI 報告生成失敗，找不到 reports/${TODAY}-ai.json"
+            exit 1
+          fi
+          python -m json.tool reports/${TODAY}-ai.json > /dev/null
+          echo "✓ v6 AI 報告驗證完成"
+          echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports
         id: commit_reports
