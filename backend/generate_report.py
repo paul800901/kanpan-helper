@@ -471,7 +471,7 @@ def save_both_reports(
     date_str: Optional[str] = None
 ) -> tuple:
     """
-    儲存完整版與精簡版報告，並更新索引（v5 安全更新）
+    儲存完整版與精簡版報告，並原子化更新索引（v5 核心）
     
     Returns:
         (完整版路徑, 精簡版路徑)
@@ -479,20 +479,20 @@ def save_both_reports(
     full_path = save_report(full_report, date_str, suffix="")
     lite_path = save_report(lite_report, date_str, suffix="-lite")
     
-    # 安全更新索引（v5 新增：確保報告存在才更新）
+    # 原子化安全更新索引（v5 核心：7步驟驗證）
     try:
-        from backend.report_index import safe_update_index
+        from backend.report_index import atomic_update_index
         actual_date = date_str or full_report.get("date", get_today_str())
-        safe_update_index(actual_date, has_lite=True, has_full=True)
-        print(f"[OK] 索引已安全更新")
+        atomic_update_index(actual_date, has_lite=True, has_full=True)
+        print(f"[OK] 索引已原子化安全更新")
     except Exception as e:
-        print(f"[WARN] 索引更新失敗: {e}")
-        # 刪除已生成的報告以避免不一致
+        print(f"[ERROR] 索引原子化更新失敗: {e}")
+        # 刪除已生成的報告以避免資料不一致
         if os.path.exists(full_path):
             os.remove(full_path)
         if os.path.exists(lite_path):
             os.remove(lite_path)
-        raise RuntimeError(f"索引更新失敗，已刪除報告: {e}")
+        raise RuntimeError(f"索引更新失敗，已刪除報告以避免不一致: {e}")
     
     return full_path, lite_path
 

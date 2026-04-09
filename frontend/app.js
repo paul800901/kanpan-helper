@@ -1,6 +1,7 @@
 /**
- * 看盤助手 v4 - PWA 版應用程式
+ * 看盤助手 v5 - PWA 版應用程式
  * 支援索引載入、日期切換、Service Worker
+ * GitHub Pages 單一 workflow 部署
  */
 
 // 全域狀態
@@ -9,8 +10,7 @@ let indexData = null;
 let currentFilter = 'all';
 let currentDate = null;
 
-// 設定
-// 自動偵測是否在 GitHub Pages 上執行
+// 設定 - 自動偵測是否在 GitHub Pages 上執行
 const IS_GITHUB_PAGES = window.location.hostname === 'paul800901.github.io';
 const REPORT_BASE_URL = IS_GITHUB_PAGES 
     ? 'https://paul800901.github.io/kanpan-helper/reports'
@@ -60,7 +60,7 @@ function escapeHtml(text) {
 // ============================================
 
 async function loadIndex() {
-    """載入報告索引"""
+    // 載入報告索引
     try {
         const response = await fetch(CONFIG.INDEX_PATH);
         if (!response.ok) {
@@ -77,7 +77,7 @@ async function loadIndex() {
 }
 
 async function loadReportByDate(dateStr) {
-    """載入指定日期的報告"""
+    // 載入指定日期的報告
     const reportPath = `${CONFIG.REPORTS_PATH}/${dateStr}-lite.json`;
     
     try {
@@ -102,7 +102,7 @@ async function loadReportByDate(dateStr) {
 }
 
 async function loadSampleData() {
-    """載入測試資料"""
+    // 載入測試資料
     try {
         const response = await fetch(`${CONFIG.SAMPLE_PATH}/2026-04-08-lite.json`);
         if (!response.ok) {
@@ -272,7 +272,7 @@ async function loadAndRenderReport(dateStr) {
 }
 
 async function reloadLatest() {
-    """重新載入最新報告"""
+    // 重新載入最新報告
     // 重新載入索引
     indexData = await loadIndex();
     
@@ -305,6 +305,7 @@ function renderPage() {
     renderSummary();
     renderStockList();
     renderFooter();
+    renderLastUpdated();
 }
 
 function renderHeader() {

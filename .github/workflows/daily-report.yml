@@ -1,4 +1,4 @@
-name: Daily Report Generation
+name: Daily Report Generation and Deploy
 
 on:
   schedule:
@@ -15,18 +15,30 @@ on:
           - full
           - test
 
+# 設定 GITHUB_TOKEN 的權限
+permissions:
+  contents: write  # 需要寫入權限來 commit/push
+  pages: write
+  id-token: write
+
+# 確保同時間只有一個報告生成在執行
+concurrency:
+  group: "daily-report"
+  cancel-in-progress: false
+
 jobs:
-  generate-report:
+  generate-commit-and-deploy:
     runs-on: ubuntu-latest
     
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -39,14 +51,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Backup existing index.json
-        run: |
-          if [ -f "reports/index.json" ]; then
-            cp reports/index.json reports/index.json.bak
-            echo "index.json backed up"
-          fi
-      
       - name: Generate daily report
+        id: generate_report
         env:
           FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
         run: |
@@ -57,38 +63,82 @@ jobs:
             echo "Running in full mode..."
             python main.py
           fi
-      
-      - name: Safe update index.json
-        if: always()
-        run: |
-          # 如果報告生成失敗，恢復備份的 index.json
-          if [ ! -f "reports/$(date -d '8 hours' +%Y-%m-%d)-lite.json" ]; then
-            if [ -f "reports/index.json.bak" ]; then
-              mv reports/index.json.bak reports/index.json
-              echo "Report generation failed, restored index.json from backup"
-            fi
+          
+          # 取得今天的日期字串 (台灣時間)
+          TODAY=$(date -d '8 hours' +%Y-%m-%d)
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+          
+          # 檢查報告是否成功生成
+          if [ ! -f "reports/${TODAY}.json" ]; then
+            echo "Error: 報告生成失敗，找不到 reports/${TODAY}.json"
             exit 1
           fi
           
-          # 如果備份檔案存在，刪除它
-          if [ -f "reports/index.json.bak" ]; then
-            rm reports/index.json.bak
+          if [ ! -f "reports/${TODAY}-lite.json" ]; then
+            echo "Error: 報告生成失敗，找不到 reports/${TODAY}-lite.json"
+            exit 1
           fi
+          
+          if [ ! -f "reports/index.json" ]; then
+            echo "Error: 索引更新失敗，找不到 reports/index.json"
+            exit 1
+          fi
+          
+          # 驗證 JSON 格式正確
+          python -m json.tool reports/${TODAY}.json > /dev/null
+          python -m json.tool reports/${TODAY}-lite.json > /dev/null
+          python -m json.tool reports/index.json > /dev/null
+          
+          echo "✓ 報告生成成功並驗證格式正確"
       
       - name: Commit and push reports
-        if: success()
+        id: commit_reports
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # 設定 git
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # 只添加報告相關檔案
+          # 只添加 reports/ 目錄（不添加 data/）
           git add reports/
-          git add data/
           
           # 檢查是否有變更
           if git diff --staged --quiet; then
+            echo "no_changes=true" >> $GITHUB_OUTPUT
             echo "No changes to commit"
           else
             git commit -m "chore: update daily report $(date -d '8 hours' +%Y-%m-%d)"
             git push
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+            echo "✓ Committed and pushed new reports"
           fi
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Prepare site content
+        run: |
+          # 建立公開目錄
+          mkdir -p _site
+          
+          # 複製 frontend 檔案
+          cp -r frontend/* _site/
+          
+          # 複製 reports 目錄
+          cp -r reports _site/
+          
+          # 確保 reports 目錄有 .nojekyll (防止 Jekyll 處理)
+          touch _site/.nojekyll
+          
+          # 建立 _config.yml
+          echo "disable_jekyll: true" > _site/_config.yml
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

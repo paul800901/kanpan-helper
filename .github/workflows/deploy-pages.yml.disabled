@@ -1,7 +1,7 @@
 name: Deploy to GitHub Pages
 
 on:
-  workflow_dispatch:
+  # 只保留 push 觸發
   push:
     branches:
       - main
@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 取得完整歷史
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
