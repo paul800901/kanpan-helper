@@ -173,6 +173,31 @@ def get_available_dates() -> List[str]:
     return [r["date"] for r in index_data.get("reports", [])]
 
 
+def safe_update_index(date_str: str, has_lite: bool = True, has_full: bool = True):
+    """
+    安全更新索引（v5 新增）
+    
+    確保只有在報告檔案確實存在時才更新索引，
+    避免 workflow 中間失敗導致索引損壞。
+    
+    Args:
+        date_str: 日期字串 YYYY-MM-DD
+        has_lite: 是否有精簡版
+        has_full: 是否有完整版
+    """
+    # 檢查報告檔案是否確實存在
+    lite_path = os.path.join(REPORTS_DIR, f"{date_str}-lite.json")
+    full_path = os.path.join(REPORTS_DIR, f"{date_str}.json")
+    
+    if has_lite and not os.path.exists(lite_path):
+        raise FileNotFoundError(f"精簡版報告不存在: {lite_path}")
+    if has_full and not os.path.exists(full_path):
+        raise FileNotFoundError(f"完整版報告不存在: {full_path}")
+    
+    # 通過檢查後才更新索引
+    return add_report_to_index(date_str, has_lite, has_full)
+
+
 if __name__ == "__main__":
     # 測試：重建索引
     print("重建報告索引...")

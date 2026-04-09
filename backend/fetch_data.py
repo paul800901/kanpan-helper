@@ -16,6 +16,8 @@ class FinMindAPI:
     
     def __init__(self):
         self.session = requests.Session()
+        # 從環境變數讀取 API token（GitHub Actions 會注入）
+        self.api_token = os.environ.get('FINMIND_API_TOKEN')
     
     def get_stock_candles(self, symbol: str, days: int = 40) -> List[Dict]:
         """
@@ -37,6 +39,10 @@ class FinMindAPI:
             "start_date": start_date.strftime("%Y-%m-%d"),
             "end_date": end_date.strftime("%Y-%m-%d")
         }
+        
+        # 如果有 API token，加入請求參數
+        if self.api_token:
+            params["token"] = self.api_token
         
         try:
             response = self.session.get(self.BASE_URL, params=params, timeout=30)
@@ -74,6 +80,10 @@ class FinMindAPI:
             "start_date": start_date.strftime("%Y-%m-%d"),
             "end_date": end_date.strftime("%Y-%m-%d")
         }
+        
+        # 如果有 API token，加入請求參數
+        if self.api_token:
+            params["token"] = self.api_token
         
         try:
             response = self.session.get(self.BASE_URL, params=params, timeout=30)

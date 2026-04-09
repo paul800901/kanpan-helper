@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - 'reports/**'
+
+# 設定 GITHUB_TOKEN 的權限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 確保同時間只有一個部署在執行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Prepare site content
+        run: |
+          # 建立公開目錄
+          mkdir -p _site
+          
+          # 複製 frontend 檔案
+          cp -r frontend/* _site/
+          
+          # 複製 reports 目錄
+          cp -r reports _site/
+          
+          # 確保 reports 目錄有 .nojekyll (防止 Jekyll 處理)
+          touch _site/.nojekyll
+          
+          # 建立 _config.yml 確認這是靜態網站
+          echo "disable_jekyll: true" > _site/_config.yml
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -377,16 +377,24 @@ def generate_report_v2(
     # 產生摘要區
     summary = generate_report_summary(top_stocks)
     
+    current_time = get_taiwan_now().isoformat()
+    
     report = {
         "report_version": "v2",
         "date": date_str,
-        "generated_at": get_taiwan_now().isoformat(),
+        "generated_at": current_time,
+        "last_updated": current_time,  # 供前端顯示最後更新時間
         "total_stocks_requested": total_stocks_requested,
         "total_stocks_analyzed": total_stocks_analyzed,
         "top_n": len(top_stocks),
         "summary": summary,
         "stocks": stocks_data,
-        "disclaimer": "本報告僅供參考，不構成任何投資建議或買賣建議。投資人應自行判斷並承擔風險。"
+        "disclaimer": "本報告僅供參考，不構成任何投資建議或買賣建議。投資人應自行判斷並承擔風險。",
+        "metadata": {
+            "last_updated": current_time,
+            "generated_by": "kanpan-helper v5",
+            "source": "FinMind API"
+        }
     }
     
     return report
@@ -463,7 +471,7 @@ def save_both_reports(
     date_str: Optional[str] = None
 ) -> tuple:
     """
-    儲存完整版與精簡版報告，並更新索引
+    儲存完整版與精簡版報告，並更新索引（v5 安全更新）
     
     Returns:
         (完整版路徑, 精簡版路徑)
@@ -471,13 +479,20 @@ def save_both_reports(
     full_path = save_report(full_report, date_str, suffix="")
     lite_path = save_report(lite_report, date_str, suffix="-lite")
     
-    # 更新索引
+    # 安全更新索引（v5 新增：確保報告存在才更新）
     try:
-        from backend.report_index import add_report_to_index
+        from backend.report_index import safe_update_index
         actual_date = date_str or full_report.get("date", get_today_str())
-        add_report_to_index(actual_date, has_lite=True, has_full=True)
+        safe_update_index(actual_date, has_lite=True, has_full=True)
+        print(f"[OK] 索引已安全更新")
     except Exception as e:
-        print(f"[WARN] 更新索引失敗: {e}")
+        print(f"[WARN] 索引更新失敗: {e}")
+        # 刪除已生成的報告以避免不一致
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        if os.path.exists(lite_path):
+            os.remove(lite_path)
+        raise RuntimeError(f"索引更新失敗，已刪除報告: {e}")
     
     return full_path, lite_path
 

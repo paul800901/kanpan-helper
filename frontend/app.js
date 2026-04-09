@@ -10,10 +10,17 @@ let currentFilter = 'all';
 let currentDate = null;
 
 // 設定
+// 自動偵測是否在 GitHub Pages 上執行
+const IS_GITHUB_PAGES = window.location.hostname === 'paul800901.github.io';
+const REPORT_BASE_URL = IS_GITHUB_PAGES 
+    ? 'https://paul800901.github.io/kanpan-helper/reports'
+    : '../reports';
+
 const CONFIG = {
-    INDEX_PATH: '../reports/index.json',
-    REPORTS_PATH: '../reports',
-    SAMPLE_PATH: './sample'
+    INDEX_PATH: `${REPORT_BASE_URL}/index.json`,
+    REPORTS_PATH: REPORT_BASE_URL,
+    SAMPLE_PATH: './sample',
+    IS_GITHUB_PAGES: IS_GITHUB_PAGES
 };
 
 // ============================================
@@ -455,6 +462,38 @@ function renderFooter() {
     document.getElementById('footerDate').textContent = currentDate || '--';
     document.getElementById('totalCount').textContent = stocks.length;
     document.getElementById('goodCount').textContent = goodCount;
+}
+
+function renderLastUpdated() {
+    const lastUpdated = reportData.metadata?.last_updated || reportData.created_at || null;
+    const element = document.getElementById('lastUpdated');
+    
+    if (lastUpdated) {
+        try {
+            const date = new Date(lastUpdated);
+            const twDate = new Date(date.getTime() + (date.getTimezoneOffset() + 480) * 60000);
+            const formatted = twDate.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            element.textContent = `最後更新: ${formatted}`;
+            
+            // 如果是當天更新，加上特殊樣式
+            const today = getTodayString();
+            const updateDate = twDate.toISOString().split('T')[0];
+            if (updateDate === today) {
+                element.classList.add('today');
+            }
+        } catch (e) {
+            element.textContent = `最後更新: ${lastUpdated}`;
+        }
+    } else {
+        element.textContent = '最後更新: --';
+    }
 }
 
 // ============================================

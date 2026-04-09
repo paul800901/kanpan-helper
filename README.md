@@ -1,10 +1,19 @@
-# 看盤助手 (Kanpan Helper) v4
+# 看盤助手 (Kanpan Helper) v5
 
-每日台股分析報告系統 - PWA 手機版
+每日台股分析報告系統 - PWA 手機版 + GitHub Pages 部署
 
 ## 快速啟動
 
-### Windows 使用者
+### 線上版本（GitHub Pages）
+
+**自動部署**：
+- 每天 08:00 (台灣時間) 自動生成報告
+- 自動部署到 GitHub Pages
+- 瀏覽即可查看最新報告
+
+**網址**：`https://paul800901.github.io/kanpan-helper/`
+
+### 本地開發
 
 **方法一：一鍵啟動全部**
 ```bash
@@ -26,13 +35,17 @@ python -m http.server 8080
 # 瀏覽器開啟 http://localhost:8080
 ```
 
-## 功能特色
+## 功能特色 (v5)
 
 - **每日自動分析**：抓取台股資料，計算技術指標
 - **評分排名**：綜合評分選出 Top 5
 - **人話報告**：白話說明理由與風險
 - **手機 PWA**：可安裝到手機主畫面
 - **歷史查詢**：可切換查看過去報告
+- **GitHub Actions 自動化**：每天自動生成報告
+- **GitHub Pages 部署**：線上瀏覽，無需本地伺服器
+- **安全更新機制**：報告生成失敗時自動恢復索引
+- **環境變數支援**：支援 FINMIND_API_TOKEN 環境變數
 
 ## 系統架構
 
@@ -61,7 +74,17 @@ kanpan-helper/
 
 ## 使用流程
 
-### 1. 產生報告
+### GitHub Pages 線上版本
+
+線上版本已自動化，您只需：
+
+1. **瀏覽報告**：開啟 `https://paul800901.github.io/kanpan-helper/`
+2. **查看更新時間**：頁面會顯示最後更新時間
+3. **切換日期**：從下拉選單選擇歷史報告
+
+### 本地開發
+
+#### 1. 產生報告
 
 ```bash
 # 測試模式（3檔股票）
@@ -72,9 +95,18 @@ python main.py
 
 # 使用快取（不再抓取）
 python main.py --use-cache
+
+# 使用特定日期快取
+python main.py --use-cache --date 2024-03-15
 ```
 
-### 2. 查看報告
+**環境變數設定（選擇性）：**
+```bash
+# 設定 FinMind API token（若未設定會使用公開 API）
+export FINMIND_API_TOKEN=your_token_here
+```
+
+#### 2. 查看報告
 
 ```bash
 # 啟動前端伺服器
@@ -181,9 +213,63 @@ index.html?date=2026-04-08&debug=1  # 除錯模式
 
 所有批次檔使用 UTF-8 編碼，若中文顯示異常請確認終端機編碼設定。
 
+## GitHub Actions 自動化（v5 新增）
+
+### 自動生成報告
+
+```
+GitHub Repository → Actions → Daily Report Generation
+```
+
+**排程**：每天 08:00 (台灣時間) 自動執行
+
+**手動觸發**：
+1. 點選 "Run workflow"
+2. 選擇模式：full / test
+3. 點選 "Run workflow"
+
+**功能**：
+- 自動抓取資料並分析
+- 生成完整版和精簡版報告
+- 更新 reports/index.json
+- 自動 commit 到 main 分支
+- **安全機制**：生成失敗時自動恢復索引
+
+### 自動部署 GitHub Pages
+
+```
+GitHub Repository → Actions → Deploy to GitHub Pages
+```
+
+**觸發條件**：
+- 手動觸發
+- 或當 frontend/** 或 reports/** 有更新時自動觸發
+
+**功能**：
+- 將 frontend/ 複製到網站根目錄
+- 將 reports/ 複製到網站根目錄
+- 自動部署到 `https://paul800901.github.io/kanpan-helper/`
+
+### 環境變數
+
+**`FINMIND_API_TOKEN`**
+- 從 GitHub repository secrets 讀取
+- 在 workflow 中自動注入環境變數
+- 支援 FinMind 需要授權的 dataset
+
+**`REPORT_BASE_URL`**
+- 前端自動偵測是否在 GitHub Pages
+- 本地開發：使用相對路徑 `../reports`
+- GitHub Pages：使用絕對路徑 `https://paul800901.github.io/kanpan-helper/reports`
+
+## 部署指南
+
+詳細部署步驟請參閱 [DEPLOY.md](DEPLOY.md)
+
 ## 版本歷史
 
 - v1：基礎骨架，可產生 JSON 報告
 - v2：報告實用化，新增人話欄位
 - v3：前端最小可用版，卡片顯示
 - v4：PWA 化，支援離線，一鍵啟動
+- **v5：GitHub Actions 自動化，GitHub Pages 部署**
