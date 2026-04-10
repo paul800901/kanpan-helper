@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0d1b2a">
+    <title>個股詳情 - 看盤助手</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .back-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 6px 0;
+        }
+        .hdr-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .hdr-symbol {
+            font-size: 26px;
+            font-weight: 800;
+            color: white;
+        }
+        .hdr-name {
+            font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        /* ── Detail Page Main ── */
+        .detail-main {
+            padding: 12px 14px 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .d-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .d-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* ── Score Row ── */
+        .score-hero {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        .score-big {
+            font-size: 56px;
+            font-weight: 800;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+        .score-labels { display: flex; flex-direction: column; gap: 6px; }
+        .grade-lg {
+            font-size: 15px;
+            font-weight: 700;
+            padding: 4px 14px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        .grade-A { background: #1b5e20; color: white; }
+        .grade-B { background: #1565c0; color: white; }
+        .grade-C { background: #e65100; color: white; }
+        .grade-D { background: #b71c1c; color: white; }
+
+        .cat-tag {
+            display: inline-block;
+            background: #e8edf5;
+            color: #1a3a5c;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 8px;
+        }
+
+        .bias-big {
+            display: inline-block;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 9px 24px;
+            border-radius: 24px;
+        }
+        .bias-可留意   { background: #e8f5e9; color: #1b5e20; border: 2px solid #2e7d32; }
+        .bias-觀察     { background: #fff3e0; color: #e65100; border: 2px solid #ef6c00; }
+        .bias-偏保守   { background: #fff8e1; color: #f57f17; border: 2px solid #f9a825; }
+        .bias-暫不考慮 { background: #ffebee; color: #b71c1c; border: 2px solid #c62828; }
+
+        /* ── Indicators ── */
+        .ind-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .ind-box {
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 10px 10px;
+            text-align: center;
+        }
+        .ind-label {
+            font-size: 11px;
+            color: #888;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .ind-val {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a2e;
+        }
+        .ind-subval {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .signal-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .signal-chip {
+            background: #eef2f7;
+            color: #1a3a5c;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 10px;
+        }
+
+        /* ── Summary ── */
+        .summary-text {
+            font-size: 17px;
+            color: #1a1a2e;
+            line-height: 1.7;
+            padding: 12px 14px;
+            background: #f0f6ff;
+            border-radius: 10px;
+            border-left: 4px solid #1a3a5c;
+            margin-bottom: 14px;
+        }
+        .reason-list, .risk-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .reason-item {
+            font-size: 15px;
+            color: #333;
+            padding: 9px 13px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #1a3a5c;
+            line-height: 1.5;
+        }
+        .risk-item {
+            font-size: 15px;
+            color: #b71c1c;
+            padding: 9px 13px;
+            background: #fff5f5;
+            border-radius: 8px;
+            border-left: 3px solid #c62828;
+            line-height: 1.5;
+        }
+
+        /* ── AI Section ── */
+        .ai-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1a3a5c, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s;
+        }
+        .ai-btn:active { opacity: 0.8; }
+        .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .ai-loading {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 16px;
+        }
+        .ai-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #ddd;
+            border-top-color: #1a3a5c;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .ai-result { margin-top: 14px; }
+        .ai-summary-box {
+            background: linear-gradient(135deg, #1a3a5c 0%, #0d2644 100%);
+            color: white;
+            padding: 16px 18px;
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 14px;
+        }
+        .ai-block { margin-bottom: 12px; }
+        .ai-block-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #888;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .ai-block-text {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.6;
+            padding: 10px 14px;
+            background: #f5f7fa;
+            border-radius: 8px;
+        }
+        .ai-watch-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+        .ai-watch-item {
+            font-size: 15px;
+            color: #1a3a5c;
+            padding: 9px 13px;
+            background: #e8f0fe;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+        .ai-watch-item::before { content: '→ '; font-weight: 700; }
+
+        .ai-error {
+            color: #b71c1c;
+            background: #fff5f5;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-top: 12px;
+        }
+
+        .loading-page { text-align: center; padding: 80px 20px; color: #666; font-size: 16px; }
+        .error-page { text-align: center; padding: 60px 20px; color: #b71c1c; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="hdr-title-row">
+            <a href="javascript:history.back()" class="back-btn">← 返回</a>
+            <div>
+                <div class="hdr-symbol" id="hdrSymbol">--</div>
+                <div class="hdr-name" id="hdrName"></div>
+            </div>
+            <div style="width:56px"></div>
+        </div>
+    </header>
+
+    <!-- 主內容 -->
+    <div id="loadingPage" class="loading-page">載入中...</div>
+    <div id="errorPage" class="error-page" style="display:none"></div>
+
+    <div class="detail-main" id="detailMain" style="display:none">
+
+        <!-- 基本資料 -->
+        <div class="d-card">
+            <div class="d-card-title">基本資料</div>
+            <div class="score-hero">
+                <div class="score-big" id="scoreNum">--</div>
+                <div class="score-labels">
+                    <span class="grade-lg" id="gradeBadge">--</span>
+                    <span class="cat-tag" id="catTag">--</span>
+                </div>
+            </div>
+            <div>
+                <span class="bias-big" id="biasBig">--</span>
+            </div>
+        </div>
+
+        <!-- 技術指標 -->
+        <div class="d-card">
+            <div class="d-card-title">技術指標</div>
+            <div class="ind-grid">
+                <div class="ind-box">
+                    <div class="ind-label">收盤價</div>
+                    <div class="ind-val" id="indClose">--</div>
+                </div>
+                <div class="ind-box">
+                    <div class="ind-label">量比</div>
+                    <div class="ind-val" id="indVol">--</div>
+                </div>
+                <div class="ind-box">
+                    <div class="ind-label">MA5</div>
+                    <div class="ind-val" id="indMa5">--</div>
+                </div>
+                <div class="ind-box">
+                    <div class="ind-label">MA20</div>
+                    <div class="ind-val" id="indMa20">--</div>
+                </div>
+                <div class="ind-box">
+                    <div class="ind-label">K 值</div>
+                    <div class="ind-val" id="indK">--</div>
+                </div>
+                <div class="ind-box">
+                    <div class="ind-label">D 值</div>
+                    <div class="ind-val" id="indD">--</div>
+                </div>
+            </div>
+            <div class="signal-row">
+                <span class="signal-chip" id="sigTrend"></span>
+                <span class="signal-chip" id="sigVol"></span>
+                <span class="signal-chip" id="sigInst"></span>
+                <span class="signal-chip" id="sigKd"></span>
+            </div>
+        </div>
+
+        <!-- 分析依據 -->
+        <div class="d-card">
+            <div class="d-card-title">分析依據</div>
+            <div class="summary-text" id="summaryText"></div>
+            <ul class="reason-list" id="reasonList"></ul>
+        </div>
+
+        <!-- 注意事項 -->
+        <div class="d-card">
+            <div class="d-card-title">注意事項</div>
+            <ul class="risk-list" id="riskList"></ul>
+        </div>
+
+        <!-- AI 解讀 -->
+        <div class="d-card" id="aiCard">
+            <div class="d-card-title">即時 AI 解讀</div>
+            <button class="ai-btn" id="aiBtn" onclick="generateAI()">🤖 產生 AI 解讀</button>
+            <div id="aiArea"></div>
+        </div>
+
+    </div>
+
+<script>
+'use strict';
+
+// ====== 設定 ======
+// 部署 Cloudflare Worker 後，請將此網址改為你的 Worker 實際 URL
+const WORKER_URL = 'https://kanpan-helper-worker.YOUR_SUBDOMAIN.workers.dev';
+
+const IS_GITHUB = location.hostname === 'paul800901.github.io';
+const BASE = IS_GITHUB
+    ? 'https://paul800901.github.io/kanpan-helper/reports'
+    : '../reports';
+
+// ====== Utils ======
+function esc(s) {
+    if (s == null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+function fmt(n) { return n != null ? Number(n).toLocaleString('zh-TW') : '--'; }
+function fmtPct(r) { return r != null ? Math.round(r * 100) + '%' : '--'; }
+function fmtNum(n, dec) { return n != null ? Number(n).toFixed(dec ?? 1) : '--'; }
+
+// ====== Fetch ======
+async function fetchJSON(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+// ====== Render stock data ======
+function renderStock(stock) {
+    // Header
+    document.getElementById('hdrSymbol').textContent = stock.symbol;
+    document.getElementById('hdrName').textContent = stock.name || '';
+    document.title = `${stock.symbol} ${stock.name} - 看盤助手`;
+
+    // Score
+    document.getElementById('scoreNum').textContent = stock.score ?? '--';
+    const grade = stock.score_grade || 'C';
+    const gradeEl = document.getElementById('gradeBadge');
+    gradeEl.textContent = `${grade} 級　${stock.score_label || ''}`;
+    gradeEl.className = `grade-lg grade-${grade}`;
+
+    document.getElementById('catTag').textContent = stock.category || '--';
+
+    const biasEl = document.getElementById('biasBig');
+    const bias = stock.action_bias || '暫不考慮';
+    biasEl.textContent = bias;
+    biasEl.className = `bias-big bias-${bias}`;
+
+    // Indicators
+    const ind = stock.indicators || {};
+    document.getElementById('indClose').textContent = fmt(ind.close);
+    document.getElementById('indVol').textContent   = fmtPct(ind.volume_ratio);
+    document.getElementById('indMa5').textContent   = fmt(ind.ma5);
+    document.getElementById('indMa20').textContent  = fmt(ind.ma20);
+    document.getElementById('indK').textContent     = fmtNum(ind.k);
+    document.getElementById('indD').textContent     = fmtNum(ind.d);
+
+    const setChip = (id, label) => {
+        const el = document.getElementById(id);
+        el.textContent = label || '';
+        el.style.display = label ? '' : 'none';
+    };
+    setChip('sigTrend', stock.trend ? `趨勢：${stock.trend}` : '');
+    setChip('sigVol',   stock.volume ? `量能：${stock.volume}` : '');
+    setChip('sigInst',  stock.institutional ? `法人：${stock.institutional}` : '');
+    setChip('sigKd',    stock.kd_state ? `KD：${stock.kd_state}` : '');
+
+    // Summary
+    document.getElementById('summaryText').textContent = stock.one_line_summary || '';
+
+    const reasonList = document.getElementById('reasonList');
+    reasonList.innerHTML = (stock.plain_reasons || []).map(r =>
+        `<li class="reason-item">${esc(r)}</li>`
+    ).join('');
+
+    const riskList = document.getElementById('riskList');
+    riskList.innerHTML = (stock.plain_risks || []).map(r =>
+        `<li class="risk-item">${esc(r)}</li>`
+    ).join('');
+}
+
+// ====== AI Generation ======
+let stockData = null;
+let urlDate   = null;
+
+async function generateAI() {
+    if (!stockData) return;
+
+    const workerConfigured = WORKER_URL.indexOf('YOUR_SUBDOMAIN') === -1;
+    if (!workerConfigured) {
+        document.getElementById('aiArea').innerHTML =
+            `<div class="ai-error">⚠️ AI 串接尚未設定。<br>請部署 Cloudflare Worker 後，在 stock.html 的頂端設定 WORKER_URL。<br>詳見 worker/README.md。</div>`;
+        return;
+    }
+
+    const btn = document.getElementById('aiBtn');
+    btn.disabled = true;
+
+    document.getElementById('aiArea').innerHTML = `
+        <div class="ai-loading">
+            <div class="ai-spinner"></div>
+            AI 分析中，請稍候...
+        </div>`;
+
+    try {
+        const resp = await fetch(WORKER_URL + '/api/stock-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol: stockData.symbol, date: urlDate })
+        });
+
+        const data = await resp.json();
+
+        if (!data.ok) {
+            throw new Error(data.error || '未知錯誤');
+        }
+
+        renderAI(data);
+        btn.textContent = '🔄 重新產生 AI 解讀';
+    } catch (e) {
+        document.getElementById('aiArea').innerHTML =
+            `<div class="ai-error">AI 解讀失敗：${esc(e.message)}<br>請確認 Worker 已正確部署，或稍後再試。</div>`;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function renderAI(data) {
+    const watchHTML = Array.isArray(data.watch_points) && data.watch_points.length
+        ? `<div class="ai-block">
+               <div class="ai-block-title">觀察重點</div>
+               <ul class="ai-watch-list">${data.watch_points.map(p => `<li class="ai-watch-item">${esc(p)}</li>`).join('')}</ul>
+           </div>`
+        : '';
+
+    document.getElementById('aiArea').innerHTML = `
+        <div class="ai-result">
+            <div class="ai-summary-box">${esc(data.ai_summary)}</div>
+            <div class="ai-block">
+                <div class="ai-block-title">趨勢觀點</div>
+                <div class="ai-block-text">${esc(data.trend_view)}</div>
+            </div>
+            <div class="ai-block">
+                <div class="ai-block-title">主要風險</div>
+                <div class="ai-block-text">${esc(data.risk_view)}</div>
+            </div>
+            ${watchHTML}
+        </div>`;
+}
+
+// ====== Init ======
+async function init() {
+    const params = new URLSearchParams(location.search);
+    const symbol = params.get('symbol');
+    urlDate = params.get('date');
+
+    if (!symbol) {
+        document.getElementById('loadingPage').style.display = 'none';
+        document.getElementById('errorPage').textContent = '缺少股票代號參數。請從股票總覽頁進入。';
+        document.getElementById('errorPage').style.display = 'block';
+        return;
+    }
+
+    // If no date, find latest from index
+    if (!urlDate) {
+        try {
+            const idx = await fetchJSON(`${BASE}/index.json`);
+            urlDate = idx.latest_date;
+        } catch (e) {
+            urlDate = null;
+        }
+    }
+
+    if (!urlDate) {
+        document.getElementById('loadingPage').style.display = 'none';
+        document.getElementById('errorPage').textContent = '找不到可用的報告日期。';
+        document.getElementById('errorPage').style.display = 'block';
+        return;
+    }
+
+    try {
+        const universe = await fetchJSON(`${BASE}/${urlDate}-universe.json`);
+        const stock = (universe.stocks || []).find(s => s.symbol === symbol);
+
+        if (!stock) {
+            throw new Error(`${urlDate} 的 universe 資料中找不到股票 ${symbol}`);
+        }
+
+        stockData = stock;
+        document.getElementById('loadingPage').style.display = 'none';
+        document.getElementById('detailMain').style.display = 'flex';
+        renderStock(stock);
+
+    } catch (e) {
+        document.getElementById('loadingPage').style.display = 'none';
+        document.getElementById('errorPage').textContent = `載入失敗：${e.message}`;
+        document.getElementById('errorPage').style.display = 'block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

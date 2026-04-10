@@ -38,7 +38,7 @@ GitHub Pages 部署
 2. **本地測試**確認功能正常
 3. **複製到桌面 Git**：
    ```powershell
-   robocopy "G:\我的雲端硬碟\kanpan-helper" "C:\Users\Paulus\Desktop\kanpan_helper_github_sync\kanpan-helper" /MIR /XD .git __pycache__
+   robocopy "G:\我的雲端硬碟\kanpan-helper" "$env:USERPROFILE\Desktop\kanpan_helper_github_sync\kanpan-helper" /MIR /XD .git __pycache__
    ```
 4. **提交並推送**：
    ```bash

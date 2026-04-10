@@ -65,15 +65,18 @@ def scan_existing_reports() -> List[Dict]:
                 continue
             
             lite_file = f"{date_str}-lite.json"
+            universe_file = f"{date_str}-universe.json"
             full_path = os.path.join(REPORTS_DIR, filename)
             lite_path = os.path.join(REPORTS_DIR, lite_file)
-            
+            universe_path = os.path.join(REPORTS_DIR, universe_file)
+
             report_info = {
                 "date": date_str,
                 "lite": lite_file if os.path.exists(lite_path) else None,
                 "full": filename if os.path.exists(full_path) else None,
                 "has_lite": os.path.exists(lite_path),
                 "has_full": os.path.exists(full_path),
+                "has_universe": os.path.exists(universe_path),
                 "created_at": datetime.fromtimestamp(
                     os.path.getmtime(full_path)
                 ).isoformat() if os.path.exists(full_path) else None
@@ -157,7 +160,7 @@ def validate_index_file(filepath: str) -> bool:
     return False
 
 
-def atomic_update_index(date_str: str, has_lite: bool = True, has_full: bool = True) -> Dict:
+def atomic_update_index(date_str: str, has_lite: bool = True, has_full: bool = True, has_universe: bool = False) -> Dict:
     """
     原子化更新索引（v5 安全更新核心）
     
@@ -189,11 +192,14 @@ def atomic_update_index(date_str: str, has_lite: bool = True, has_full: bool = T
     # 步驟 1: 檢查報告檔案是否存在且有效（使用單一報告驗證）
     lite_path = os.path.join(REPORTS_DIR, f"{date_str}-lite.json")
     full_path = os.path.join(REPORTS_DIR, f"{date_str}.json")
-    
+    universe_path_check = os.path.join(REPORTS_DIR, f"{date_str}-universe.json")
+
     if has_lite and not validate_single_report(lite_path):
         raise FileNotFoundError(f"精簡版報告檔案無效或不存在: {lite_path}")
     if has_full and not validate_single_report(full_path):
         raise FileNotFoundError(f"完整版報告檔案無效或不存在: {full_path}")
+    if has_universe and not os.path.exists(universe_path_check):
+        raise FileNotFoundError(f"Universe 報告檔案不存在: {universe_path_check}")
     
     # 步驟 2: 載入現有索引並更新
     index_data = load_index()
@@ -211,6 +217,7 @@ def atomic_update_index(date_str: str, has_lite: bool = True, has_full: bool = T
         "full": f"{date_str}.json" if has_full else None,
         "has_lite": has_lite,
         "has_full": has_full,
+        "has_universe": has_universe,
         "created_at": datetime.now().isoformat()
     }
     

@@ -1,0 +1,16 @@
+name = "kanpan-helper-worker"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# Worker 說明
+# 1. 修改 name 為你想要的 worker 名稱
+# 2. 執行 wrangler secret put DEEPSEEK_API_KEY 設定 API Key
+# 3. 執行 wrangler deploy 部署
+#
+# 部署成功後，你的 Worker URL 為：
+#   https://{name}.{your-subdomain}.workers.dev
+#
+# 將此 URL 填入 frontend/stock.html 的 WORKER_URL 常數
+
+# 若需限制 Worker 只能從特定網域呼叫，可設定 routes
+# (Free plan 不支援 custom domains，需升級才能設定 routes)

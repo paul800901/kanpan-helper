@@ -94,10 +94,15 @@ jobs:
             echo "Error: AI 報告生成失敗，找不到 reports/${TODAY}-ai.json"
             exit 1
           fi
+          if [ ! -f "reports/${TODAY}-universe.json" ]; then
+            echo "Error: Universe 報告生成失敗，找不到 reports/${TODAY}-universe.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
           python -m json.tool reports/${TODAY}-ai.json > /dev/null
+          python -m json.tool reports/${TODAY}-universe.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports

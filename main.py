@@ -21,7 +21,8 @@ from backend.config import get_today_str
 from backend.fetch_data import fetch_all_stocks, load_cached_data
 from backend.calc_indicators import calculate_all_indicators, StockIndicators
 from backend.ranking import rank_stocks, StockScore
-from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled
+from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled, generate_universe_report, save_universe_report, save_report
+from backend.report_index import atomic_update_index
 
 
 def fetch_data_with_stats(
@@ -62,10 +63,10 @@ def fetch_data_with_stats(
 
 
 def run_pipeline(
-    use_cache: bool = False, 
+    use_cache: bool = False,
     date_str: Optional[str] = None,
     symbols: Optional[List[str]] = None
-) -> Tuple[str, str, Optional[str]]:
+) -> Tuple[str, str, Optional[str], str]:
     """
     執行完整分析流程
     
@@ -119,7 +120,8 @@ def run_pipeline(
     print("\n[Step 3] 評分與排名")
     print("-" * 40)
     
-    top_stocks = rank_stocks(indicators, top_n=5)
+    all_stocks = rank_stocks(indicators, top_n=len(indicators))
+    top_stocks = all_stocks[:5]
     print(f"[OK] 評分完成，選出 Top {len(top_stocks)}:")
     
     for i, stock in enumerate(top_stocks, 1):
@@ -146,9 +148,10 @@ def run_pipeline(
     # 生成精簡版
     lite_report = generate_lite_report(full_report)
     
-    # 儲存兩份報告
-    full_path, lite_path = save_both_reports(full_report, lite_report, report_date)
-    
+    # 儲存兩份報告（此時不更新 index.json，等 universe 生成後一起更新）
+    full_path = save_report(full_report, report_date, suffix="")
+    lite_path = save_report(lite_report, report_date, suffix="-lite")
+
     print(f"[OK] 報告已生成")
     print(f"   完整版: {full_path}")
     print(f"   精簡版: {lite_path}")
@@ -168,6 +171,24 @@ def run_pipeline(
     else:
         print("[INFO] AI 分析未啟用或失敗，略過此步驟")
     
+    # Step 6: 生成 Universe 報告 (v6.1)
+    print("\n[Step 6] 生成 Universe 報告 (v6.1)")
+    print("-" * 40)
+
+    universe_report = generate_universe_report(all_stocks, report_date)
+    universe_path = save_universe_report(universe_report, report_date)
+    print(f"[OK] Universe 報告已生成: {universe_path}")
+    print(f"   包含 {universe_report['total_stocks']} 檔股票")
+
+    # 最終一次更新 index.json（確保 has_universe=True）
+    print("\n[Step 6 結尾] 更新索引 (has_universe=True)")
+    try:
+        atomic_update_index(report_date, has_lite=True, has_full=True, has_universe=True)
+        print(f"[OK] 索引已更新，has_universe=True")
+    except Exception as e:
+        print(f"[ERROR] 索引更新失敗: {e}")
+        raise
+
     # 顯示摘要
     print("\n[報告摘要]")
     print("-" * 40)
@@ -182,7 +203,7 @@ def run_pipeline(
     print("流程完成！")
     print("=" * 60)
     
-    return full_path, lite_path, ai_path
+    return full_path, lite_path, ai_path, universe_path
 
 
 def main():
@@ -235,7 +256,7 @@ def main():
         test_symbols = ["2330", "2317", "2454"]
     
     try:
-        full_path, lite_path, ai_path = run_pipeline(
+        full_path, lite_path, ai_path, universe_path = run_pipeline(
             use_cache=args.use_cache,
             date_str=args.date,
             symbols=test_symbols
@@ -245,6 +266,7 @@ def main():
         print(f"   精簡版: {os.path.abspath(lite_path)}")
         if ai_path:
             print(f"   AI版: {os.path.abspath(ai_path)}")
+        print(f"   Universe: {os.path.abspath(universe_path)}")
         
     except KeyboardInterrupt:
         print("\n\n使用者中斷")

@@ -528,6 +528,94 @@ def generate_ai_report_if_enabled(full_report: Dict, date_str: Optional[str] = N
     return ai_path
 
 
+# ======== Universe Report (v6.1) ========
+
+STOCK_CATEGORIES = {
+    "2330": "半導體", "2317": "電子", "2454": "半導體", "2412": "電信",
+    "2881": "金融", "2882": "金融", "2308": "電子", "2303": "半導體",
+    "3711": "半導體", "2891": "金融", "2886": "金融", "2884": "金融",
+    "1216": "食品", "2885": "金融", "2357": "電子", "2382": "電子",
+    "2892": "金融", "5880": "金融", "2880": "金融", "2327": "電子",
+    "3034": "半導體", "2883": "金融", "2002": "鋼鐵", "3008": "光學",
+    "2890": "金融", "1101": "水泥", "3045": "電信", "2395": "電子",
+    "5876": "金融", "1326": "化工", "4904": "電信", "5871": "租賃",
+    "2301": "電子", "2912": "零售", "1402": "纖維", "2887": "金融",
+    "1102": "水泥", "2603": "航運", "2408": "半導體", "2615": "航運",
+    "2609": "航運", "2610": "航空", "2618": "航空", "2606": "航運",
+    "2617": "航運", "1605": "電線電纜", "2207": "汽車", "1229": "食品",
+    "2634": "航太", "2363": "半導體"
+}
+
+
+def get_stock_category(symbol: str) -> str:
+    """取得股票分類"""
+    return STOCK_CATEGORIES.get(symbol, "其他")
+
+
+def generate_universe_stock(score: StockScore) -> Dict:
+    """產生 universe 格式的單一股票資料"""
+    return {
+        "symbol": score.symbol,
+        "name": get_stock_name(score.symbol),
+        "category": get_stock_category(score.symbol),
+        "rank": score.rank,
+        "score": score.score,
+        "score_grade": get_score_grade(score.score),
+        "score_label": get_score_label(score.score),
+        "action_bias": determine_action_bias(score),
+        "trend": score.trend,
+        "volume": score.volume,
+        "volume_ratio": score.volume_ratio,
+        "institutional": score.institutional,
+        "kd_state": score.kd_state,
+        "one_line_summary": generate_one_line_summary(score),
+        "plain_reasons": generate_plain_reasons(score),
+        "plain_risks": generate_plain_risks(score),
+        "indicators": {
+            "close": score.latest_close,
+            "ma5": score.ma5,
+            "ma20": score.ma20,
+            "k": score.k_value,
+            "d": score.d_value,
+            "volume_ratio": score.volume_ratio
+        }
+    }
+
+
+def generate_universe_report(all_scores: List[StockScore], date_str: Optional[str] = None) -> Dict:
+    """
+    產生 universe 報告（所有股票完整資料）
+    用於第二頁股票總覽與第三頁個股詳情
+    """
+    if date_str is None:
+        date_str = get_today_str()
+
+    current_time = get_taiwan_now().isoformat()
+    stocks_data = [generate_universe_stock(s) for s in all_scores]
+
+    return {
+        "report_version": "v1-universe",
+        "date": date_str,
+        "generated_at": current_time,
+        "total_stocks": len(stocks_data),
+        "stocks": stocks_data
+    }
+
+
+def save_universe_report(universe_report: Dict, date_str: Optional[str] = None) -> str:
+    """儲存 universe 報告"""
+    if date_str is None:
+        date_str = get_today_str()
+
+    filename = f"{date_str}-universe.json"
+    file_path = os.path.join(os.path.dirname(get_report_path()), filename)
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(universe_report, f, ensure_ascii=False, indent=2)
+
+    return file_path
+
+
 def load_report(date_str: Optional[str] = None, lite: bool = False) -> Optional[Dict]:
     """
     載入報告

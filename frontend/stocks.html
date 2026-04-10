@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0d1b2a">
+    <title>股票總覽 - 看盤助手</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .back-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 6px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .page-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        .header-mid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .search-row {
+            margin-bottom: 10px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 11px 16px;
+            font-size: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.12);
+            color: white;
+            outline: none;
+        }
+        .search-input::placeholder { color: rgba(255,255,255,0.5); }
+        .search-input:focus { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.55); }
+
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .filter-row::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border: 1.5px solid rgba(255,255,255,0.35);
+            border-radius: 20px;
+            background: transparent;
+            color: rgba(255,255,255,0.8);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .filter-btn.active {
+            background: rgba(255,255,255,0.22);
+            color: white;
+            border-color: rgba(255,255,255,0.7);
+        }
+
+        /* ── 主內容區 ── */
+        .stocks-main {
+            padding: 0 0 80px;
+        }
+        .stats-bar {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: #666;
+        }
+        .stats-bar b { color: #1a3a5c; }
+
+        /* ── 股票列表 ── */
+        .stock-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: white;
+            margin: 0 12px 8px;
+            border-radius: 14px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: box-shadow 0.15s;
+        }
+        .stock-row:active { box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+        .row-main { flex: 1; min-width: 0; }
+        .row-top {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .row-symbol {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a3a5c;
+        }
+        .row-name {
+            font-size: 15px;
+            color: #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .row-cat {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 8px;
+            background: #e8edf5;
+            color: #1a3a5c;
+        }
+        .row-summary {
+            font-size: 13px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .row-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .score-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .score-num-sm {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a1a2e;
+        }
+        .grade-badge-sm {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+        .grade-badge-sm.gA { background: #1b5e20; color: white; }
+        .grade-badge-sm.gB { background: #1565c0; color: white; }
+        .grade-badge-sm.gC { background: #e65100; color: white; }
+        .grade-badge-sm.gD { background: #b71c1c; color: white; }
+
+        .bias-chip-sm {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+        .bias-chip-sm.b0 { background: #e8f5e9; color: #1b5e20; }
+        .bias-chip-sm.b1 { background: #fff3e0; color: #e65100; }
+        .bias-chip-sm.b2 { background: #fff8e1; color: #f57f17; }
+        .bias-chip-sm.b3 { background: #ffebee; color: #b71c1c; }
+
+        .row-arrow {
+            font-size: 20px;
+            color: #ccc;
+            font-weight: 300;
+        }
+
+        /* ── 分頁 ── */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+        }
+        .pg-btn {
+            padding: 8px 20px;
+            border: 2px solid #1a3a5c;
+            border-radius: 8px;
+            background: white;
+            color: #1a3a5c;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .pg-btn:disabled { opacity: 0.35; cursor: default; }
+        .pg-info { font-size: 15px; color: #555; }
+
+        /* ── 日期選擇 ── */
+        .date-sel-row {
+            padding: 8px 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #888;
+        }
+        .date-sel {
+            padding: 4px 8px;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+        }
+
+        /* ── 空/錯誤 ── */
+        .empty-msg {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 16px;
+        }
+        .loading-row {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-mid">
+            <a href="index.html" class="back-btn">← 首頁</a>
+            <span class="page-title">📊 股票總覽</span>
+            <div style="width:56px"></div>
+        </div>
+        <div class="search-row">
+            <input type="text" id="searchInput" class="search-input" placeholder="搜尋代號或名稱...">
+        </div>
+        <div class="filter-row" id="filterRow"></div>
+    </header>
+
+    <!-- 主內容 -->
+    <div class="stocks-main">
+        <div id="loadingRow" class="loading-row">載入中...</div>
+        <div id="stocksContent" style="display:none">
+            <div class="date-sel-row">
+                <span>資料日期：</span>
+                <select id="dateSel" class="date-sel"></select>
+            </div>
+            <div class="stats-bar" id="statsBar"></div>
+            <div id="stockList"></div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+<script>
+'use strict';
+// === Config ===
+const IS_GITHUB = location.hostname === 'paul800901.github.io';
+const BASE = IS_GITHUB
+    ? 'https://paul800901.github.io/kanpan-helper/reports'
+    : '../reports';
+
+const PAGE_SIZE = 20;
+
+// === State ===
+let allStocks = [];
+let filtered  = [];
+let currentPage = 1;
+let currentCat  = '';
+let currentDate = '';
+let indexData   = null;
+
+// Categories for filter buttons
+const FILTER_CATS = ['全部', '半導體', '金融', '電子', '航運', '電信', '食品'];
+
+// === Utils ===
+function esc(s) {
+    if (s == null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
+function biasClass(bias) {
+    if (bias === '可留意')   return 'b0';
+    if (bias === '觀察')     return 'b1';
+    if (bias === '偏保守')   return 'b2';
+    return 'b3';
+}
+
+// === Fetch ===
+async function fetchJSON(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+async function loadIndexData() {
+    try { return await fetchJSON(`${BASE}/index.json`); }
+    catch (e) { return null; }
+}
+
+async function loadUniverse(date) {
+    return fetchJSON(`${BASE}/${date}-universe.json`);
+}
+
+// === Build date selector ===
+function buildDateSel() {
+    const sel = document.getElementById('dateSel');
+    if (!indexData || !indexData.reports) return;
+    // 只列出 has_universe === true 的日期（嚴格相等）
+    const dates = indexData.reports.filter(r => r.has_universe === true);
+    sel.innerHTML = dates.map(r => {
+        const tag = r.date === indexData.latest_date ? ' (最新)' : '';
+        return `<option value="${r.date}"${r.date === currentDate ? ' selected' : ''}>${r.date}${tag}</option>`;
+    }).join('');
+    sel.onchange = () => loadDate(sel.value);
+}
+
+// === Build filter buttons ===
+function buildFilters() {
+    const row = document.getElementById('filterRow');
+    row.innerHTML = FILTER_CATS.map(cat =>
+        `<button class="filter-btn${cat === '全部' ? ' active' : ''}" data-cat="${cat === '全部' ? '' : cat}">${cat}</button>`
+    ).join('');
+    row.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = () => {
+            row.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCat = btn.dataset.cat;
+            currentPage = 1;
+            applyFilter();
+        };
+    });
+}
+
+// === Apply filter + search ===
+function applyFilter() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    filtered = allStocks.filter(s => {
+        const catOk = !currentCat || s.category === currentCat;
+        const qOk   = !q || s.symbol.includes(q) || (s.name || '').toLowerCase().includes(q);
+        return catOk && qOk;
+    });
+    renderList();
+}
+
+// === Render list ===
+function renderList() {
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+
+    document.getElementById('statsBar').innerHTML =
+        `共 <b>${total}</b> 檔　可留意 <b style="color:#1b5e20">${filtered.filter(s=>s.action_bias==='可留意').length}</b> 檔`;
+
+    const listEl = document.getElementById('stockList');
+    if (page.length === 0) {
+        listEl.innerHTML = '<div class="empty-msg">沒有找到符合條件的股票</div>';
+    } else {
+        listEl.innerHTML = page.map(s => buildRow(s)).join('');
+        listEl.querySelectorAll('.stock-row').forEach(row => {
+            row.onclick = () => {
+                location.href = `stock.html?symbol=${row.dataset.symbol}&date=${currentDate}`;
+            };
+        });
+    }
+
+    renderPagination(totalPages);
+}
+
+function buildRow(s) {
+    const grade = (s.score_grade || 'C').toUpperCase();
+    const bias  = s.action_bias || '暫不考慮';
+    return `
+<div class="stock-row" data-symbol="${esc(s.symbol)}">
+    <div class="row-main">
+        <div class="row-top">
+            <span class="row-symbol">${esc(s.symbol)}</span>
+            <span class="row-name">${esc(s.name)}</span>
+            <span class="row-cat">${esc(s.category)}</span>
+        </div>
+        <div class="row-summary">${esc(s.one_line_summary || '')}</div>
+    </div>
+    <div class="row-right">
+        <div class="score-chip">
+            <span class="score-num-sm">${s.score}</span>
+            <span class="grade-badge-sm g${grade}">${grade}</span>
+        </div>
+        <span class="bias-chip-sm ${biasClass(bias)}">${esc(bias)}</span>
+    </div>
+    <span class="row-arrow">›</span>
+</div>`;
+}
+
+// === Pagination ===
+function renderPagination(totalPages) {
+    const pg = document.getElementById('pagination');
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    pg.innerHTML = `
+        <button class="pg-btn" id="pgPrev" ${currentPage <= 1 ? 'disabled' : ''}>‹ 上一頁</button>
+        <span class="pg-info">${currentPage} / ${totalPages}</span>
+        <button class="pg-btn" id="pgNext" ${currentPage >= totalPages ? 'disabled' : ''}>下一頁 ›</button>`;
+    document.getElementById('pgPrev').onclick = () => { currentPage--; renderList(); };
+    document.getElementById('pgNext').onclick = () => { currentPage++; renderList(); };
+}
+
+// === Load date ===
+async function loadDate(date) {
+    currentDate = date;
+    currentPage = 1;
+    document.getElementById('loadingRow').style.display = 'block';
+    document.getElementById('stocksContent').style.display = 'none';
+    try {
+        const universe = await loadUniverse(date);
+        allStocks = universe.stocks || [];
+        document.getElementById('loadingRow').style.display = 'none';
+        document.getElementById('stocksContent').style.display = 'block';
+        buildDateSel();
+        applyFilter();
+    } catch (e) {
+        document.getElementById('loadingRow').textContent = `載入失敗：${e.message}。請確認 ${date}-universe.json 已生成。`;
+    }
+}
+
+// === Search input ===
+document.getElementById('searchInput').addEventListener('input', () => {
+    currentPage = 1;
+    applyFilter();
+});
+
+// === Init ===
+async function init() {
+    buildFilters();
+
+    // Check URL param
+    const urlDate = new URLSearchParams(location.search).get('date');
+
+    indexData = await loadIndexData();
+
+    if (urlDate) {
+        // URL 指定日期：直接使用，但載入失敗會顯示錯誤
+        currentDate = urlDate;
+    } else {
+        // 從 index 找出第一個 has_universe === true 的日期（不盲用 latest_date）
+        const reports = indexData?.reports || [];
+        const firstWithUniverse = reports.find(r => r.has_universe === true);
+        if (!firstWithUniverse) {
+            document.getElementById('loadingRow').textContent = '尚無可用股票總覽資料。請先執行 workflow 以生成 universe 報告。';
+            return;
+        }
+        currentDate = firstWithUniverse.date;
+    }
+
+    await loadDate(currentDate);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
