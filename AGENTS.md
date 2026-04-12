@@ -55,6 +55,9 @@ GitHub Pages 部署
 - **只有定時或手動觸發** workflow 才會部署
 - **修改現有報告 JSON** 後必須手動 Run workflow 才會生效
 - **`.github/workflows/` 修改** 也需要手動觸發
+- **AI 修改完成後，若使用者未明示禁止，預設要同步到桌面 Git 倉庫並執行 `git add`、`git commit`、`git push origin main`**
+- **若 push 被拒絕且遠端有新提交，先 `git pull --rebase origin main`，確認無衝突後再重推，不要直接放棄**
+- **同步與提交時不要順手帶入無關產物，例如 `worker/.wrangler/`**
 
 ---
 
