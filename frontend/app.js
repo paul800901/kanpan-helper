@@ -48,6 +48,14 @@ function toNum(value) {
     return Number.isFinite(num) ? num : null;
 }
 
+function fmtZonePrice(value) {
+    if (value == null) return '--';
+    return Number(value).toLocaleString('zh-TW', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+}
+
 function isConsecutiveInstitutionalBuy(label) {
     if (!label) return false;
     const text = String(label);
@@ -181,7 +189,42 @@ function getDecisionSummary(stock) {
     return summary;
 }
 
-function renderDecisionSummary(summary) {
+function getEntryZones(stock) {
+    const indicators = stock?.indicators || {};
+    const close = toNum(indicators.close);
+    const ma5 = toNum(indicators.ma5);
+    const ma20 = toNum(indicators.ma20);
+
+    return {
+        observe: close != null ? `${fmtZonePrice(close)}以上` : '--',
+        pilot: ma5 != null
+            ? `${fmtZonePrice(ma5 * 0.98)} ~ ${fmtZonePrice(ma5 * 1.02)}`
+            : '--',
+        lowRisk: ma20 != null ? `${fmtZonePrice(ma20)}附近` : '--'
+    };
+}
+
+function renderEntryZones(entryZones) {
+    return `
+        <div class="entry-zones">
+            <div class="entry-zones-title">進場區間</div>
+            <div class="entry-zone-row">
+                <div class="entry-zone-label">觀察區</div>
+                <div class="entry-zone-text">${esc(entryZones.observe)}</div>
+            </div>
+            <div class="entry-zone-row">
+                <div class="entry-zone-label">試單區</div>
+                <div class="entry-zone-text">${esc(entryZones.pilot)}</div>
+            </div>
+            <div class="entry-zone-row">
+                <div class="entry-zone-label">低風險區</div>
+                <div class="entry-zone-text">${esc(entryZones.lowRisk)}</div>
+            </div>
+        </div>`;
+}
+
+function renderDecisionSummary(summary, stock) {
+    const entryZones = getEntryZones(stock);
     return `
         <div class="decision-summary">
             <div class="decision-summary-title">決策摘要</div>
@@ -197,6 +240,7 @@ function renderDecisionSummary(summary) {
                 <div class="decision-summary-label">風險</div>
                 <div class="decision-summary-text">${esc(summary.risk)}</div>
             </div>
+            ${renderEntryZones(entryZones)}
         </div>`;
 }
 
@@ -396,7 +440,7 @@ function buildStockCard(stock, ai, fullStock) {
         </div>
         <div class="bias-tag bias-${esc(bias)}">${esc(bias)}</div>
         <div class="why-text">${esc(whyText)}</div>
-        ${renderDecisionSummary(decisionSummary)}
+        ${renderDecisionSummary(decisionSummary, fullStock || stock)}
         <div class="expand-hint">▼ 展開完整分析</div>
     </div>
     <div class="stock-details">

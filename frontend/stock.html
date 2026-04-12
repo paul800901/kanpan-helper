@@ -349,6 +349,21 @@
                     <div class="decision-summary-label">風險</div>
                     <div class="decision-summary-text" id="decisionRisk">--</div>
                 </div>
+                <div class="entry-zones">
+                    <div class="entry-zones-title">進場區間</div>
+                    <div class="entry-zone-row">
+                        <div class="entry-zone-label">觀察區</div>
+                        <div class="entry-zone-text" id="entryObserve">--</div>
+                    </div>
+                    <div class="entry-zone-row">
+                        <div class="entry-zone-label">試單區</div>
+                        <div class="entry-zone-text" id="entryPilot">--</div>
+                    </div>
+                    <div class="entry-zone-row">
+                        <div class="entry-zone-label">低風險區</div>
+                        <div class="entry-zone-text" id="entryLowRisk">--</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -402,6 +417,14 @@ function fmtNum(n, dec) { return n != null ? Number(n).toFixed(dec ?? 1) : '--';
 function toNum(value) {
     const num = Number(value);
     return Number.isFinite(num) ? num : null;
+}
+
+function fmtZonePrice(value) {
+    if (value == null) return '--';
+    return Number(value).toLocaleString('zh-TW', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
 }
 
 function createRequestVersion() {
@@ -559,11 +582,34 @@ function getDecisionSummary(stock) {
     return summary;
 }
 
+function getEntryZones(stock) {
+    const indicators = stock?.indicators || {};
+    const close = toNum(indicators.close);
+    const ma5 = toNum(indicators.ma5);
+    const ma20 = toNum(indicators.ma20);
+
+    return {
+        observe: close != null ? `${fmtZonePrice(close)}以上` : '--',
+        pilot: ma5 != null
+            ? `${fmtZonePrice(ma5 * 0.98)} ~ ${fmtZonePrice(ma5 * 1.02)}`
+            : '--',
+        lowRisk: ma20 != null ? `${fmtZonePrice(ma20)}附近` : '--'
+    };
+}
+
+function renderEntryZones(stock) {
+    const entryZones = getEntryZones(stock);
+    document.getElementById('entryObserve').textContent = entryZones.observe;
+    document.getElementById('entryPilot').textContent = entryZones.pilot;
+    document.getElementById('entryLowRisk').textContent = entryZones.lowRisk;
+}
+
 function renderDecisionSummary(stock) {
     const summary = getDecisionSummary(stock);
     document.getElementById('decisionAdvice').textContent = summary.advice;
     document.getElementById('decisionReason').textContent = summary.reason;
     document.getElementById('decisionRisk').textContent = summary.risk;
+    renderEntryZones(stock);
 }
 
 // ====== Fetch ======
