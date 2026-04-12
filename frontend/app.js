@@ -59,6 +59,29 @@ function isCloseToMa5(close, ma5) {
     return Math.abs(close - ma5) / Math.abs(ma5) <= 0.01;
 }
 
+function getMa20Diff(close, ma20) {
+    if (close == null || ma20 == null || ma20 === 0) return null;
+    return (close - ma20) / ma20;
+}
+
+function downgradeBullishSummary(summary) {
+    if (summary.advice === '強勢續看') {
+        return {
+            advice: '可偏多觀察',
+            reason: '結構仍偏多，但量能或過熱需要再確認',
+            risk: '縮量或高檔過熱時，續攻失敗容易回檔'
+        };
+    }
+    if (summary.advice === '可偏多觀察') {
+        return {
+            advice: '先觀望',
+            reason: '偏多條件存在，但量能或過熱需要先消化',
+            risk: '追價後若量縮或高檔反轉，容易回落'
+        };
+    }
+    return summary;
+}
+
 function getDecisionSummary(stock) {
     const indicators = stock?.indicators || {};
     const signals = stock?.signals || {};
@@ -72,6 +95,17 @@ function getDecisionSummary(stock) {
     const institutional = String(
         signals.institutional ?? stock?.institutional ?? stock?.institution_trend ?? ''
     ).trim();
+    const ma20Diff = getMa20Diff(close, ma20);
+    const isWeakBelowMa20 = score != null && score < 60 && close != null && ma20 != null && close < ma20;
+    const hasBullishPenalty = (volumeRatio != null && volumeRatio < 1) || (k != null && k >= 80);
+
+    if (score != null && score < 50) {
+        return {
+            advice: '暫不考慮',
+            reason: '分數過低且結構偏弱',
+            risk: '下跌延續或反彈失敗'
+        };
+    }
 
     const matches = [];
 
@@ -93,7 +127,7 @@ function getDecisionSummary(stock) {
         });
     }
 
-    if (close != null && ma20 != null && k != null && close < ma20 && k < 30) {
+    if (!isWeakBelowMa20 && close != null && ma20 != null && k != null && close < ma20 && k < 30) {
         matches.push({
             advice: '可留意',
             reason: '低檔區出現反彈訊號',
@@ -102,34 +136,49 @@ function getDecisionSummary(stock) {
         });
     }
 
-    if (close != null && ma5 != null && volumeRatio != null && isCloseToMa5(close, ma5) && volumeRatio < 1) {
+    if (
+        !isWeakBelowMa20 && (
+            (ma20Diff != null && ma20Diff < 0 && ma20Diff > -0.01) ||
+            (close != null && ma5 != null && volumeRatio != null && isCloseToMa5(close, ma5) && volumeRatio < 1)
+        )
+    ) {
         matches.push({
             advice: '先觀望',
-            reason: '短線位置不差，但量能不足',
-            risk: '缺乏續航，容易震盪',
+            reason: ma20Diff != null && ma20Diff < 0 && ma20Diff > -0.01
+                ? '貼近中期結構，先觀察是否重新站穩'
+                : '短線位置不差，但量能不足',
+            risk: ma20Diff != null && ma20Diff < 0 && ma20Diff > -0.01
+                ? '若無法站回中期結構，容易再度轉弱'
+                : '缺乏續航，容易震盪',
             priority: 2
         });
     }
 
-    if (close != null && ma20 != null && k != null && close < ma20 && k >= 30) {
+    if (isWeakBelowMa20 || (ma20Diff != null && ma20Diff <= -0.01)) {
         matches.push({
             advice: '暫不進場',
-            reason: '仍在中期壓力下方',
-            risk: '容易出現反彈後再回落',
+            reason: isWeakBelowMa20 ? '分數偏低且仍在中期壓力下方' : '仍在中期壓力下方',
+            risk: isWeakBelowMa20 ? '弱勢延續時，反彈容易失敗' : '容易出現反彈後再回落',
             priority: 1
         });
     }
 
-    if (matches.length === 0) {
-        return {
-            advice: '無明確訊號',
-            reason: '未命中 v6.5 固定規則',
-            risk: '條件不足時，短線方向可能反覆'
-        };
+    matches.sort((left, right) => right.priority - left.priority);
+
+    let summary = matches[0] || {
+        advice: '先觀望',
+        reason: '條件不足，方向不明',
+        risk: '短線震盪或反覆'
+    };
+
+    if (
+        hasBullishPenalty &&
+        (summary.advice === '強勢續看' || summary.advice === '可偏多觀察')
+    ) {
+        summary = downgradeBullishSummary(summary);
     }
 
-    matches.sort((left, right) => right.priority - left.priority);
-    return matches[0];
+    return summary;
 }
 
 function renderDecisionSummary(summary) {
