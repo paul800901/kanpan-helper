@@ -282,6 +282,11 @@ let currentPage = 1;
 let currentCat  = '';
 let currentDate = '';
 let indexData   = null;
+let requestVersion = createRequestVersion();
+
+function createRequestVersion() {
+    return String(Date.now());
+}
 
 // Categories for filter buttons
 const FILTER_CATS = ['全部', '半導體', '金融', '電子', '航運', '電信', '食品'];
@@ -301,9 +306,27 @@ function biasClass(bias) {
     return 'b3';
 }
 
+function buildFreshUrl(url, version = requestVersion) {
+    const target = new URL(url, window.location.href);
+    target.searchParams.set('_ts', version);
+    return target.toString();
+}
+
+function getLatestUniverseDate(index) {
+    if (!index?.reports?.length) return null;
+
+    const latestReport = index.reports.find(r => r.date === index.latest_date);
+    if (latestReport?.has_universe === true) {
+        return latestReport.date;
+    }
+
+    const firstWithUniverse = index.reports.find(r => r.has_universe === true);
+    return firstWithUniverse ? firstWithUniverse.date : null;
+}
+
 // === Fetch ===
-async function fetchJSON(url) {
-    const r = await fetch(url);
+async function fetchJSON(url, version = requestVersion) {
+    const r = await fetch(buildFreshUrl(url, version), { cache: 'no-store' });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
 }
@@ -327,7 +350,10 @@ function buildDateSel() {
         const tag = r.date === indexData.latest_date ? ' (最新)' : '';
         return `<option value="${r.date}"${r.date === currentDate ? ' selected' : ''}>${r.date}${tag}</option>`;
     }).join('');
-    sel.onchange = () => loadDate(sel.value);
+    sel.onchange = () => {
+        requestVersion = createRequestVersion();
+        loadDate(sel.value);
+    };
 }
 
 // === Build filter buttons ===
@@ -452,26 +478,31 @@ async function init() {
     // Check URL param
     const urlDate = new URLSearchParams(location.search).get('date');
 
+    requestVersion = createRequestVersion();
     indexData = await loadIndexData();
 
     if (urlDate) {
         // URL 指定日期：直接使用，但載入失敗會顯示錯誤
         currentDate = urlDate;
     } else {
-        // 從 index 找出第一個 has_universe === true 的日期（不盲用 latest_date）
-        const reports = indexData?.reports || [];
-        const firstWithUniverse = reports.find(r => r.has_universe === true);
-        if (!firstWithUniverse) {
+        currentDate = getLatestUniverseDate(indexData);
+        if (!currentDate) {
             document.getElementById('loadingRow').textContent = '尚無可用股票總覽資料。請先執行 workflow 以生成 universe 報告。';
             return;
         }
-        currentDate = firstWithUniverse.date;
     }
 
     await loadDate(currentDate);
 }
 
 document.addEventListener('DOMContentLoaded', init);
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js?v=20260412-cachefix', { updateViaCache: 'none' })
+            .then(reg => reg.update())
+            .catch(err => console.log('SW 錯誤:', err));
+    }
 </script>
 </body>
 </html>

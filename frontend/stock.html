@@ -360,12 +360,14 @@
 
 // ====== 設定 ======
 // 部署 Cloudflare Worker 後，請將此網址改為你的 Worker 實際 URL
-const WORKER_URL = 'https://kanpan-helper-worker.sl800901.workers.dev';
+const WORKER_URL = 'https://kanpan-helper-worker.YOUR_SUBDOMAIN.workers.dev';
 
 const IS_GITHUB = location.hostname === 'paul800901.github.io';
 const BASE = IS_GITHUB
     ? 'https://paul800901.github.io/kanpan-helper/reports'
     : '../reports';
+
+let requestVersion = createRequestVersion();
 
 // ====== Utils ======
 function esc(s) {
@@ -378,9 +380,31 @@ function fmt(n) { return n != null ? Number(n).toLocaleString('zh-TW') : '--'; }
 function fmtPct(r) { return r != null ? Math.round(r * 100) + '%' : '--'; }
 function fmtNum(n, dec) { return n != null ? Number(n).toFixed(dec ?? 1) : '--'; }
 
+function createRequestVersion() {
+    return String(Date.now());
+}
+
+function buildFreshUrl(url, version = requestVersion) {
+    const target = new URL(url, window.location.href);
+    target.searchParams.set('_ts', version);
+    return target.toString();
+}
+
+function getLatestUniverseDate(index) {
+    if (!index?.reports?.length) return null;
+
+    const latestReport = index.reports.find(r => r.date === index.latest_date);
+    if (latestReport?.has_universe === true) {
+        return latestReport.date;
+    }
+
+    const firstWithUniverse = index.reports.find(r => r.has_universe === true);
+    return firstWithUniverse ? firstWithUniverse.date : null;
+}
+
 // ====== Fetch ======
-async function fetchJSON(url) {
-    const r = await fetch(url);
+async function fetchJSON(url, version = requestVersion) {
+    const r = await fetch(buildFreshUrl(url, version), { cache: 'no-store' });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
 }
@@ -513,6 +537,7 @@ async function init() {
     const params = new URLSearchParams(location.search);
     const symbol = params.get('symbol');
     urlDate = params.get('date');
+    requestVersion = createRequestVersion();
 
     if (!symbol) {
         document.getElementById('loadingPage').style.display = 'none';
@@ -525,7 +550,7 @@ async function init() {
     if (!urlDate) {
         try {
             const idx = await fetchJSON(`${BASE}/index.json`);
-            urlDate = idx.latest_date;
+            urlDate = getLatestUniverseDate(idx);
         } catch (e) {
             urlDate = null;
         }
@@ -559,6 +584,13 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js?v=20260412-cachefix', { updateViaCache: 'none' })
+            .then(reg => reg.update())
+            .catch(err => console.log('SW 錯誤:', err));
+    }
 </script>
 </body>
 </html>

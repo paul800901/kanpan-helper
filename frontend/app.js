@@ -9,6 +9,17 @@ let aiData = null;
 let indexData = null;
 let currentDate = null;
 
+let requestVersion = createRequestVersion();
+
+function createRequestVersion() {
+    return String(Date.now());
+}
+
+function buildFreshUrl(url, version = requestVersion) {
+    const target = new URL(url, window.location.href);
+    target.searchParams.set('_ts', version);
+    return target.toString();
+}
 // === Config ===
 const IS_GITHUB = window.location.hostname === 'paul800901.github.io';
 const BASE = IS_GITHUB
@@ -32,8 +43,8 @@ function fmtPct(r) {
 }
 
 // === Data Fetch ===
-async function fetchJSON(url) {
-    const res = await fetch(url);
+async function fetchJSON(url, version = requestVersion) {
+    const res = await fetch(buildFreshUrl(url, version), { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
     return res.json();
 }
@@ -282,6 +293,7 @@ async function loadAndRender(date) {
 }
 
 async function reloadLatest() {
+    requestVersion = createRequestVersion();
     indexData = await loadIndex();
     if (!indexData?.latest_date) {
         showError('無報告', '找不到任何可用報告');
@@ -300,6 +312,7 @@ async function init() {
 
     document.getElementById('dateDropdown').addEventListener('change', async function () {
         if (!this.value) return;
+        requestVersion = createRequestVersion();
         currentDate = this.value;
         const url = new URL(location.href);
         url.searchParams.set('date', currentDate);
@@ -312,12 +325,14 @@ async function init() {
     window.addEventListener('popstate', async () => {
         const d = new URLSearchParams(location.search).get('date');
         if (d && d !== currentDate) {
+            requestVersion = createRequestVersion();
             currentDate = d;
             buildDateDropdown();
             await loadAndRender(d);
         }
     });
 
+    requestVersion = createRequestVersion();
     indexData = await loadIndex();
     const urlDate = new URLSearchParams(location.search).get('date');
 

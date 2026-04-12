@@ -94,10 +94,11 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20260412-cachefix"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
+            navigator.serviceWorker.register('service-worker.js?v=20260412-cachefix', { updateViaCache: 'none' })
+                .then(reg => reg.update())
                 .catch(err => console.log('SW 錯誤:', err));
         }
     </script>

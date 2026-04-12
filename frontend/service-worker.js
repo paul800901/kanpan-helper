@@ -3,12 +3,12 @@
  * 快取靜態資源，支援離線瀏覽
  */
 
-const CACHE_NAME = 'kanpan-helper-v4';
+const CACHE_NAME = 'kanpan-helper-v5-cachefix';
 const STATIC_ASSETS = [
     './',
     './index.html',
     './style.css',
-    './app.js',
+    './app.js?v=20260412-cachefix',
     './manifest.json',
     './test.html',
     './sample/2026-04-08-lite.json'
@@ -62,9 +62,14 @@ self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
     
-    // 排除 API 請求（以 ../reports/ 開頭）
+    // 報表一律走網路，避免讀到舊版 JSON。
     if (url.pathname.includes('/reports/')) {
-        // 報告檔案使用網路優先策略
+        event.respondWith(fetchFreshReport(request));
+        return;
+    }
+
+    // HTML 導覽頁優先拿最新內容，避免頁面腳本本身被舊快取鎖住。
+    if (request.mode === 'navigate') {
         event.respondWith(networkFirst(request));
         return;
     }
@@ -99,7 +104,29 @@ async function cacheFirst(request) {
     }
 }
 
-// 網路優先策略（用於報告檔案）
+// 報表檔案不寫入快取，避免長時間停留在舊值。
+async function fetchFreshReport(request) {
+    try {
+        return await fetch(request, { cache: 'no-store' });
+    } catch (error) {
+        console.log('[Service Worker] 報表請求失敗:', request.url);
+        return new Response(
+            JSON.stringify({
+                error: '無法取得最新報表資料',
+                cached: false
+            }),
+            {
+                status: 503,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-store'
+                }
+            }
+        );
+    }
+}
+
+// 網路優先策略（用於頁面 HTML）
 async function networkFirst(request) {
     try {
         const networkResponse = await fetch(request);
