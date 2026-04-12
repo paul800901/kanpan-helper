@@ -333,6 +333,25 @@
             </div>
         </div>
 
+        <!-- 決策摘要 -->
+        <div class="d-card">
+            <div class="d-card-title">決策摘要</div>
+            <div class="decision-summary">
+                <div class="decision-summary-row">
+                    <div class="decision-summary-label">建議</div>
+                    <div class="decision-summary-text" id="decisionAdvice">--</div>
+                </div>
+                <div class="decision-summary-row">
+                    <div class="decision-summary-label">理由</div>
+                    <div class="decision-summary-text" id="decisionReason">--</div>
+                </div>
+                <div class="decision-summary-row">
+                    <div class="decision-summary-label">風險</div>
+                    <div class="decision-summary-text" id="decisionRisk">--</div>
+                </div>
+            </div>
+        </div>
+
         <!-- 分析依據 -->
         <div class="d-card">
             <div class="d-card-title">分析依據</div>
@@ -380,6 +399,11 @@ function fmt(n) { return n != null ? Number(n).toLocaleString('zh-TW') : '--'; }
 function fmtPct(r) { return r != null ? Math.round(r * 100) + '%' : '--'; }
 function fmtNum(n, dec) { return n != null ? Number(n).toFixed(dec ?? 1) : '--'; }
 
+function toNum(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+}
+
 function createRequestVersion() {
     return String(Date.now());
 }
@@ -400,6 +424,97 @@ function getLatestUniverseDate(index) {
 
     const firstWithUniverse = index.reports.find(r => r.has_universe === true);
     return firstWithUniverse ? firstWithUniverse.date : null;
+}
+
+function isConsecutiveInstitutionalBuy(label) {
+    if (!label) return false;
+    const text = String(label);
+    return text.includes('連') && text.includes('買');
+}
+
+function isCloseToMa5(close, ma5) {
+    if (close == null || ma5 == null || ma5 === 0) return false;
+    return Math.abs(close - ma5) / Math.abs(ma5) <= 0.01;
+}
+
+function getDecisionSummary(stock) {
+    const indicators = stock?.indicators || {};
+    const signals = stock?.signals || {};
+
+    const score = toNum(stock?.score);
+    const close = toNum(indicators.close);
+    const ma5 = toNum(indicators.ma5);
+    const ma20 = toNum(indicators.ma20);
+    const k = toNum(indicators.k);
+    const volumeRatio = toNum(indicators.volume_ratio);
+    const institutional = String(
+        signals.institutional ?? stock?.institutional ?? stock?.institution_trend ?? ''
+    ).trim();
+
+    const matches = [];
+
+    if (score != null && close != null && ma20 != null && score >= 80 && close > ma20) {
+        matches.push({
+            advice: '強勢續看',
+            reason: '評分高且結構偏強',
+            risk: '短線過熱時不宜追價',
+            priority: 5
+        });
+    }
+
+    if (close != null && ma20 != null && close > ma20 && isConsecutiveInstitutionalBuy(institutional)) {
+        matches.push({
+            advice: '可偏多觀察',
+            reason: '價格站上中期結構且法人偏多',
+            risk: '短線若爆量不續攻，容易追高回檔',
+            priority: 4
+        });
+    }
+
+    if (close != null && ma20 != null && k != null && close < ma20 && k < 30) {
+        matches.push({
+            advice: '可留意',
+            reason: '低檔區出現反彈訊號',
+            risk: '尚未站回中期結構，反彈可能失敗',
+            priority: 3
+        });
+    }
+
+    if (close != null && ma5 != null && volumeRatio != null && isCloseToMa5(close, ma5) && volumeRatio < 1) {
+        matches.push({
+            advice: '先觀望',
+            reason: '短線位置不差，但量能不足',
+            risk: '缺乏續航，容易震盪',
+            priority: 2
+        });
+    }
+
+    if (close != null && ma20 != null && k != null && close < ma20 && k >= 30) {
+        matches.push({
+            advice: '暫不進場',
+            reason: '仍在中期壓力下方',
+            risk: '容易出現反彈後再回落',
+            priority: 1
+        });
+    }
+
+    if (matches.length === 0) {
+        return {
+            advice: '無明確訊號',
+            reason: '未命中 v6.5 固定規則',
+            risk: '條件不足時，短線方向可能反覆'
+        };
+    }
+
+    matches.sort((left, right) => right.priority - left.priority);
+    return matches[0];
+}
+
+function renderDecisionSummary(stock) {
+    const summary = getDecisionSummary(stock);
+    document.getElementById('decisionAdvice').textContent = summary.advice;
+    document.getElementById('decisionReason').textContent = summary.reason;
+    document.getElementById('decisionRisk').textContent = summary.risk;
 }
 
 // ====== Fetch ======
@@ -448,6 +563,8 @@ function renderStock(stock) {
     setChip('sigVol',   stock.volume ? `量能：${stock.volume}` : '');
     setChip('sigInst',  stock.institutional ? `法人：${stock.institutional}` : '');
     setChip('sigKd',    stock.kd_state ? `KD：${stock.kd_state}` : '');
+
+    renderDecisionSummary(stock);
 
     // Summary
     document.getElementById('summaryText').textContent = stock.one_line_summary || '';
