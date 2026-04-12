@@ -9,7 +9,7 @@
 
 import json
 import os
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from backend.config import get_today_str, get_taiwan_now
 from backend.yesterday_compare import load_yesterday_report
 
@@ -20,6 +20,238 @@ DEEPSEEK_MODEL = "deepseek-chat"
 
 # 檢查是否強制 AI 模式（任何失敗都要 raise）
 FORCE_AI_MODE = os.environ.get("ENABLE_AI_ANALYSIS", "").lower() in ["true", "1", "yes"]
+
+AI_DIRECTION_MAP = {
+    "暫不考慮": "偏保守",
+    "暫不進場": "偏保守",
+    "先觀望": "偏向觀察",
+    "可留意": "偏多",
+    "可偏多觀察": "偏多",
+    "強勢續看": "偏多"
+}
+
+PROHIBITED_DIRECTIVE_PHRASES = (
+    "買進", "買入", "賣出", "進場", "出場", "加碼", "減碼",
+    "停損", "停利", "抄底", "布局", "佈局", "建議買", "建議賣",
+    "可買", "可賣", "逢低買", "追價買", "進場點"
+)
+
+
+def _to_num(value: Any) -> Optional[float]:
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return None
+    return num
+
+
+def _is_consecutive_institutional_buy(label: Any) -> bool:
+    text = str(label or "")
+    return "連" in text and "買" in text
+
+
+def _is_close_to_ma5(close: Optional[float], ma5: Optional[float]) -> bool:
+    if close is None or ma5 in [None, 0]:
+        return False
+    return abs(close - ma5) / abs(ma5) <= 0.01
+
+
+def _get_ma20_diff(close: Optional[float], ma20: Optional[float]) -> Optional[float]:
+    if close is None or ma20 in [None, 0]:
+        return None
+    return (close - ma20) / ma20
+
+
+def _downgrade_bullish_summary(summary: Dict[str, str]) -> Dict[str, str]:
+    if summary["advice"] == "強勢續看":
+        return {
+            "advice": "可偏多觀察",
+            "reason": "結構仍偏多，但量能或過熱需要再確認",
+            "risk": "縮量或高檔過熱時，續攻失敗容易回檔"
+        }
+    if summary["advice"] == "可偏多觀察":
+        return {
+            "advice": "先觀望",
+            "reason": "偏多條件存在，但量能或過熱需要先消化",
+            "risk": "追價後若量縮或高檔反轉，容易回落"
+        }
+    return summary
+
+
+def get_v72_decision_summary(stock: Dict[str, Any]) -> Dict[str, str]:
+    indicators = stock.get("indicators", {}) or {}
+    signals = stock.get("signals", {}) or {}
+
+    score = _to_num(stock.get("score"))
+    close = _to_num(indicators.get("close"))
+    ma5 = _to_num(indicators.get("ma5"))
+    ma20 = _to_num(indicators.get("ma20"))
+    k = _to_num(indicators.get("k"))
+    volume_ratio = _to_num(indicators.get("volume_ratio"))
+    institutional = str(
+        signals.get("institutional")
+        or stock.get("institutional")
+        or stock.get("institution_trend")
+        or ""
+    ).strip()
+    ma20_diff = _get_ma20_diff(close, ma20)
+    is_weak_below_ma20 = (
+        score is not None and score < 60 and
+        close is not None and ma20 is not None and close < ma20
+    )
+    has_bullish_penalty = (
+        (volume_ratio is not None and volume_ratio < 1) or
+        (k is not None and k >= 80)
+    )
+
+    if score is not None and score < 50:
+        return {
+            "advice": "暫不考慮",
+            "reason": "分數過低且結構偏弱",
+            "risk": "下跌延續或反彈失敗"
+        }
+
+    matches: List[Dict[str, Any]] = []
+
+    if score is not None and close is not None and ma20 is not None and score >= 80 and close > ma20:
+        matches.append({
+            "advice": "強勢續看",
+            "reason": "評分高且結構偏強",
+            "risk": "短線過熱時不宜追價",
+            "priority": 5
+        })
+
+    if close is not None and ma20 is not None and close > ma20 and _is_consecutive_institutional_buy(institutional):
+        matches.append({
+            "advice": "可偏多觀察",
+            "reason": "價格站上中期結構且法人偏多",
+            "risk": "短線若爆量不續攻，容易追高回檔",
+            "priority": 4
+        })
+
+    if not is_weak_below_ma20 and close is not None and ma20 is not None and k is not None and close < ma20 and k < 30:
+        matches.append({
+            "advice": "可留意",
+            "reason": "低檔區出現反彈訊號",
+            "risk": "尚未站回中期結構，反彈可能失敗",
+            "priority": 3
+        })
+
+    if not is_weak_below_ma20 and (
+        (ma20_diff is not None and ma20_diff < 0 and ma20_diff > -0.01) or
+        (close is not None and ma5 is not None and volume_ratio is not None and _is_close_to_ma5(close, ma5) and volume_ratio < 1)
+    ):
+        matches.append({
+            "advice": "先觀望",
+            "reason": "貼近中期結構，先觀察是否重新站穩"
+            if ma20_diff is not None and ma20_diff < 0 and ma20_diff > -0.01
+            else "短線位置不差，但量能不足",
+            "risk": "若無法站回中期結構，容易再度轉弱"
+            if ma20_diff is not None and ma20_diff < 0 and ma20_diff > -0.01
+            else "缺乏續航，容易震盪",
+            "priority": 2
+        })
+
+    if is_weak_below_ma20 or (ma20_diff is not None and ma20_diff <= -0.01):
+        matches.append({
+            "advice": "暫不進場",
+            "reason": "分數偏低且仍在中期壓力下方" if is_weak_below_ma20 else "仍在中期壓力下方",
+            "risk": "弱勢延續時，反彈容易失敗" if is_weak_below_ma20 else "容易出現反彈後再回落",
+            "priority": 1
+        })
+
+    matches.sort(key=lambda item: item["priority"], reverse=True)
+    summary = matches[0] if matches else {
+        "advice": "先觀望",
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆"
+    }
+
+    if has_bullish_penalty and summary["advice"] in ["強勢續看", "可偏多觀察"]:
+        summary = _downgrade_bullish_summary(summary)
+
+    return {
+        "advice": summary["advice"],
+        "reason": summary["reason"],
+        "risk": summary["risk"]
+    }
+
+
+def get_expected_ai_direction(advice: str) -> str:
+    return AI_DIRECTION_MAP.get(advice, "偏向觀察")
+
+
+def _contains_prohibited_directive(text: str) -> bool:
+    return any(phrase in text for phrase in PROHIBITED_DIRECTIVE_PHRASES)
+
+
+def build_fallback_v8_judgment(stock: Dict[str, Any], decision_summary: Dict[str, str]) -> Dict[str, Any]:
+    indicators = stock.get("indicators", {}) or {}
+    signals = stock.get("signals", {}) or {}
+    close = _to_num(indicators.get("close"))
+    ma5 = _to_num(indicators.get("ma5"))
+    ma20 = _to_num(indicators.get("ma20"))
+    k = _to_num(indicators.get("k"))
+    d = _to_num(indicators.get("d"))
+    volume_ratio = _to_num(indicators.get("volume_ratio"))
+    institutional = str(signals.get("institutional") or stock.get("institutional") or "").strip()
+
+    structure = "目前資料以既有決策摘要為主，技術結構仍待確認。"
+    if close is not None and ma5 is not None and ma20 is not None:
+        if close > ma5 > ma20:
+            structure = "目前價格位於短中期均線之上，整體技術結構仍偏強。"
+        elif close > ma20:
+            structure = "目前仍守在 ma20 之上，但短線位置還需要持續觀察。"
+        elif close < ma20 and close >= ma5:
+            structure = "目前位於短線支撐與中期壓力之間，方向尚未完全明朗。"
+        elif close < ma5 and close < ma20:
+            structure = "目前價格位於短中期均線下方，整體技術結構仍偏弱。"
+    elif decision_summary.get("reason"):
+        structure = decision_summary["reason"]
+
+    bullish_factors: List[str] = []
+    if signals.get("trend") == "偏多" or (close is not None and ma20 is not None and close > ma20):
+        bullish_factors.append("價格仍維持在中期結構附近或之上。")
+    if institutional and "買" in institutional:
+        bullish_factors.append(f"法人面呈現{institutional}，籌碼尚未明顯轉弱。")
+    if volume_ratio is not None and volume_ratio >= 1:
+        bullish_factors.append(f"量能維持常態以上（量比{volume_ratio:.2f}）。")
+    if k is not None and d is not None and k >= d:
+        bullish_factors.append("KD 相對仍偏多，尚未出現明顯轉弱訊號。")
+    if close is not None and ma5 is not None and close >= ma5:
+        bullish_factors.append("價格仍守在 ma5 附近或之上。")
+    if not bullish_factors:
+        bullish_factors.append("目前有利條件有限，需觀察既有結構是否能延續。")
+
+    risk_factors: List[str] = []
+    if decision_summary.get("risk"):
+        risk_factors.append(f"{decision_summary['risk']}。")
+    if close is not None and ma20 is not None and close < ma20:
+        risk_factors.append("仍在 ma20 附近或下方，容易遇到中期壓力。")
+    if volume_ratio is not None and volume_ratio < 1:
+        risk_factors.append(f"量能偏弱（量比{volume_ratio:.2f}），續航力仍待確認。")
+    if institutional and "賣" in institutional:
+        risk_factors.append(f"法人面呈現{institutional}，籌碼仍有調節壓力。")
+    if k is not None and k >= 80:
+        risk_factors.append("KD 位於高檔，短線震盪風險偏高。")
+    if close is not None and ma5 is not None and close < ma5:
+        risk_factors.append("短線位置仍未穩定站回 ma5。")
+    if not risk_factors:
+        risk_factors.append("目前仍需留意訊號延續性與波動風險。")
+
+    direction = get_expected_ai_direction(decision_summary.get("advice", "先觀望"))
+    conclusion = "結論偏向觀察，先確認結構是否延續。"
+    if direction == "偏多":
+        conclusion = "結論偏多，重點觀察強勢結構是否延續。"
+    elif direction == "偏保守":
+        conclusion = "結論偏保守，先等待壓力消化與結構修復。"
+
+    return {
+        "structure": structure,
+        "bullish_factors": bullish_factors[:3],
+        "risk_factors": risk_factors[:3],
+        "conclusion": conclusion
+    }
 
 
 class AIAnalyzerError(Exception):
@@ -229,6 +461,51 @@ class AIAnalyzer:
                 f"內容：{risk_texts}"
             )
 
+    def _validate_v8_judgment(
+        self,
+        judgment: Dict[str, Any],
+        expected_direction: str,
+        symbol: str
+    ) -> Dict[str, Any]:
+        required = ["structure", "bullish_factors", "risk_factors", "conclusion"]
+        missing = [field for field in required if field not in judgment]
+        if missing:
+            raise AIAnalyzerError(f"{symbol} judgment_ai 缺少欄位 {missing}")
+
+        structure = str(judgment.get("structure", "")).strip()
+        conclusion = str(judgment.get("conclusion", "")).strip()
+        bullish = judgment.get("bullish_factors")
+        risks = judgment.get("risk_factors")
+
+        if not structure or not conclusion:
+            raise AIAnalyzerError(f"{symbol} judgment_ai 文字欄位不可為空")
+        if not isinstance(bullish, list) or not isinstance(risks, list):
+            raise AIAnalyzerError(f"{symbol} judgment_ai factors 必須是列表")
+
+        bullish = [str(item).strip() for item in bullish if str(item).strip()][:3]
+        risks = [str(item).strip() for item in risks if str(item).strip()][:3]
+
+        if not bullish:
+            raise AIAnalyzerError(f"{symbol} bullish_factors 至少需要 1 項")
+        if not risks:
+            raise AIAnalyzerError(f"{symbol} risk_factors 至少需要 1 項")
+
+        all_texts = [structure, conclusion, *bullish, *risks]
+        if any(_contains_prohibited_directive(text) for text in all_texts):
+            raise AIAnalyzerError(f"{symbol} judgment_ai 出現直接買賣指令")
+        if expected_direction not in conclusion:
+            raise AIAnalyzerError(
+                f"{symbol} judgment_ai 結論方向與 decision_summary 不一致："
+                f"預期包含 {expected_direction}，實際為 {conclusion}"
+            )
+
+        return {
+            "structure": structure,
+            "bullish_factors": bullish,
+            "risk_factors": risks,
+            "conclusion": conclusion
+        }
+
     def _build_market_prompt(self, stocks: List[Dict], summary: Dict) -> str:
         """建立市場總覽 prompt"""
         avg_score = sum(s.get("score", 0) for s in stocks) / len(stocks) if stocks else 0
@@ -372,10 +649,68 @@ class AIAnalyzer:
     "change_vs_yesterday_ai": "上方標籤之一",
     "primary_drivers": ["訊號1（具體）", "訊號2（具體）"],
     "risk_driver": "風險來源一句話",
-    "change_type": "標籤"
+        "change_type": "標籤"
   }},
   ...
 ]
+
+直接輸出 JSON array，不要任何說明文字。"""
+
+    def _build_v8_judgment_prompt(self, stocks: List[Dict]) -> str:
+        blocks = []
+        for stock in stocks:
+            indicators = stock.get("indicators", {}) or {}
+            signals = stock.get("signals", {}) or {}
+            decision_summary = get_v72_decision_summary(stock)
+            expected_direction = get_expected_ai_direction(decision_summary["advice"])
+
+            blocks.append(
+                f"\n股票 {stock['symbol']} {stock['name']}：\n"
+                f"  symbol={stock['symbol']}\n"
+                f"  name={stock['name']}\n"
+                f"  score={stock.get('score', '--')}\n"
+                f"  trend={signals.get('trend', '--')}\n"
+                f"  institutional={signals.get('institutional', '--')}\n"
+                f"  indicators.close={indicators.get('close', '--')}\n"
+                f"  indicators.ma5={indicators.get('ma5', '--')}\n"
+                f"  indicators.ma20={indicators.get('ma20', '--')}\n"
+                f"  indicators.k={indicators.get('k', '--')}\n"
+                f"  indicators.d={indicators.get('d', '--')}\n"
+                f"  indicators.volume_ratio={indicators.get('volume_ratio', '--')}\n"
+                f"  decision_summary.advice={decision_summary['advice']}\n"
+                f"  decision_summary.reason={decision_summary['reason']}\n"
+                f"  decision_summary.risk={decision_summary['risk']}\n"
+                f"  結論必須包含：{expected_direction}"
+            )
+
+        stocks_text = "\n".join(blocks)
+        return f"""請用繁體中文，基於以下數據做技術面解讀：
+
+限制：
+- 不得編造資訊
+- 不得引用新聞或外部資料
+- 不得給出直接買賣指令
+- 必須與 decision_summary 保持一致方向
+
+輸出：
+1. 結構解讀（目前位置）
+2. 有利因素（最多3點）
+3. 風險因素（最多3點）
+4. 一句結論（偏向觀察/偏多/保守）
+
+請輸出 JSON array，順序與上方股票完全一致，共 {len(stocks)} 個元素：
+[
+    {{
+        "symbol": "股票代號",
+        "structure": "目前位置的技術結構解讀",
+        "bullish_factors": ["有利因素1", "有利因素2"],
+        "risk_factors": ["風險因素1", "風險因素2"],
+        "conclusion": "一句結論，必須包含偏向觀察或偏多或偏保守"
+    }}
+]
+
+【個股資料】
+{stocks_text}
 
 直接輸出 JSON array，不要任何說明文字。"""
 
@@ -454,6 +789,48 @@ class AIAnalyzer:
 
         return result_list
 
+    def analyze_v8_judgments(self, stocks: List[Dict]) -> List[Dict]:
+        try:
+            prompt = self._build_v8_judgment_prompt(stocks)
+            response = self._call_deepseek(prompt, temperature=0.3)
+            raw_list = self._parse_json_array_response(response, len(stocks))
+        except Exception as exc:
+            print(f"[AI] v8 judgment_ai 批次生成失敗，改用 fallback: {exc}")
+            return [
+                {
+                    "symbol": stock["symbol"],
+                    "judgment_ai": build_fallback_v8_judgment(
+                        stock,
+                        get_v72_decision_summary(stock)
+                    )
+                }
+                for stock in stocks
+            ]
+
+        results = []
+        for i, item in enumerate(raw_list):
+            symbol = str(item.get("symbol", "")).strip()
+            decision_summary = get_v72_decision_summary(stocks[i])
+            if symbol != stocks[i]["symbol"]:
+                print(
+                    f"[AI] {stocks[i]['symbol']} judgment_ai symbol 不一致，改用 fallback："
+                    f"實際為 {symbol or '--'}"
+                )
+                validated = build_fallback_v8_judgment(stocks[i], decision_summary)
+            else:
+                expected_direction = get_expected_ai_direction(decision_summary["advice"])
+                try:
+                    validated = self._validate_v8_judgment(item, expected_direction, stocks[i]["symbol"])
+                except Exception as exc:
+                    print(f"[AI] {stocks[i]['symbol']} judgment_ai 驗證失敗，改用 fallback: {exc}")
+                    validated = build_fallback_v8_judgment(stocks[i], decision_summary)
+            results.append({
+                "symbol": stocks[i]["symbol"],
+                "judgment_ai": validated
+            })
+
+        return results
+
     def generate_ai_report(self, v5_report: Dict) -> Dict:
         """產生完整的 v6 AI 分析報告 - 任何步驟失敗都會 raise"""
         stocks = v5_report.get("stocks", [])
@@ -487,17 +864,25 @@ class AIAnalyzer:
         ai_stock_details = self.analyze_all_stocks(stocks, yesterday_map)
         ai_detail_map = {d["symbol"]: d for d in ai_stock_details}
 
+        print(f"[AI] 批次生成 v8 judgment_ai {len(stocks)} 檔...")
+        v8_judgments = self.analyze_v8_judgments(stocks)
+        v8_map = {item["symbol"]: item["judgment_ai"] for item in v8_judgments}
+
         ai_stocks = []
         for stock in stocks:
             detail = ai_detail_map.get(stock["symbol"])
             if not detail:
                 raise AIAnalyzerError(f"AI 分析結果缺少 {stock['symbol']}")
+            judgment_ai = v8_map.get(stock["symbol"])
+            if not judgment_ai:
+                raise AIAnalyzerError(f"v8 judgment_ai 缺少 {stock['symbol']}")
             ai_stocks.append({
                 "symbol": stock["symbol"],
                 "name": stock["name"],
                 "score": stock["score"],
                 "rank": stock["rank"],
                 "action_bias": stock["action_bias"],
+                "judgment_ai": judgment_ai,
                 **detail
             })
 

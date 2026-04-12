@@ -315,8 +315,12 @@ body {
 }
 
 .bias-可留意   { background: #e8f5e9; color: #1b5e20; border: 2px solid #2e7d32; }
+.bias-可偏多觀察 { background: #e0f2f1; color: #00695c; border: 2px solid #00897b; }
+.bias-強勢續看 { background: #dcedc8; color: #33691e; border: 2px solid #558b2f; }
+.bias-先觀望   { background: #fff3e0; color: #e65100; border: 2px solid #ef6c00; }
 .bias-觀察     { background: #fff3e0; color: #e65100; border: 2px solid #ef6c00; }
 .bias-偏保守   { background: #fff8e1; color: #f57f17; border: 2px solid #f9a825; }
+.bias-暫不進場 { background: #ffebee; color: #b71c1c; border: 2px solid #c62828; }
 .bias-暫不考慮 { background: #ffebee; color: #b71c1c; border: 2px solid #c62828; }
 
 .why-text {
@@ -474,6 +478,65 @@ body {
     line-height: 1.55;
 }
 
+.ai-judgment {
+    margin-top: 12px;
+    padding: 14px;
+    background: #fbf7f1;
+    border: 1px solid #eadfce;
+    border-radius: 12px;
+}
+
+.ai-judgment-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #5d4037;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+}
+
+.ai-judgment-note {
+    font-size: 12px;
+    color: #8d6e63;
+    margin-bottom: 10px;
+}
+
+.ai-judgment-row {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 8px;
+}
+
+.ai-judgment-row:last-child {
+    margin-bottom: 0;
+}
+
+.ai-judgment-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8d6e63;
+}
+
+.ai-judgment-text {
+    font-size: 14px;
+    color: #3e2723;
+    line-height: 1.55;
+}
+
+.ai-judgment-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.ai-judgment-item {
+    margin-bottom: 4px;
+}
+
+.ai-judgment-item:last-child {
+    margin-bottom: 0;
+}
+
 /* ======== FOOTER ======== */
 .footer {
     position: fixed;
@@ -545,6 +608,8 @@ body {
     .decision-summary-text { font-size: 13px; }
     .entry-zone-row { grid-template-columns: 60px 1fr; gap: 8px; }
     .entry-zone-text { font-size: 13px; }
+    .ai-judgment-row { grid-template-columns: 36px 1fr; gap: 8px; }
+    .ai-judgment-text { font-size: 13px; }
 }
 
 /* ======== v6.1 NAVIGATION ======== */

@@ -98,8 +98,12 @@
             border-radius: 24px;
         }
         .bias-可留意   { background: #e8f5e9; color: #1b5e20; border: 2px solid #2e7d32; }
+        .bias-可偏多觀察 { background: #e0f2f1; color: #00695c; border: 2px solid #00897b; }
+        .bias-強勢續看 { background: #dcedc8; color: #33691e; border: 2px solid #558b2f; }
+        .bias-先觀望   { background: #fff3e0; color: #e65100; border: 2px solid #ef6c00; }
         .bias-觀察     { background: #fff3e0; color: #e65100; border: 2px solid #ef6c00; }
         .bias-偏保守   { background: #fff8e1; color: #f57f17; border: 2px solid #f9a825; }
+        .bias-暫不進場 { background: #ffebee; color: #b71c1c; border: 2px solid #c62828; }
         .bias-暫不考慮 { background: #ffebee; color: #b71c1c; border: 2px solid #c62828; }
 
         /* ── Indicators ── */
@@ -483,6 +487,27 @@ function downgradeBullishSummary(summary) {
     return summary;
 }
 
+const FINAL_ADVICE_PRIORITY = Object.freeze({
+    '暫不考慮': 1,
+    '暫不進場': 2,
+    '先觀望': 3,
+    '可留意': 4,
+    '可偏多觀察': 5,
+    '強勢續看': 6
+});
+
+function getAdvicePriority(advice) {
+    return FINAL_ADVICE_PRIORITY[advice] || 0;
+}
+
+function isAvoidAdvice(advice) {
+    return advice === '暫不考慮' || advice === '暫不進場';
+}
+
+function isWatchAdvice(advice) {
+    return advice === '先觀望';
+}
+
 function getDecisionSummary(stock) {
     const indicators = stock?.indicators || {};
     const signals = stock?.signals || {};
@@ -582,23 +607,96 @@ function getDecisionSummary(stock) {
     return summary;
 }
 
-function getEntryZones(stock) {
+function getEntryZones(stock, summary = getDecisionSummary(stock)) {
     const indicators = stock?.indicators || {};
+    const score = toNum(stock?.score);
     const close = toNum(indicators.close);
     const ma5 = toNum(indicators.ma5);
     const ma20 = toNum(indicators.ma20);
+    const advice = summary?.advice || '先觀望';
+    const isWeakBelowMa20 = score != null && score < 60 && close != null && ma20 != null && close < ma20;
+    const pilotLowValue = ma5 != null ? ma5 * 0.98 : null;
+    const pilotHighValue = ma5 != null ? ma5 * 1.02 : null;
+    const isPilotInside = close != null && pilotLowValue != null && pilotHighValue != null && close >= pilotLowValue && close <= pilotHighValue;
+    const isPilotExpired = close != null && pilotHighValue != null && close > pilotHighValue;
+
+    let observe = '--';
+    let observeAnchor = null;
+    if (close != null) {
+        if (ma5 != null && close < ma5) {
+            observe = `${fmtZonePrice(ma5)}附近`;
+            observeAnchor = ma5;
+        } else {
+            observe = `${fmtZonePrice(close * 1.01)}以上`;
+            observeAnchor = close * 1.01;
+        }
+    }
+
+    let pilot = '--';
+    if (ma5 != null) {
+        const pilotLow = fmtZonePrice(ma5 * 0.98);
+        const pilotHigh = fmtZonePrice(ma5 * 1.02);
+        const pilotBase = `${pilotLow} ~ ${pilotHigh}`;
+
+        if (isAvoidAdvice(advice)) {
+            pilot = '不建議使用（目前不在可進場狀態）';
+            if (isPilotInside) {
+                pilot += '（即使落在區間內，仍不建議進場）';
+            }
+        } else if (isWatchAdvice(advice)) {
+            if (isPilotExpired) {
+                pilot = `${pilotBase}（已離開試單區，僅供觀察，不建議進場）`;
+            } else if (isPilotInside) {
+                pilot = `${pilotBase}（現價位於試單區內，僅供觀察，不建議進場）`;
+            } else {
+                pilot = `${pilotBase}（僅供觀察，不建議進場）`;
+            }
+        } else if (isPilotExpired) {
+            pilot = `${pilotBase}（已離開試單區）`;
+        } else if (isPilotInside) {
+            pilot = `${pilotBase}（現價位於試單區內）`;
+        } else {
+            pilot = pilotBase;
+        }
+    }
+
+    let lowRisk = '--';
+    let lowRiskAnchor = null;
+    if (isAvoidAdvice(advice)) {
+        observe = '暫不提供（等待結構重新轉強）';
+        lowRisk = isWeakBelowMa20
+            ? '暫不提供（仍在中期壓力下）'
+            : '暫不提供（目前不在可進場狀態）';
+    } else if (isWeakBelowMa20) {
+        lowRisk = '暫不提供（仍在中期壓力下）';
+    } else if (ma20 != null) {
+        lowRisk = `${fmtZonePrice(ma20)}附近`;
+        lowRiskAnchor = ma20;
+        if (close != null && ma20 > close && score != null && score < 70) {
+            lowRisk += '（壓力未完全消化）';
+        }
+    }
+
+    if (
+        !isAvoidAdvice(advice) &&
+        observeAnchor != null &&
+        lowRiskAnchor != null &&
+        lowRiskAnchor !== 0 &&
+        Math.abs(observeAnchor - lowRiskAnchor) / Math.abs(lowRiskAnchor) < 0.01
+    ) {
+        observe = `區間集中：${fmtZonePrice((observeAnchor + lowRiskAnchor) / 2)}附近（需等待明確方向）`;
+        lowRisk = '已併入觀察區';
+    }
 
     return {
-        observe: close != null ? `${fmtZonePrice(close)}以上` : '--',
-        pilot: ma5 != null
-            ? `${fmtZonePrice(ma5 * 0.98)} ~ ${fmtZonePrice(ma5 * 1.02)}`
-            : '--',
-        lowRisk: ma20 != null ? `${fmtZonePrice(ma20)}附近` : '--'
+        observe,
+        pilot,
+        lowRisk
     };
 }
 
-function renderEntryZones(stock) {
-    const entryZones = getEntryZones(stock);
+function renderEntryZones(stock, summary) {
+    const entryZones = getEntryZones(stock, summary);
     document.getElementById('entryObserve').textContent = entryZones.observe;
     document.getElementById('entryPilot').textContent = entryZones.pilot;
     document.getElementById('entryLowRisk').textContent = entryZones.lowRisk;
@@ -609,7 +707,7 @@ function renderDecisionSummary(stock) {
     document.getElementById('decisionAdvice').textContent = summary.advice;
     document.getElementById('decisionReason').textContent = summary.reason;
     document.getElementById('decisionRisk').textContent = summary.risk;
-    renderEntryZones(stock);
+    renderEntryZones(stock, summary);
 }
 
 // ====== Fetch ======
@@ -635,8 +733,9 @@ function renderStock(stock) {
 
     document.getElementById('catTag').textContent = stock.category || '--';
 
+    const summary = getDecisionSummary(stock);
     const biasEl = document.getElementById('biasBig');
-    const bias = stock.action_bias || '暫不考慮';
+    const bias = summary.advice;
     biasEl.textContent = bias;
     biasEl.className = `bias-big bias-${bias}`;
 
@@ -659,10 +758,13 @@ function renderStock(stock) {
     setChip('sigInst',  stock.institutional ? `法人：${stock.institutional}` : '');
     setChip('sigKd',    stock.kd_state ? `KD：${stock.kd_state}` : '');
 
-    renderDecisionSummary(stock);
+    document.getElementById('decisionAdvice').textContent = summary.advice;
+    document.getElementById('decisionReason').textContent = summary.reason;
+    document.getElementById('decisionRisk').textContent = summary.risk;
+    renderEntryZones(stock, summary);
 
     // Summary
-    document.getElementById('summaryText').textContent = stock.one_line_summary || '';
+    document.getElementById('summaryText').textContent = summary.reason || '';
 
     const reasonList = document.getElementById('reasonList');
     reasonList.innerHTML = (stock.plain_reasons || []).map(r =>

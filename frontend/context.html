@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0d1b2a">
+    <title>市場情境卡 - 看盤助手</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .page-shell {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #eef3f8 0%, #f8fbfd 100%);
+            padding-bottom: 32px;
+        }
+
+        .context-header {
+            background: linear-gradient(135deg, #0d1b2a, #1b3350);
+            padding: 22px 18px 18px;
+            color: white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .context-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .context-date-select {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.14);
+            color: white;
+            font-size: 14px;
+        }
+
+        .context-date-select option {
+            color: #1b1b1b;
+        }
+
+        .schema-chip,
+        .count-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.16);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .context-main {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 18px 14px 0;
+        }
+
+        .context-help {
+            margin-bottom: 14px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid #dde6ef;
+            color: #44586b;
+            font-size: 14px;
+            line-height: 1.65;
+            box-shadow: 0 1px 8px rgba(18, 38, 63, 0.06);
+        }
+
+        .overview-shell {
+            margin-bottom: 14px;
+            padding: 16px;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #fdfefe 0%, #f5f9fd 100%);
+            border: 1px solid #d8e3ee;
+            box-shadow: 0 4px 14px rgba(20, 42, 67, 0.05);
+        }
+
+        .overview-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .overview-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #17324d;
+        }
+
+        .overview-meta {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #5d7287;
+        }
+
+        .overview-group {
+            margin-bottom: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #e3ecf4;
+        }
+
+        .overview-group:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .overview-group-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .overview-group-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #23405d;
+        }
+
+        .overview-group-count {
+            font-size: 12px;
+            font-weight: 700;
+            color: #678198;
+        }
+
+        .overview-group-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .overview-item {
+            padding: 12px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid #dde7f0;
+        }
+
+        .overview-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .overview-symbol-line {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .overview-symbol {
+            font-size: 15px;
+            font-weight: 800;
+            color: #17324d;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .overview-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #58708a;
+        }
+
+        .overview-count {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #e9f2fb;
+            color: #1d4f80;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .overview-tech-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .overview-status-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+
+        .advice-positive {
+            background: #e7f6ec;
+            color: #1b5e20;
+        }
+
+        .advice-watch {
+            background: #fff4de;
+            color: #9a5b00;
+        }
+
+        .advice-avoid {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+
+        .flag-on {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .flag-off {
+            background: #eef2f6;
+            color: #546575;
+        }
+
+        .flag-blocked {
+            background: #fdecea;
+            color: #b3261e;
+        }
+
+        .flag-clear {
+            background: #edf7ee;
+            color: #256029;
+        }
+
+        .tech-missing {
+            background: #f3f6f9;
+            color: #687d90;
+        }
+
+        .overview-row {
+            display: grid;
+            grid-template-columns: 56px 1fr;
+            gap: 8px;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        .overview-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .overview-label {
+            font-size: 12px;
+            font-weight: 800;
+            color: #718398;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .overview-event-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .overview-event-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 9px;
+            border-radius: 10px;
+            background: #eef4fa;
+            color: #2a4764;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .overview-empty {
+            padding: 14px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px dashed #cfd9e2;
+            color: #688097;
+            font-size: 13px;
+        }
+
+        .context-state,
+        .context-empty {
+            padding: 56px 18px;
+            text-align: center;
+            color: #66778a;
+            font-size: 16px;
+        }
+
+        .context-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .scenario-card {
+            background: white;
+            border: 1px solid #dde6ef;
+            border-radius: 18px;
+            padding: 18px 18px 16px;
+            box-shadow: 0 6px 20px rgba(20, 42, 67, 0.06);
+        }
+
+        .scenario-card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .scenario-card-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #18314f;
+            line-height: 1.4;
+        }
+
+        .scenario-card-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+
+        .confidence-high { background: #e8f5e9; color: #1b5e20; }
+        .confidence-medium { background: #fff3e0; color: #e65100; }
+        .confidence-low { background: #f3e5f5; color: #6a1b9a; }
+        .relation-aligned { background: #e3f2fd; color: #1565c0; }
+        .relation-conflict { background: #ffebee; color: #b71c1c; }
+        .relation-neutral { background: #eceff1; color: #455a64; }
+
+        .scenario-row {
+            display: grid;
+            grid-template-columns: 88px 1fr;
+            gap: 10px;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .scenario-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .scenario-label {
+            font-size: 13px;
+            font-weight: 800;
+            color: #6a7b8e;
+            line-height: 1.5;
+        }
+
+        .scenario-text {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #243746;
+        }
+
+        .reasoning-list {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .keyword-chip {
+            background: #edf5ff;
+            color: #134074;
+        }
+
+        .theme-chip {
+            background: #f4efe6;
+            color: #744210;
+        }
+
+        .trace-block {
+            display: grid;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 12px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .trace-caption {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            color: #51657a;
+            text-transform: uppercase;
+        }
+
+        .trace-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .trace-arrow {
+            font-size: 13px;
+            font-weight: 800;
+            color: #708399;
+        }
+
+        .trace-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 10px;
+            background: #eaf1f8;
+            color: #26415f;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .trace-event {
+            background: #dbe8f5;
+            color: #17324d;
+        }
+
+        .candidate-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .candidate-item {
+            padding: 12px;
+            border-radius: 12px;
+            background: #fbfdff;
+            border: 1px solid #d8e4ef;
+        }
+
+        .candidate-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .candidate-symbol {
+            font-size: 15px;
+            font-weight: 800;
+            color: #16324b;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .candidate-theme {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #efe8da;
+            color: #6f4e1f;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .candidate-meta {
+            font-size: 12px;
+            color: #688097;
+            margin-bottom: 6px;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .candidate-reason {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #30475a;
+        }
+
+        .candidate-empty {
+            padding: 12px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px dashed #cfd9e2;
+            color: #688097;
+            font-size: 13px;
+        }
+
+        .reasoning-item {
+            margin-bottom: 6px;
+        }
+
+        .reasoning-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .scenario-footer {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #e5edf5;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 12px;
+            color: #7a8a9a;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 640px) {
+            .context-header {
+                padding: 18px 14px 16px;
+            }
+
+            .header-title {
+                font-size: 20px;
+            }
+
+            .scenario-row {
+                grid-template-columns: 70px 1fr;
+                gap: 8px;
+            }
+
+            .scenario-label,
+            .scenario-text {
+                font-size: 13px;
+            }
+
+            .scenario-card {
+                padding: 16px 14px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="context-header">
+            <div class="context-header-top">
+                <a class="back-link" href="index.html">← 首頁</a>
+                <div class="header-title">市場情境卡</div>
+                <a class="back-link" href="stocks.html">股票總覽 →</a>
+            </div>
+            <div class="header-subtitle">
+                這一頁只用固定 trace 與 mapping 導出候選股票，不提供進場建議。
+            </div>
+            <div class="header-controls">
+                <select id="dateSelect" class="context-date-select">
+                    <option value="">載入中...</option>
+                </select>
+                <span class="schema-chip" id="schemaChip">schema --</span>
+                <span class="count-chip" id="countChip">0 張卡</span>
+            </div>
+        </header>
+
+        <main class="context-main">
+            <div class="context-help">
+                固定欄位包含事件、關鍵詞、題材、追溯鏈、候選股票與可人工驗證的推論鏈。候選總覽只額外疊加 v7.2 技術面狀態與 v7.1 區間位置，供人工交叉判讀，不做排序。
+            </div>
+            <section id="candidateOverview" class="overview-shell" style="display:none">
+                <div class="overview-head">
+                    <div class="overview-title">候選總覽</div>
+                    <div id="overviewMeta" class="overview-meta"></div>
+                </div>
+                <div id="overviewBody"></div>
+            </section>
+            <div id="loadingState" class="context-state">載入情境卡中...</div>
+            <div id="emptyState" class="context-empty" style="display:none"></div>
+            <div id="cardList" class="context-grid" style="display:none"></div>
+        </main>
+    </div>
+
+    <script src="context.js?v=20260413-v10b"></script>
+</body>
+</html>

@@ -90,6 +90,206 @@ function downgradeBullishSummary(summary) {
     return summary;
 }
 
+const FINAL_ADVICE_PRIORITY = Object.freeze({
+    '暫不考慮': 1,
+    '暫不進場': 2,
+    '先觀望': 3,
+    '可留意': 4,
+    '可偏多觀察': 5,
+    '強勢續看': 6
+});
+
+function getAdvicePriority(advice) {
+    return FINAL_ADVICE_PRIORITY[advice] || 0;
+}
+
+function isAvoidAdvice(advice) {
+    return advice === '暫不考慮' || advice === '暫不進場';
+}
+
+function isWatchAdvice(advice) {
+    return advice === '先觀望';
+}
+
+function getAdviceBucket(advice) {
+    if (isAvoidAdvice(advice)) return 'avoid';
+    if (isWatchAdvice(advice)) return 'watch';
+    return 'strong';
+}
+
+function getAIConclusionDirection(advice) {
+    if (isAvoidAdvice(advice)) return '偏保守';
+    if (isWatchAdvice(advice)) return '偏向觀察';
+    return '偏多';
+}
+
+function hasProhibitedAIInstruction(text) {
+    return /買進|買入|賣出|進場|出場|加碼|減碼|停損|停利|抄底|布局|佈局|建議買|建議賣|可買|可賣|逢低買|追價買|進場點/.test(text);
+}
+
+function normalizeAITextList(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+        .map(item => String(item ?? '').trim())
+        .filter(Boolean)
+        .slice(0, 3);
+}
+
+function buildFallbackAIJudgment(stock, summary) {
+    const indicators = stock?.indicators || {};
+    const signals = stock?.signals || {};
+    const close = toNum(indicators.close);
+    const ma5 = toNum(indicators.ma5);
+    const ma20 = toNum(indicators.ma20);
+    const k = toNum(indicators.k);
+    const d = toNum(indicators.d);
+    const volumeRatio = toNum(indicators.volume_ratio);
+    const institutional = String(signals.institutional ?? stock?.institutional ?? '').trim();
+
+    let structure = '目前資料以決策摘要為主，結構仍待進一步確認。';
+    if (close != null && ma5 != null && ma20 != null) {
+        if (close > ma5 && ma5 > ma20) {
+            structure = '目前股價站在短中期均線之上，整體結構仍偏強。';
+        } else if (close > ma20) {
+            structure = '目前仍守在 ma20 之上，但短線位置需要再確認。';
+        } else if (close < ma20 && close >= ma5) {
+            structure = '目前位於短線支撐與中期壓力之間，方向尚未完全明確。';
+        } else if (close < ma5 && close < ma20) {
+            structure = '目前位於短中期均線下方，整體結構仍偏弱。';
+        }
+    } else if (summary?.reason) {
+        structure = summary.reason;
+    }
+
+    const bullishFactors = [];
+    if (signals.trend === '偏多' || (close != null && ma20 != null && close > ma20)) {
+        bullishFactors.push('價格仍維持在中期結構附近或之上。');
+    }
+    if (institutional.includes('買')) {
+        bullishFactors.push(`法人面維持${institutional}，籌碼未明顯轉弱。`);
+    }
+    if (volumeRatio != null && volumeRatio >= 1) {
+        bullishFactors.push(`量能維持常態以上（量比${volumeRatio.toFixed(2)}）。`);
+    }
+    if (k != null && d != null && k >= d) {
+        bullishFactors.push('KD 相對仍偏多，尚未出現明顯轉弱訊號。');
+    }
+    if (close != null && ma5 != null && close >= ma5) {
+        bullishFactors.push('股價仍守在 ma5 附近或之上。');
+    }
+
+    const riskFactors = [];
+    if (summary?.risk) {
+        riskFactors.push(`${summary.risk}。`);
+    }
+    if (close != null && ma20 != null && close < ma20) {
+        riskFactors.push('仍在 ma20 附近或下方，容易遇到中期壓力。');
+    }
+    if (volumeRatio != null && volumeRatio < 1) {
+        riskFactors.push(`量能偏弱（量比${volumeRatio.toFixed(2)}），續航力仍待確認。`);
+    }
+    if (institutional.includes('賣')) {
+        riskFactors.push(`法人面呈現${institutional}，籌碼仍有調節壓力。`);
+    }
+    if (k != null && k >= 80) {
+        riskFactors.push('KD 位於高檔，短線震盪風險偏高。');
+    }
+    if (close != null && ma5 != null && close < ma5) {
+        riskFactors.push('短線位置仍未穩定站回 ma5。');
+    }
+
+    while (bullishFactors.length < 1) {
+        bullishFactors.push('目前有利條件有限，需以既有結構是否延續為主。');
+    }
+    while (riskFactors.length < 1) {
+        riskFactors.push('目前仍需留意訊號延續性與波動風險。');
+    }
+
+    const direction = getAIConclusionDirection(summary?.advice || '先觀望');
+    let conclusion = '結論偏向觀察，先確認結構是否延續。';
+    if (direction === '偏多') {
+        conclusion = '結論偏多，重點觀察強勢結構是否延續。';
+    } else if (direction === '偏保守') {
+        conclusion = '結論偏保守，先等待壓力消化與結構修復。';
+    }
+
+    return {
+        structure,
+        bullishFactors: bullishFactors.slice(0, 3),
+        riskFactors: riskFactors.slice(0, 3),
+        conclusion,
+        isFallback: true
+    };
+}
+
+function getAIJudgment(stock, ai, summary) {
+    const candidate = ai?.judgment_ai;
+    const expectedDirection = getAIConclusionDirection(summary?.advice || '先觀望');
+
+    if (!candidate || typeof candidate !== 'object') {
+        return buildFallbackAIJudgment(stock, summary);
+    }
+
+    const structure = String(candidate.structure ?? '').trim();
+    const bullishFactors = normalizeAITextList(candidate.bullish_factors);
+    const riskFactors = normalizeAITextList(candidate.risk_factors);
+    const conclusion = String(candidate.conclusion ?? '').trim();
+    const allTexts = [structure, conclusion, ...bullishFactors, ...riskFactors];
+
+    if (
+        !structure ||
+        !bullishFactors.length ||
+        !riskFactors.length ||
+        !conclusion ||
+        !conclusion.includes(expectedDirection) ||
+        allTexts.some(hasProhibitedAIInstruction)
+    ) {
+        return buildFallbackAIJudgment(stock, summary);
+    }
+
+    return {
+        structure,
+        bullishFactors,
+        riskFactors,
+        conclusion,
+        isFallback: false
+    };
+}
+
+function renderAIJudgment(aiJudgment) {
+    const bullishItems = aiJudgment.bullishFactors
+        .map(item => `<li class="ai-judgment-item">${esc(item)}</li>`)
+        .join('');
+    const riskItems = aiJudgment.riskFactors
+        .map(item => `<li class="ai-judgment-item">${esc(item)}</li>`)
+        .join('');
+    const fallbackNote = aiJudgment.isFallback
+        ? '<div class="ai-judgment-note">AI 資料暫缺，改用系統整理</div>'
+        : '';
+
+    return `
+        <div class="ai-judgment">
+            <div class="ai-judgment-title">AI 判斷</div>
+            ${fallbackNote}
+            <div class="ai-judgment-row">
+                <div class="ai-judgment-label">結構</div>
+                <div class="ai-judgment-text">${esc(aiJudgment.structure)}</div>
+            </div>
+            <div class="ai-judgment-row">
+                <div class="ai-judgment-label">有利</div>
+                <div class="ai-judgment-text"><ul class="ai-judgment-list">${bullishItems}</ul></div>
+            </div>
+            <div class="ai-judgment-row">
+                <div class="ai-judgment-label">風險</div>
+                <div class="ai-judgment-text"><ul class="ai-judgment-list">${riskItems}</ul></div>
+            </div>
+            <div class="ai-judgment-row">
+                <div class="ai-judgment-label">結論</div>
+                <div class="ai-judgment-text">${esc(aiJudgment.conclusion)}</div>
+            </div>
+        </div>`;
+}
+
 function getDecisionSummary(stock) {
     const indicators = stock?.indicators || {};
     const signals = stock?.signals || {};
@@ -189,18 +389,91 @@ function getDecisionSummary(stock) {
     return summary;
 }
 
-function getEntryZones(stock) {
+function getEntryZones(stock, summary = getDecisionSummary(stock)) {
     const indicators = stock?.indicators || {};
+    const score = toNum(stock?.score);
     const close = toNum(indicators.close);
     const ma5 = toNum(indicators.ma5);
     const ma20 = toNum(indicators.ma20);
+    const advice = summary?.advice || '先觀望';
+    const isWeakBelowMa20 = score != null && score < 60 && close != null && ma20 != null && close < ma20;
+    const pilotLowValue = ma5 != null ? ma5 * 0.98 : null;
+    const pilotHighValue = ma5 != null ? ma5 * 1.02 : null;
+    const isPilotInside = close != null && pilotLowValue != null && pilotHighValue != null && close >= pilotLowValue && close <= pilotHighValue;
+    const isPilotExpired = close != null && pilotHighValue != null && close > pilotHighValue;
+
+    let observe = '--';
+    let observeAnchor = null;
+    if (close != null) {
+        if (ma5 != null && close < ma5) {
+            observe = `${fmtZonePrice(ma5)}附近`;
+            observeAnchor = ma5;
+        } else {
+            observe = `${fmtZonePrice(close * 1.01)}以上`;
+            observeAnchor = close * 1.01;
+        }
+    }
+
+    let pilot = '--';
+    if (ma5 != null) {
+        const pilotLow = fmtZonePrice(ma5 * 0.98);
+        const pilotHigh = fmtZonePrice(ma5 * 1.02);
+        const pilotBase = `${pilotLow} ~ ${pilotHigh}`;
+
+        if (isAvoidAdvice(advice)) {
+            pilot = '不建議使用（目前不在可進場狀態）';
+            if (isPilotInside) {
+                pilot += '（即使落在區間內，仍不建議進場）';
+            }
+        } else if (isWatchAdvice(advice)) {
+            if (isPilotExpired) {
+                pilot = `${pilotBase}（已離開試單區，僅供觀察，不建議進場）`;
+            } else if (isPilotInside) {
+                pilot = `${pilotBase}（現價位於試單區內，僅供觀察，不建議進場）`;
+            } else {
+                pilot = `${pilotBase}（僅供觀察，不建議進場）`;
+            }
+        } else if (isPilotExpired) {
+            pilot = `${pilotBase}（已離開試單區）`;
+        } else if (isPilotInside) {
+            pilot = `${pilotBase}（現價位於試單區內）`;
+        } else {
+            pilot = pilotBase;
+        }
+    }
+
+    let lowRisk = '--';
+    let lowRiskAnchor = null;
+    if (isAvoidAdvice(advice)) {
+        observe = '暫不提供（等待結構重新轉強）';
+        lowRisk = isWeakBelowMa20
+            ? '暫不提供（仍在中期壓力下）'
+            : '暫不提供（目前不在可進場狀態）';
+    } else if (isWeakBelowMa20) {
+        lowRisk = '暫不提供（仍在中期壓力下）';
+    } else if (ma20 != null) {
+        lowRisk = `${fmtZonePrice(ma20)}附近`;
+        lowRiskAnchor = ma20;
+        if (close != null && ma20 > close && score != null && score < 70) {
+            lowRisk += '（壓力未完全消化）';
+        }
+    }
+
+    if (
+        !isAvoidAdvice(advice) &&
+        observeAnchor != null &&
+        lowRiskAnchor != null &&
+        lowRiskAnchor !== 0 &&
+        Math.abs(observeAnchor - lowRiskAnchor) / Math.abs(lowRiskAnchor) < 0.01
+    ) {
+        observe = `區間集中：${fmtZonePrice((observeAnchor + lowRiskAnchor) / 2)}附近（需等待明確方向）`;
+        lowRisk = '已併入觀察區';
+    }
 
     return {
-        observe: close != null ? `${fmtZonePrice(close)}以上` : '--',
-        pilot: ma5 != null
-            ? `${fmtZonePrice(ma5 * 0.98)} ~ ${fmtZonePrice(ma5 * 1.02)}`
-            : '--',
-        lowRisk: ma20 != null ? `${fmtZonePrice(ma20)}附近` : '--'
+        observe,
+        pilot,
+        lowRisk
     };
 }
 
@@ -224,7 +497,7 @@ function renderEntryZones(entryZones) {
 }
 
 function renderDecisionSummary(summary, stock) {
-    const entryZones = getEntryZones(stock);
+    const entryZones = getEntryZones(stock, summary);
     return `
         <div class="decision-summary">
             <div class="decision-summary-title">決策摘要</div>
@@ -343,28 +616,36 @@ function renderAIOverview() {
 // === Render: Groups ===
 function renderGroups() {
     const stocks = liteData?.stocks || [];
-    const aiStocksMap = {};
-    if (aiData?.stocks) {
-        aiData.stocks.forEach(s => { aiStocksMap[s.symbol] = s; });
+    const fullMap = {};
+    if (fullData?.stocks) {
+        fullData.stocks.forEach(s => { fullMap[s.symbol] = s; });
     }
 
-    const strong = stocks.filter(s => s.action_bias === '可留意');
-    const watch  = stocks.filter(s => s.action_bias === '觀察');
-    const avoid  = stocks.filter(s => ['偏保守', '暫不考慮'].includes(s.action_bias));
+    const decisions = stocks.map(stock => ({
+        stock,
+        summary: getDecisionSummary(fullMap[stock.symbol] || stock)
+    }));
+    const strong = decisions.filter(item => getAdviceBucket(item.summary.advice) === 'strong');
+    const watch  = decisions.filter(item => getAdviceBucket(item.summary.advice) === 'watch');
+    const avoid  = decisions.filter(item => getAdviceBucket(item.summary.advice) === 'avoid');
 
-    const makeTag = (s, cls) =>
-        `<span class="group-tag" onclick="scrollToCard('${s.symbol}')">${esc(s.symbol)} ${esc(s.name)}</span>`;
+    const makeTag = item =>
+        `<span class="group-tag" onclick="scrollToCard('${item.stock.symbol}')">${esc(item.stock.symbol)} ${esc(item.stock.name)}</span>`;
+    const makeGroupText = items =>
+        items.length
+            ? items.map(item => `${item.stock.name}（${item.summary.advice}）`).join('、')
+            : '--';
 
     document.getElementById('strongestGroupAI').textContent =
-        aiData?.strongest_group_ai || strong.map(s => s.name).join('、') || '--';
+        makeGroupText(strong);
     document.getElementById('cautionGroupAI').textContent =
-        aiData?.caution_group_ai || watch.map(s => s.name).join('、') || '--';
+        makeGroupText(watch);
     document.getElementById('avoidGroupAI').textContent =
-        aiData?.avoid_group_ai || avoid.map(s => s.name).join('、') || '--';
+        makeGroupText(avoid);
 
-    document.getElementById('strongestTags').innerHTML = strong.map(s => makeTag(s, 'group-strong')).join('');
-    document.getElementById('cautionTags').innerHTML   = watch.map(s => makeTag(s, 'group-watch')).join('');
-    document.getElementById('avoidTags').innerHTML     = avoid.map(s => makeTag(s, 'group-avoid')).join('');
+    document.getElementById('strongestTags').innerHTML = strong.map(item => makeTag(item)).join('');
+    document.getElementById('cautionTags').innerHTML   = watch.map(item => makeTag(item)).join('');
+    document.getElementById('avoidTags').innerHTML     = avoid.map(item => makeTag(item)).join('');
 }
 
 function scrollToCard(symbol) {
@@ -398,12 +679,13 @@ function renderStockCards() {
 
 function buildStockCard(stock, ai, fullStock) {
     const grade = stock.score_grade || 'C';
-    const bias  = stock.action_bias || '暫不考慮';
     const indic = stock.indicators || {};
     const sigs  = stock.signals || {};
     const decisionSummary = getDecisionSummary(fullStock || stock);
+    const bias = decisionSummary.advice;
+    const aiJudgment = getAIJudgment(fullStock || stock, ai, decisionSummary);
 
-    const whyText = ai?.why_selected_ai || stock.one_line_summary || '暫無摘要';
+    const whyText = decisionSummary.reason || '暫無摘要';
 
     const driversHTML = ai?.primary_drivers?.length
         ? `<div class="drivers-list">${ai.primary_drivers.map(d => `<span class="driver-tag">${esc(d)}</span>`).join('')}</div>`
@@ -441,6 +723,7 @@ function buildStockCard(stock, ai, fullStock) {
         <div class="bias-tag bias-${esc(bias)}">${esc(bias)}</div>
         <div class="why-text">${esc(whyText)}</div>
         ${renderDecisionSummary(decisionSummary, fullStock || stock)}
+        ${renderAIJudgment(aiJudgment)}
         <div class="expand-hint">▼ 展開完整分析</div>
     </div>
     <div class="stock-details">
@@ -473,9 +756,16 @@ function buildStockCard(stock, ai, fullStock) {
 // === Render: Footer ===
 function renderFooter() {
     const stocks = liteData?.stocks || [];
+    const fullMap = {};
+    if (fullData?.stocks) {
+        fullData.stocks.forEach(s => { fullMap[s.symbol] = s; });
+    }
     document.getElementById('footerDate').textContent = currentDate || '--';
     document.getElementById('totalCount').textContent = stocks.length;
-    document.getElementById('goodCount').textContent = stocks.filter(s => s.action_bias === '可留意').length;
+    document.getElementById('goodCount').textContent = stocks.filter(stock => {
+        const advice = getDecisionSummary(fullMap[stock.symbol] || stock).advice;
+        return getAdvicePriority(advice) >= getAdvicePriority('可留意');
+    }).length;
 }
 
 // === Main Flow ===
