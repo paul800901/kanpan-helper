@@ -81,6 +81,20 @@ Workflow permissions:
 - index.json 使用原子化更新（原子替換機制，確保失敗時保留舊檔）
 - 透過 `permissions` 設定限制 GITHUB_TOKEN 權限
 
+## 本地與遠端同步注意
+
+- GitHub Actions 會在遠端直接生成、commit、push `reports/`，因此 GitHub 遠端或桌面 Git 倉庫的 `reports/` 可能比雲端本體新。
+- 開始本地除錯、查資料或修改前，先檢查桌面 Git 倉庫或遠端的 `reports/index.json` 是否較新，避免用舊資料判讀線上問題。
+- 如果桌面 Git 倉庫的 `reports/` 較新，先反向同步回雲端本體，再以雲端本體作為主要開發目錄。
+
+### 反向同步 `reports/` 範例
+
+```powershell
+Copy-Item "$env:USERPROFILE\Desktop\kanpan_helper_github_sync\kanpan-helper\reports\*.json" "G:\我的雲端硬碟\kanpan-helper\reports\" -Force
+```
+
+- 反向同步完成後，再確認雲端本體的 `reports/index.json` 已更新到最新日期。
+
 ## 環境變數
 
 ### REPORT_BASE_URL (前端自動偵測)
