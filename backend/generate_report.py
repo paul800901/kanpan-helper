@@ -363,7 +363,8 @@ def generate_report_v2(
     top_stocks: List[StockScore],
     date_str: Optional[str] = None,
     total_stocks_requested: int = 0,
-    total_stocks_analyzed: int = 0
+    total_stocks_analyzed: int = 0,
+    bundle_id: Optional[str] = None
 ) -> Dict:
     """
     產生 v2 完整報告
@@ -393,41 +394,81 @@ def generate_report_v2(
         "metadata": {
             "last_updated": current_time,
             "generated_by": "kanpan-helper v5",
-            "source": "FinMind API"
+            "source": "FinMind API",
+            "bundle_id": bundle_id
         }
     }
     
     return report
 
 
-def generate_lite_report(full_report: Dict) -> Dict:
+def build_lite_stock_from_full(stock: Dict) -> Dict:
+    """從 full report 產生 lite 股票欄位（舊版相容用）"""
+    return {
+        "symbol": stock["symbol"],
+        "name": stock["name"],
+        "rank": stock["rank"],
+        "score": stock["score"],
+        "score_grade": stock["score_grade"],
+        "score_label": stock["score_label"],
+        "action_bias": stock["action_bias"],
+        "one_line_summary": stock["one_line_summary"],
+        "plain_reasons": stock["plain_reasons"][:2] if stock["plain_reasons"] else [],
+        "plain_risks": stock["plain_risks"][:2] if stock["plain_risks"] else [],
+        "indicators": {
+            "close": stock["indicators"]["close"],
+            "volume_ratio": stock["indicators"]["volume_ratio"]
+        },
+        "signals": {
+            "trend": stock["signals"]["trend"],
+            "institutional": stock["signals"]["institutional"]
+        }
+    }
+
+
+def build_lite_stock_from_universe(stock: Dict) -> Dict:
+    """從 universe report 產生 lite 股票欄位，確保首頁與個股頁共用同一份資料。"""
+    return {
+        "symbol": stock["symbol"],
+        "name": stock["name"],
+        "rank": stock["rank"],
+        "score": stock["score"],
+        "score_grade": stock["score_grade"],
+        "score_label": stock["score_label"],
+        "action_bias": stock["action_bias"],
+        "one_line_summary": stock["one_line_summary"],
+        "plain_reasons": stock["plain_reasons"][:2] if stock["plain_reasons"] else [],
+        "plain_risks": stock["plain_risks"][:2] if stock["plain_risks"] else [],
+        "indicators": {
+            "close": stock["indicators"]["close"],
+            "volume_ratio": stock["indicators"]["volume_ratio"]
+        },
+        "signals": {
+            "trend": stock["trend"],
+            "institutional": stock["institutional"]
+        }
+    }
+
+
+def generate_lite_report(full_report: Dict, universe_report: Optional[Dict] = None) -> Dict:
     """
     產生精簡版報告，只保留前端顯示需要的欄位
     """
     lite_stocks = []
-    
-    for stock in full_report.get("stocks", []):
-        lite_stock = {
-            "symbol": stock["symbol"],
-            "name": stock["name"],
-            "rank": stock["rank"],
-            "score": stock["score"],
-            "score_grade": stock["score_grade"],
-            "score_label": stock["score_label"],
-            "action_bias": stock["action_bias"],
-            "one_line_summary": stock["one_line_summary"],
-            "plain_reasons": stock["plain_reasons"][:2] if stock["plain_reasons"] else [],  # 最多2條
-            "plain_risks": stock["plain_risks"][:2] if stock["plain_risks"] else [],
-            "indicators": {
-                "close": stock["indicators"]["close"],
-                "volume_ratio": stock["indicators"]["volume_ratio"]
-            },
-            "signals": {
-                "trend": stock["signals"]["trend"],
-                "institutional": stock["signals"]["institutional"]
-            }
-        }
-        lite_stocks.append(lite_stock)
+
+    if universe_report is not None:
+        if universe_report.get("date") != full_report.get("date"):
+            raise ValueError("lite/universe 報告日期不一致，拒絕生成 lite 報告")
+
+        universe_map = {stock["symbol"]: stock for stock in universe_report.get("stocks", [])}
+        for stock in full_report.get("stocks", []):
+            universe_stock = universe_map.get(stock["symbol"])
+            if universe_stock is None:
+                raise KeyError(f"universe 報告缺少首頁需要的股票: {stock['symbol']}")
+            lite_stocks.append(build_lite_stock_from_universe(universe_stock))
+    else:
+        for stock in full_report.get("stocks", []):
+            lite_stocks.append(build_lite_stock_from_full(stock))
     
     return {
         "report_version": "v2-lite",
@@ -438,8 +479,102 @@ def generate_lite_report(full_report: Dict) -> Dict:
             "market_overview": full_report["summary"]["market_overview"],
             "top_picks": [{"symbol": s["symbol"], "name": s["name"]} for s in full_report["summary"]["top_picks"]]
         },
-        "stocks": lite_stocks
+        "stocks": lite_stocks,
+        "metadata": {
+            "generated_by": "kanpan-helper v5",
+            "source": "full-report + universe-report",
+            "bundle_id": full_report.get("metadata", {}).get("bundle_id")
+        }
     }
+
+
+def validate_report_consistency(full_report: Dict, lite_report: Dict, universe_report: Dict) -> None:
+    """驗證 full/lite/universe 三份報告是否同日同源，不一致時直接拋錯。"""
+    errors = []
+
+    full_date = full_report.get("date")
+    lite_date = lite_report.get("date")
+    universe_date = universe_report.get("date")
+
+    if len({full_date, lite_date, universe_date}) != 1:
+        errors.append(f"報告日期不一致: full={full_date}, lite={lite_date}, universe={universe_date}")
+
+    bundle_ids = {
+        full_report.get("metadata", {}).get("bundle_id"),
+        lite_report.get("metadata", {}).get("bundle_id"),
+        universe_report.get("metadata", {}).get("bundle_id")
+    }
+    bundle_ids.discard(None)
+    if len(bundle_ids) > 1:
+        errors.append(f"bundle_id 不一致: {sorted(bundle_ids)}")
+
+    full_stocks = full_report.get("stocks", [])
+    lite_stocks = lite_report.get("stocks", [])
+    universe_stocks = universe_report.get("stocks", [])
+
+    full_symbols = [stock["symbol"] for stock in full_stocks]
+    lite_symbols = [stock["symbol"] for stock in lite_stocks]
+    if full_symbols != lite_symbols:
+        errors.append(f"lite 股票順序與 full 不一致: full={full_symbols}, lite={lite_symbols}")
+
+    if len(full_stocks) != len(lite_stocks):
+        errors.append(f"首頁股票數量不一致: full={len(full_stocks)}, lite={len(lite_stocks)}")
+
+    universe_map = {stock["symbol"]: stock for stock in universe_stocks}
+    lite_map = {stock["symbol"]: stock for stock in lite_stocks}
+
+    for full_stock in full_stocks:
+        symbol = full_stock["symbol"]
+        universe_stock = universe_map.get(symbol)
+        lite_stock = lite_map.get(symbol)
+
+        if universe_stock is None:
+            errors.append(f"universe 缺少 full 股票 {symbol}")
+            continue
+        if lite_stock is None:
+            errors.append(f"lite 缺少 full 股票 {symbol}")
+            continue
+
+        checks = [
+            (full_stock["rank"], universe_stock["rank"], f"{symbol} rank(full/universe)"),
+            (full_stock["score"], universe_stock["score"], f"{symbol} score(full/universe)"),
+            (full_stock["score_grade"], universe_stock["score_grade"], f"{symbol} score_grade(full/universe)"),
+            (full_stock["score_label"], universe_stock["score_label"], f"{symbol} score_label(full/universe)"),
+            (full_stock["action_bias"], universe_stock["action_bias"], f"{symbol} action_bias(full/universe)"),
+            (full_stock["one_line_summary"], universe_stock["one_line_summary"], f"{symbol} one_line_summary(full/universe)"),
+            (full_stock["plain_reasons"], universe_stock["plain_reasons"], f"{symbol} plain_reasons(full/universe)"),
+            (full_stock["plain_risks"], universe_stock["plain_risks"], f"{symbol} plain_risks(full/universe)"),
+            (full_stock["indicators"]["close"], universe_stock["indicators"]["close"], f"{symbol} close(full/universe)"),
+            (full_stock["indicators"]["ma5"], universe_stock["indicators"]["ma5"], f"{symbol} ma5(full/universe)"),
+            (full_stock["indicators"]["ma20"], universe_stock["indicators"]["ma20"], f"{symbol} ma20(full/universe)"),
+            (full_stock["indicators"]["k"], universe_stock["indicators"]["k"], f"{symbol} k(full/universe)"),
+            (full_stock["indicators"]["d"], universe_stock["indicators"]["d"], f"{symbol} d(full/universe)"),
+            (full_stock["indicators"]["volume_ratio"], universe_stock["indicators"]["volume_ratio"], f"{symbol} volume_ratio(full/universe)"),
+            (full_stock["signals"]["trend"], universe_stock["trend"], f"{symbol} trend(full/universe)"),
+            (full_stock["signals"]["volume"], universe_stock["volume"], f"{symbol} volume(full/universe)"),
+            (full_stock["signals"]["institutional"], universe_stock["institutional"], f"{symbol} institutional(full/universe)"),
+            (full_stock["signals"]["kd"], universe_stock["kd_state"], f"{symbol} kd(full/universe)"),
+            (lite_stock["rank"], universe_stock["rank"], f"{symbol} rank(lite/universe)"),
+            (lite_stock["score"], universe_stock["score"], f"{symbol} score(lite/universe)"),
+            (lite_stock["score_grade"], universe_stock["score_grade"], f"{symbol} score_grade(lite/universe)"),
+            (lite_stock["score_label"], universe_stock["score_label"], f"{symbol} score_label(lite/universe)"),
+            (lite_stock["action_bias"], universe_stock["action_bias"], f"{symbol} action_bias(lite/universe)"),
+            (lite_stock["one_line_summary"], universe_stock["one_line_summary"], f"{symbol} one_line_summary(lite/universe)"),
+            (lite_stock["plain_reasons"], universe_stock["plain_reasons"][:2], f"{symbol} plain_reasons(lite/universe)"),
+            (lite_stock["plain_risks"], universe_stock["plain_risks"][:2], f"{symbol} plain_risks(lite/universe)"),
+            (lite_stock["indicators"]["close"], universe_stock["indicators"]["close"], f"{symbol} close(lite/universe)"),
+            (lite_stock["indicators"]["volume_ratio"], universe_stock["indicators"]["volume_ratio"], f"{symbol} volume_ratio(lite/universe)"),
+            (lite_stock["signals"]["trend"], universe_stock["trend"], f"{symbol} trend(lite/universe)"),
+            (lite_stock["signals"]["institutional"], universe_stock["institutional"], f"{symbol} institutional(lite/universe)"),
+        ]
+
+        for left, right, label in checks:
+            if left != right:
+                errors.append(f"{label} 不一致: {left!r} != {right!r}")
+
+    if errors:
+        preview = "\n".join(errors[:10])
+        raise ValueError(f"報告一致性檢查失敗，共 {len(errors)} 項問題:\n{preview}")
 
 
 def save_report(report: Dict, date_str: Optional[str] = None, suffix: str = "") -> str:
@@ -582,7 +717,7 @@ def generate_universe_stock(score: StockScore) -> Dict:
     }
 
 
-def generate_universe_report(all_scores: List[StockScore], date_str: Optional[str] = None) -> Dict:
+def generate_universe_report(all_scores: List[StockScore], date_str: Optional[str] = None, bundle_id: Optional[str] = None) -> Dict:
     """
     產生 universe 報告（所有股票完整資料）
     用於第二頁股票總覽與第三頁個股詳情
@@ -598,7 +733,12 @@ def generate_universe_report(all_scores: List[StockScore], date_str: Optional[st
         "date": date_str,
         "generated_at": current_time,
         "total_stocks": len(stocks_data),
-        "stocks": stocks_data
+        "stocks": stocks_data,
+        "metadata": {
+            "generated_by": "kanpan-helper v6.1",
+            "source": "FinMind API",
+            "bundle_id": bundle_id
+        }
     }
 
 
@@ -695,10 +835,14 @@ if __name__ == "__main__":
         )
     ]
     
-    report = generate_report_v2(test_scores, total_stocks_requested=50, total_stocks_analyzed=48)
-    lite = generate_lite_report(report)
+    report = generate_report_v2(test_scores, total_stocks_requested=50, total_stocks_analyzed=48, bundle_id="demo-bundle")
+    universe = generate_universe_report(test_scores, bundle_id="demo-bundle")
+    lite = generate_lite_report(report, universe)
+    validate_report_consistency(report, lite, universe)
     
     print("=== 完整版報告 ===")
     print(json.dumps(report, ensure_ascii=False, indent=2))
     print("\n=== 精簡版報告 ===")
     print(json.dumps(lite, ensure_ascii=False, indent=2))
+    print("\n=== Universe 報告 ===")
+    print(json.dumps(universe, ensure_ascii=False, indent=2))

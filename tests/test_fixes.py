@@ -15,7 +15,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
-from backend.ranking import score_stock, evaluate_institutional
+from backend.ranking import score_stock, evaluate_institutional, StockScore
+from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -197,7 +198,7 @@ class TestInstitutionalScoring(unittest.TestCase):
             signal, score = evaluate_institutional(ind)
             self.assertEqual(signal, expected_signal)
             self.assertEqual(score, expected_score)
-    
+
     def test_consecutive_sell_scoring(self):
         """測試連賣分數"""
         ind = StockIndicators(
@@ -226,6 +227,103 @@ class TestInstitutionalScoring(unittest.TestCase):
             self.assertEqual(score, expected_score)
 
 
+class TestReportConsistency(unittest.TestCase):
+    """測試 lite / universe 同源與一致性檢查"""
+
+    def make_score(self, symbol: str, score: int, rank: int) -> StockScore:
+        return StockScore(
+            symbol=symbol,
+            score=score,
+            trend="偏多",
+            volume="放量",
+            institutional="連2買",
+            kd_state="多頭延續",
+            trend_score=30,
+            volume_score=25,
+            institutional_score=15,
+            kd_score=18,
+            latest_close=100.0 + rank,
+            ma5=95.0 + rank,
+            ma20=90.0 + rank,
+            k_value=70.0 + rank,
+            d_value=60.0 + rank,
+            volume_ratio=1.5,
+            institutional_consecutive_days=2,
+            institutional_total_net=5000,
+            has_sufficient_data=True,
+            data_issues=[],
+            rank=rank,
+            rank_percentile=100.0 - rank,
+            total_stocks=3
+        )
+
+    def test_lite_report_uses_universe_shared_fields(self):
+        all_scores = [
+            self.make_score("2330", 88, 1),
+            self.make_score("2317", 80, 2),
+            self.make_score("2454", 70, 3),
+        ]
+
+        top_scores = all_scores[:2]
+        full_report = generate_report_v2(
+            top_scores,
+            date_str="2026-04-12",
+            total_stocks_requested=3,
+            total_stocks_analyzed=3,
+            bundle_id="bundle-test"
+        )
+        universe_report = generate_universe_report(all_scores, date_str="2026-04-12", bundle_id="bundle-test")
+        lite_report = generate_lite_report(full_report, universe_report)
+
+        self.assertEqual(lite_report["metadata"]["bundle_id"], "bundle-test")
+        self.assertEqual(lite_report["stocks"][0]["symbol"], universe_report["stocks"][0]["symbol"])
+        self.assertEqual(lite_report["stocks"][0]["score"], universe_report["stocks"][0]["score"])
+        self.assertEqual(lite_report["stocks"][0]["indicators"]["close"], universe_report["stocks"][0]["indicators"]["close"])
+        self.assertEqual(lite_report["stocks"][0]["signals"]["trend"], universe_report["stocks"][0]["trend"])
+
+        validate_report_consistency(full_report, lite_report, universe_report)
+
+    def test_validate_report_consistency_rejects_mismatch(self):
+        all_scores = [
+            self.make_score("2330", 88, 1),
+            self.make_score("2317", 80, 2),
+        ]
+
+        full_report = generate_report_v2(
+            all_scores,
+            date_str="2026-04-12",
+            total_stocks_requested=2,
+            total_stocks_analyzed=2,
+            bundle_id="bundle-test"
+        )
+        universe_report = generate_universe_report(all_scores, date_str="2026-04-12", bundle_id="bundle-test")
+        lite_report = generate_lite_report(full_report, universe_report)
+        lite_report["stocks"][0]["indicators"]["close"] = 999.0
+
+        with self.assertRaises(ValueError):
+            validate_report_consistency(full_report, lite_report, universe_report)
+
+    def test_validate_report_consistency_rejects_bundle_mismatch(self):
+        all_scores = [
+            self.make_score("2330", 88, 1),
+            self.make_score("2317", 80, 2),
+        ]
+
+        full_report = generate_report_v2(
+            all_scores,
+            date_str="2026-04-12",
+            total_stocks_requested=2,
+            total_stocks_analyzed=2,
+            bundle_id="bundle-a"
+        )
+        universe_report = generate_universe_report(all_scores, date_str="2026-04-12", bundle_id="bundle-b")
+        lite_report = generate_lite_report(full_report, universe_report)
+        lite_report["metadata"]["bundle_id"] = "bundle-c"
+
+        with self.assertRaises(ValueError):
+            validate_report_consistency(full_report, lite_report, universe_report)
+
+
 if __name__ == "__main__":
     # 執行單元測試
     print("=" * 60)
@@ -240,6 +338,7 @@ if __name__ == "__main__":
     suite.addTests(loader.loadTestsFromTestCase(TestInstitutionalAggregation))
     suite.addTests(loader.loadTestsFromTestCase(TestVolumeRatio))
     suite.addTests(loader.loadTestsFromTestCase(TestInstitutionalScoring))
+    suite.addTests(loader.loadTestsFromTestCase(TestReportConsistency))
     
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

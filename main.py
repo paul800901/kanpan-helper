@@ -17,11 +17,11 @@ from typing import Optional, Tuple, Dict, List
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from backend.config import get_today_str
+from backend.config import get_today_str, get_taiwan_now
 from backend.fetch_data import fetch_all_stocks, load_cached_data
 from backend.calc_indicators import calculate_all_indicators, StockIndicators
 from backend.ranking import rank_stocks, StockScore
-from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled, generate_universe_report, save_universe_report, save_report
+from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled, generate_universe_report, save_universe_report, save_report, validate_report_consistency
 from backend.report_index import atomic_update_index
 
 
@@ -137,20 +137,29 @@ def run_pipeline(
     # 使用報告日期：如果從快取載入，使用快取日期；否則使用今天
     report_date = date_str if (use_cache and date_str) else get_today_str()
     
+    bundle_id = f"{report_date}-{get_taiwan_now().strftime('%Y%m%dT%H%M%S%f')}"
+
     # 生成 v2 完整報告
     full_report = generate_report_v2(
         top_stocks=top_stocks,
         date_str=report_date,
         total_stocks_requested=total_requested,
-        total_stocks_analyzed=total_analyzed
+        total_stocks_analyzed=total_analyzed,
+        bundle_id=bundle_id
     )
-    
-    # 生成精簡版
-    lite_report = generate_lite_report(full_report)
-    
-    # 儲存兩份報告（此時不更新 index.json，等 universe 生成後一起更新）
+
+    universe_report = generate_universe_report(all_stocks, report_date, bundle_id=bundle_id)
+
+    # 讓首頁與個股頁共用同一份 universe 共用欄位，避免分流後漂移。
+    lite_report = generate_lite_report(full_report, universe_report)
+
+    # 生成前先做同日同源一致性檢查，不通過就直接 fail。
+    validate_report_consistency(full_report, lite_report, universe_report)
+
+    # 儲存報告（此時不更新 index.json，等 universe 與 AI 完成後一起更新）
     full_path = save_report(full_report, report_date, suffix="")
     lite_path = save_report(lite_report, report_date, suffix="-lite")
+    universe_path = save_universe_report(universe_report, report_date)
 
     print(f"[OK] 報告已生成")
     print(f"   完整版: {full_path}")
@@ -175,8 +184,6 @@ def run_pipeline(
     print("\n[Step 6] 生成 Universe 報告 (v6.1)")
     print("-" * 40)
 
-    universe_report = generate_universe_report(all_stocks, report_date)
-    universe_path = save_universe_report(universe_report, report_date)
     print(f"[OK] Universe 報告已生成: {universe_path}")
     print(f"   包含 {universe_report['total_stocks']} 檔股票")
 
