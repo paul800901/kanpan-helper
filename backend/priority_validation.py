@@ -1,4 +1,4 @@
-"""v23 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v24 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
 FACTOR_ANALYSIS_REPORT_VERSION = "v18-factor-analysis"
 FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
-STRATEGY_ANALYSIS_REPORT_VERSION = "v22-strategy-analysis"
+STRATEGY_ANALYSIS_REPORT_VERSION = "v24-strategy-analysis"
 SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 STEADY_V2_BLOCKER_REPORT_VERSION = "v20-steady-v2-blockers"
 TIMING_ALIGNMENT_REPORT_VERSION = "v21-timing-alignment"
@@ -31,6 +31,10 @@ MA20_V2_BAND_PCT = 0.02
 MA20_V2_RECENT_BREAK_LOOKBACK = 3
 TIMING_ALIGNMENT_LOOKAHEAD_DAYS = [1, 2, 3]
 STEADY_V2_SIGNATURE_SHARP_DROP_THRESHOLD_PCT = -3.0
+STEADY_V4_K_MIN = 24.0
+STEADY_V4_K_MAX = 30.0
+STEADY_V4_MA20_DISTANCE_PCT = 0.0208
+STEADY_V4_CLOSE_RETURN_RATIO = 0.7
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -164,6 +168,18 @@ STRATEGY_V3_DEFINITIONS = {
         "factor_names": ["low_k_turn_up"],
         "family": "steady",
         "generation": "v3",
+    },
+}
+
+STRATEGY_V4_DEFINITIONS = {
+    "steady_v4": {
+        "label": "穩定型 v4",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + K 24~30 + 距 MA20 < 2.08%",
+        "selection_hint": "把 v23 的高品質樣本特徵正式寫回策略：保留 KD 翻揚，聚焦 K 已回到較高區間且仍貼近 MA20 的修復型樣本。",
+        "factor_names": ["low_k_turn_up", "steady_v4_k_band", "steady_v4_ma20_distance"],
+        "family": "steady",
+        "generation": "v4",
     },
 }
 
@@ -1209,6 +1225,22 @@ def _is_low_k_turn_up(sample: Dict[str, Any]) -> bool:
     )
 
 
+def _is_steady_v4_k_band(sample: Dict[str, Any]) -> bool:
+    current_k = _candidate_metric(sample, "k")
+    return (
+        current_k is not None
+        and STEADY_V4_K_MIN <= current_k <= STEADY_V4_K_MAX
+    )
+
+
+def _is_steady_v4_ma20_distance(sample: Dict[str, Any]) -> bool:
+    gap_pct = _ma20_gap_pct(sample)
+    return (
+        gap_pct is not None
+        and abs(gap_pct) < STEADY_V4_MA20_DISTANCE_PCT
+    )
+
+
 def _ma20_gap_pct_as_percent(sample: Dict[str, Any]) -> Optional[float]:
     gap_pct = _ma20_gap_pct(sample)
     if gap_pct is None:
@@ -1794,6 +1826,10 @@ def _sample_matches_factor(
         return _is_low_k_turn_up(sample)
     if factor_name == "volume_expand_after_shrink":
         return _is_volume_expand_after_shrink(sample)
+    if factor_name == "steady_v4_k_band":
+        return _is_steady_v4_k_band(sample)
+    if factor_name == "steady_v4_ma20_distance":
+        return _is_steady_v4_ma20_distance(sample)
     raise KeyError(f"未支援的策略因子：{factor_name}")
 
 
@@ -1894,10 +1930,11 @@ def _metric_text(value: Optional[float], suffix: str = "") -> str:
     return f"{value}{suffix}" if value is not None else "資料不足"
 
 
-def _build_steady_v22_comparison(
+def _build_steady_strategy_rebuild_comparison(
     v1_strategy: Optional[Dict[str, Any]],
     v2_strategy: Optional[Dict[str, Any]],
     v3_strategy: Optional[Dict[str, Any]],
+    v4_strategy: Optional[Dict[str, Any]],
     optional_tests: Dict[str, Optional[Dict[str, Any]]],
 ) -> Dict[str, Any]:
     comparison = _build_strategy_variant_comparison(
@@ -1909,10 +1946,13 @@ def _build_steady_v22_comparison(
     v1_hit_count = int((v1_strategy or {}).get("hit_count") or 0)
     v2_hit_count = int((v2_strategy or {}).get("hit_count") or 0)
     v3_hit_count = int((v3_strategy or {}).get("hit_count") or 0)
+    v4_hit_count = int((v4_strategy or {}).get("hit_count") or 0)
     v2_avg_return = _as_float((v2_strategy or {}).get("avg_return_pct"))
     v3_avg_return = _as_float((v3_strategy or {}).get("avg_return_pct"))
+    v4_avg_return = _as_float((v4_strategy or {}).get("avg_return_pct"))
     v2_win_rate = _as_float((v2_strategy or {}).get("win_rate_pct"))
     v3_win_rate = _as_float((v3_strategy or {}).get("win_rate_pct"))
+    v4_win_rate = _as_float((v4_strategy or {}).get("win_rate_pct"))
     optional_test_summaries = {
         test_name: _summarize_strategy(strategy)
         for test_name, strategy in optional_tests.items()
@@ -1931,10 +1971,23 @@ def _build_steady_v22_comparison(
         and v3_win_rate >= v2_win_rate
     )
     meets_v22_goal = v3_hit_count_recovered and v3_avg_return_gt_v2 and v3_win_rate_ge_v2
+    v4_hit_count_gt_v2 = v4_hit_count > v2_hit_count
+    v4_avg_return_ratio_vs_v2 = _round_number(v4_avg_return / v2_avg_return) if v4_avg_return is not None and v2_avg_return not in (None, 0) else None
+    v4_avg_return_close_to_v2 = (
+        v4_avg_return_ratio_vs_v2 is not None
+        and v4_avg_return_ratio_vs_v2 >= STEADY_V4_CLOSE_RETURN_RATIO
+    )
+    v4_win_rate_stable = (
+        v4_win_rate is not None
+        and v3_win_rate is not None
+        and v4_win_rate >= v3_win_rate
+    )
+    meets_v24_goal = v4_hit_count_gt_v2 and v4_avg_return_close_to_v2 and v4_win_rate_stable
 
     return {
         **comparison,
         "v3": _summarize_strategy(v3_strategy),
+        "v4": _summarize_strategy(v4_strategy),
         "optional_tests": optional_test_summaries,
         "optional_test_names": list(optional_tests.keys()),
         "hit_count_delta_v3_vs_v2": v3_hit_count - v2_hit_count,
@@ -1947,26 +2000,37 @@ def _build_steady_v22_comparison(
         "v3_avg_return_gt_v2": v3_avg_return_gt_v2,
         "v3_win_rate_ge_v2": v3_win_rate_ge_v2,
         "meets_v22_goal": meets_v22_goal,
+        "hit_count_delta_v4_vs_v2": v4_hit_count - v2_hit_count,
+        "hit_count_delta_v4_vs_v3": v4_hit_count - v3_hit_count,
+        "avg_return_delta_v4_vs_v2": _safe_diff(v4_avg_return, v2_avg_return),
+        "avg_return_delta_v4_vs_v3": _safe_diff(v4_avg_return, v3_avg_return),
+        "win_rate_delta_v4_vs_v2": _safe_diff(v4_win_rate, v2_win_rate),
+        "win_rate_delta_v4_vs_v3": _safe_diff(v4_win_rate, v3_win_rate),
+        "v4_hit_count_gt_v2": v4_hit_count_gt_v2,
+        "v4_avg_return_ratio_vs_v2": v4_avg_return_ratio_vs_v2,
+        "v4_avg_return_close_to_v2": v4_avg_return_close_to_v2,
+        "v4_win_rate_stable": v4_win_rate_stable,
+        "meets_v24_goal": meets_v24_goal,
         "best_core_by_avg_return": _best_strategy_summary_by_metric(
-            [v1_strategy, v2_strategy, v3_strategy],
+            [v1_strategy, v2_strategy, v3_strategy, v4_strategy],
             "avg_return_pct",
         ),
         "best_core_by_hit_count": _best_strategy_summary_by_metric(
-            [v1_strategy, v2_strategy, v3_strategy],
+            [v1_strategy, v2_strategy, v3_strategy, v4_strategy],
             "hit_count",
         ),
         "best_core_by_win_rate": _best_strategy_summary_by_metric(
-            [v1_strategy, v2_strategy, v3_strategy],
+            [v1_strategy, v2_strategy, v3_strategy, v4_strategy],
             "win_rate_pct",
         ),
         "best_optional_test_by_avg_return": _best_strategy_summary_by_metric(optional_tests.values(), "avg_return_pct"),
         "best_optional_test_by_hit_count": _best_strategy_summary_by_metric(optional_tests.values(), "hit_count"),
         "best_optional_test_by_win_rate": _best_strategy_summary_by_metric(optional_tests.values(), "win_rate_pct"),
         "summary": (
-            "steady_v3 改為只保留 KD 低檔翻揚，"
-            f"相較 steady_v2 命中數 {v2_hit_count}->{v3_hit_count}、"
-            f"平均報酬 {_metric_text(v2_avg_return, '%')}->{_metric_text(v3_avg_return, '%')}、"
-            f"勝率 {_metric_text(v2_win_rate, '%')}->{_metric_text(v3_win_rate, '%')}。"
+            "steady_v4 把 v23 signature 正式寫回策略，"
+            f"相較 steady_v2 命中數 {v2_hit_count}->{v4_hit_count}、"
+            f"平均報酬 {_metric_text(v2_avg_return, '%')}->{_metric_text(v4_avg_return, '%')}、"
+            f"勝率 {_metric_text(v2_win_rate, '%')}->{_metric_text(v4_win_rate, '%')}。"
         ),
     }
 
@@ -3239,6 +3303,16 @@ def generate_strategy_analysis_report(
         )
         for strategy_name, definition in STRATEGY_V3_DEFINITIONS.items()
     }
+    strategies_v4 = {
+        strategy_name: _build_strategy_variant_summary(
+            strategy_name,
+            definition,
+            trading_samples,
+            single_factor_baselines,
+            lower_third_cutoff,
+        )
+        for strategy_name, definition in STRATEGY_V4_DEFINITIONS.items()
+    }
     strategy_experiments = {
         strategy_name: _build_strategy_variant_summary(
             strategy_name,
@@ -3253,6 +3327,7 @@ def generate_strategy_analysis_report(
         **strategies,
         **strategies_v2,
         **strategies_v3,
+        **strategies_v4,
         **strategy_experiments,
     }
 
@@ -3284,10 +3359,11 @@ def generate_strategy_analysis_report(
         "kd_plus_low_position": strategies.get("steady"),
         "kd_plus_volume_expand": strategy_experiments.get("steady_v3_volume"),
     }
-    steady_rewrite_comparison = _build_steady_v22_comparison(
+    steady_rewrite_comparison = _build_steady_strategy_rebuild_comparison(
         strategies.get("steady"),
         strategies_v2.get("steady_v2"),
         strategies_v3.get("steady_v3"),
+        strategies_v4.get("steady_v4"),
         steady_optional_tests,
     )
     strategy_variant_comparison = {
@@ -3328,6 +3404,20 @@ def generate_strategy_analysis_report(
             "summary": steady_rewrite_comparison.get("summary"),
         }
     }
+    v24_summary = {
+        "steady_rebuild": {
+            "target_strategy": "steady_v4",
+            "comparison_variant_names": ["steady_v2", "steady_v3", "steady_v4"],
+            "k_band": {
+                "min": STEADY_V4_K_MIN,
+                "max": STEADY_V4_K_MAX,
+            },
+            "ma20_distance_pct_lt": _round_number(STEADY_V4_MA20_DISTANCE_PCT * 100, digits=2),
+            "close_return_ratio_threshold": STEADY_V4_CLOSE_RETURN_RATIO,
+            "meets_v24_goal": steady_rewrite_comparison.get("meets_v24_goal"),
+            "summary": steady_rewrite_comparison.get("summary"),
+        }
+    }
 
     return {
         "report_version": STRATEGY_ANALYSIS_REPORT_VERSION,
@@ -3338,12 +3428,14 @@ def generate_strategy_analysis_report(
         "strategy_names": list(STRATEGY_DEFINITIONS.keys()),
         "strategy_v2_names": list(STRATEGY_V2_DEFINITIONS.keys()),
         "strategy_v3_names": list(STRATEGY_V3_DEFINITIONS.keys()),
+        "strategy_v4_names": list(STRATEGY_V4_DEFINITIONS.keys()),
         "strategy_experiment_names": list(STEADY_V3_EXPERIMENT_DEFINITIONS.keys()),
         "strategy_variant_names": list(strategy_variants.keys()),
         "low_position_definition": low_position_definition,
         "strategies": strategies,
         "strategies_v2": strategies_v2,
         "strategies_v3": strategies_v3,
+        "strategies_v4": strategies_v4,
         "strategy_experiments": strategy_experiments,
         "strategy_variants": strategy_variants,
         "ranking_by_avg_return": [
@@ -3379,6 +3471,7 @@ def generate_strategy_analysis_report(
         "strategy_variant_comparison": strategy_variant_comparison,
         "v2_summary": v2_summary,
         "v22_summary": v22_summary,
+        "v24_summary": v24_summary,
     }
 
 

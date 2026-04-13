@@ -188,8 +188,8 @@ def run_pipeline(
     print(f"[OK] Universe 報告已生成: {universe_path}")
     print(f"   包含 {universe_report['total_stocks']} 檔股票")
 
-    # Step 7: 產生 context / priority / factor 驗證層（v9 + v23）
-    print("\n[Step 7] 產生 Context、Priority 與 steady v2 特徵分析報告")
+    # Step 7: 產生 context / priority / factor 驗證層（v9 + v24）
+    print("\n[Step 7] 產生 Context、Priority 與 steady v4 策略分析報告")
     print("-" * 40)
 
     validation_result = backfill_priority_validation_reports(target_date=report_date)
@@ -229,7 +229,7 @@ def run_pipeline(
     if validation_result.get("history_window"):
         generated_days = len(validation_result["history_window"].get("generated") or [])
         target_days = len(validation_result["history_window"].get("target_dates") or [])
-        print(f"[OK] v23 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
+        print(f"[OK] v24 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
 
     if validation_result.get("skipped"):
         print(f"[INFO] 有 {len(validation_result['skipped'])} 個歷史日期因缺資料而略過")
