@@ -508,6 +508,15 @@ function cardTextFragments(card) {
     ].map(item => String(item || ''));
 }
 
+function cardNarrativeFragments(card) {
+    return [
+        card.title,
+        card.event,
+        card.anomaly,
+        ...(Array.isArray(card.reasoning_chain) ? card.reasoning_chain : [])
+    ].map(item => String(item || ''));
+}
+
 function isValidCard(card, bannedTerms) {
     if (!card || typeof card !== 'object') return false;
     if (REQUIRED_CARD_FIELDS.some(field => !(field in card))) return false;
@@ -527,7 +536,8 @@ function isValidCard(card, bannedTerms) {
     if (texts.some(text => PROHIBITED_TEXT_SNIPPETS.some(snippet => text.includes(snippet)))) {
         return false;
     }
-    if (texts.some(text => Array.from(bannedTerms).some(term => term && text.includes(term)))) {
+    const narrativeTexts = cardNarrativeFragments(card);
+    if (narrativeTexts.some(text => Array.from(bannedTerms).some(term => term && text.includes(term)))) {
         return false;
     }
 
@@ -641,7 +651,7 @@ async function loadContextCards(date) {
 
         const fallbackCount = cards.filter(card => card.source_type === 'ui_fallback').length;
         if (fallbackCount > 0) {
-            showFallbackBanner(`本頁已自動補上 ${fallbackCount} 張保底卡，原因是部分日期缺少 universe、AI 或 activation 資料。`);
+            showFallbackBanner(`本頁已自動補上 ${fallbackCount} 張保底卡，原因是部分日期缺少資料，或原始內容不符合 v8.1 固定 schema。`);
         } else {
             hideFallbackBanner();
         }
