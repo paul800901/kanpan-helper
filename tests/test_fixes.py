@@ -14,8 +14,9 @@ import unittest
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+import backend.priority_validation as priority_validation_module
 from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
@@ -921,8 +922,18 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertEqual(validation["strategy_baseline_snapshot"]["strategy"], "steady_v5")
         self.assertEqual(validation["evaluated_days"], 2)
         self.assertEqual(len(validation["daily_validation"]), 2)
+        self.assertIn("overall_alpha", validation)
+        self.assertIn("overall_winrate", validation)
+        self.assertIn("segmented_alpha", validation)
+        self.assertIn("segmented_winrate", validation)
+        self.assertIn("rolling_alpha", validation)
+        self.assertIn("rolling_winrate", validation)
         self.assertIn("60d", validation["validation_windows"])
         self.assertIn("120d", validation["validation_windows"])
+        self.assertIn("60d", validation["overall_alpha"])
+        self.assertIn("120d", validation["overall_winrate"])
+        self.assertEqual(validation["segmented_alpha"]["segment_days"], 30)
+        self.assertEqual(validation["rolling_alpha"]["rolling_window_days"], 10)
         self.assertFalse(validation["validation_windows"]["60d"]["is_ready"])
         self.assertFalse(validation["validation_windows"]["120d"]["is_ready"])
         self.assertGreater(validation["validation_windows"]["60d"]["avg_alpha_pct"], 0)
@@ -930,6 +941,49 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertTrue(validation["validation_windows"]["60d"]["has_not_broken"])
         self.assertIsNone(validation["latest_assessment"]["alpha_confirmed"])
         self.assertIn("60 天視窗尚未完成", validation["summary"])
+
+    def test_steady_v5_segmented_and_rolling_validation_helpers(self):
+        base_date = datetime(2026, 1, 1)
+        alpha_by_block = [0.6, 0.4, 0.5, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.3, 0.5, 0.2]
+        daily_records = []
+
+        for index in range(120):
+            block_index = index // 10
+            alpha_pct = alpha_by_block[block_index]
+            next_day_return_pct = 1.2 if index % 5 else -0.2
+            market_return_pct = next_day_return_pct - alpha_pct
+            date_str = (base_date + timedelta(days=index)).strftime("%Y-%m-%d")
+            daily_records.append({
+                "date": date_str,
+                "next_report_date": date_str,
+                "steady_v5_hit_count": 1,
+                "avg_return_pct": next_day_return_pct,
+                "avg_alpha_pct": alpha_pct,
+                "steady_v5_hits": [{
+                    "next_day_return_pct": next_day_return_pct,
+                    "market_return_pct": market_return_pct,
+                    "alpha_pct": alpha_pct,
+                }],
+            })
+
+        segmented = priority_validation_module._build_steady_v5_segmented_validation(120, daily_records)
+        self.assertTrue(segmented["is_ready"])
+        self.assertEqual(segmented["segment_days"], 30)
+        self.assertEqual(len(segmented["segments"]), 4)
+        self.assertEqual(segmented["segments"][0]["label"], "第1段（前30天）")
+        self.assertEqual(segmented["segments"][-1]["label"], "第4段（後30天）")
+        self.assertTrue(segmented["assessment"]["all_segments_alpha_positive"])
+        self.assertTrue(segmented["assessment"]["all_segments_not_broken"])
+
+        rolling = priority_validation_module._build_steady_v5_rolling_validation(120, daily_records)
+        self.assertTrue(rolling["is_ready"])
+        self.assertEqual(rolling["rolling_window_days"], 10)
+        self.assertEqual(rolling["step_days"], 10)
+        self.assertEqual(len(rolling["windows"]), 12)
+        self.assertEqual(rolling["assessment"]["negative_window_count"], 0)
+        self.assertEqual(rolling["assessment"]["longest_negative_streak"], 0)
+        self.assertTrue(rolling["assessment"]["has_no_long_negative_streak"])
+        self.assertTrue(rolling["assessment"]["has_no_long_instability_streak"])
 
 
     def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):

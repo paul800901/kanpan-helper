@@ -45,6 +45,10 @@ STEADY_V5_MIN_HIT_SHARE_VS_V4 = 0.75
 STEADY_V5_MAX_WIN_RATE_DROP_PCT = 10.0
 STEADY_V5_LONG_TERM_WINDOW_DAYS = [60, 120]
 STEADY_V5_LONG_TERM_MIN_AVAILABLE_DATES = max(STEADY_V5_LONG_TERM_WINDOW_DAYS) + 5
+STEADY_V5_LONG_TERM_SEGMENT_DAYS = 30
+STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS = 10
+STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS = 10
+STEADY_V5_LONG_TERM_MAX_NEGATIVE_ROLLING_STREAK = 2
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -3747,12 +3751,17 @@ def _build_steady_v5_long_term_day_summary(
     }
 
 
-def _build_steady_v5_long_term_window_summary(
+def _steady_v5_long_term_window_records(
     window_days: int,
     daily_records: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    return list(daily_records[-window_days:]) if len(daily_records) > window_days else list(daily_records)
+
+
+def _compute_steady_v5_long_term_metrics(
+    observed_records: List[Dict[str, Any]],
     strategy_baseline: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    observed_records = list(daily_records[-window_days:]) if len(daily_records) > window_days else list(daily_records)
     observed_days = len(observed_records)
     hit_day_records = [record for record in observed_records if int(record.get("steady_v5_hit_count") or 0) > 0]
     hit_rows = [item for record in hit_day_records for item in (record.get("steady_v5_hits") or [])]
@@ -3772,7 +3781,6 @@ def _build_steady_v5_long_term_window_summary(
     baseline_avg_return_pct = _as_float((strategy_baseline or {}).get("avg_return_pct"))
     baseline_win_rate_pct = _as_float((strategy_baseline or {}).get("win_rate_pct"))
     baseline_avg_alpha_pct = _as_float((strategy_baseline or {}).get("avg_alpha_pct"))
-    is_ready = len(daily_records) >= window_days
     alpha_positive = avg_alpha_pct > 0 if avg_alpha_pct is not None and total_hits else None
     has_not_broken = (
         avg_return_pct is not None
@@ -3780,6 +3788,45 @@ def _build_steady_v5_long_term_window_summary(
         and avg_return_pct > 0
         and win_rate_pct >= STEADY_V4_TRACKING_STABLE_WIN_RATE_PCT
     ) if total_hits else None
+
+    return {
+        "observed_days": observed_days,
+        "hit_day_records": hit_day_records,
+        "hit_rows": hit_rows,
+        "hit_days": hit_days,
+        "total_hits": total_hits,
+        "avg_return_pct": avg_return_pct,
+        "win_rate_pct": win_rate_pct,
+        "avg_market_return_pct": avg_market_return_pct,
+        "avg_alpha_pct": avg_alpha_pct,
+        "outperform_rate_pct": outperform_rate_pct,
+        "positive_alpha_day_count": positive_alpha_day_count,
+        "positive_return_day_count": positive_return_day_count,
+        "alpha_positive": alpha_positive,
+        "has_not_broken": has_not_broken,
+        "avg_return_delta_vs_strategy_baseline": _safe_diff(avg_return_pct, baseline_avg_return_pct),
+        "win_rate_delta_vs_strategy_baseline": _safe_diff(win_rate_pct, baseline_win_rate_pct),
+        "avg_alpha_delta_vs_strategy_baseline": _safe_diff(avg_alpha_pct, baseline_avg_alpha_pct),
+    }
+
+
+def _build_steady_v5_long_term_window_summary(
+    window_days: int,
+    daily_records: List[Dict[str, Any]],
+    strategy_baseline: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    observed_records = _steady_v5_long_term_window_records(window_days, daily_records)
+    metrics = _compute_steady_v5_long_term_metrics(observed_records, strategy_baseline=strategy_baseline)
+    observed_days = int(metrics.get("observed_days") or 0)
+    hit_days = int(metrics.get("hit_days") or 0)
+    total_hits = int(metrics.get("total_hits") or 0)
+    avg_return_pct = _as_float(metrics.get("avg_return_pct"))
+    win_rate_pct = _as_float(metrics.get("win_rate_pct"))
+    avg_market_return_pct = _as_float(metrics.get("avg_market_return_pct"))
+    avg_alpha_pct = _as_float(metrics.get("avg_alpha_pct"))
+    is_ready = len(daily_records) >= window_days
+    alpha_positive = metrics.get("alpha_positive")
+    has_not_broken = metrics.get("has_not_broken")
 
     if observed_days == 0:
         summary = f"目前沒有可用資料建立 steady_v5 的 {window_days} 天驗證視窗。"
@@ -3806,27 +3853,425 @@ def _build_steady_v5_long_term_window_summary(
         "end_date": observed_records[-1].get("date") if observed_records else None,
         "hit_days": hit_days,
         "hit_day_rate_pct": _round_number((hit_days / observed_days) * 100) if observed_days else None,
-        "positive_alpha_day_count": positive_alpha_day_count,
-        "positive_alpha_day_rate_pct": _round_number((positive_alpha_day_count / hit_days) * 100) if hit_days else None,
-        "positive_return_day_count": positive_return_day_count,
-        "positive_return_day_rate_pct": _round_number((positive_return_day_count / hit_days) * 100) if hit_days else None,
+        "positive_alpha_day_count": metrics.get("positive_alpha_day_count"),
+        "positive_alpha_day_rate_pct": _round_number(((metrics.get("positive_alpha_day_count") or 0) / hit_days) * 100) if hit_days else None,
+        "positive_return_day_count": metrics.get("positive_return_day_count"),
+        "positive_return_day_rate_pct": _round_number(((metrics.get("positive_return_day_count") or 0) / hit_days) * 100) if hit_days else None,
         "total_hits": total_hits,
         "avg_daily_hit_count": _round_number(total_hits / observed_days) if observed_days else None,
         "avg_return_pct": avg_return_pct,
         "win_rate_pct": win_rate_pct,
         "avg_market_return_pct": avg_market_return_pct,
         "avg_alpha_pct": avg_alpha_pct,
-        "outperform_rate_pct": outperform_rate_pct,
-        "avg_return_delta_vs_strategy_baseline": _safe_diff(avg_return_pct, baseline_avg_return_pct),
-        "win_rate_delta_vs_strategy_baseline": _safe_diff(win_rate_pct, baseline_win_rate_pct),
-        "avg_alpha_delta_vs_strategy_baseline": _safe_diff(avg_alpha_pct, baseline_avg_alpha_pct),
+        "outperform_rate_pct": metrics.get("outperform_rate_pct"),
+        "avg_return_delta_vs_strategy_baseline": metrics.get("avg_return_delta_vs_strategy_baseline"),
+        "win_rate_delta_vs_strategy_baseline": metrics.get("win_rate_delta_vs_strategy_baseline"),
+        "avg_alpha_delta_vs_strategy_baseline": metrics.get("avg_alpha_delta_vs_strategy_baseline"),
         "alpha_positive": alpha_positive,
         "has_not_broken": has_not_broken,
         "summary": summary,
     }
 
 
-def _build_steady_v5_long_term_assessment(validation_windows: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+def _steady_v5_long_term_segment_label(segment_index: int, segment_count: int) -> str:
+    if segment_count == 2:
+        return "前30天" if segment_index == 0 else "後30天"
+    if segment_index == 0:
+        return f"第{segment_index + 1}段（前30天）"
+    if segment_index == segment_count - 1:
+        return f"第{segment_index + 1}段（後30天）"
+    return f"第{segment_index + 1}段"
+
+
+def _build_steady_v5_segmented_validation(
+    window_days: int,
+    daily_records: List[Dict[str, Any]],
+    strategy_baseline: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    observed_records = _steady_v5_long_term_window_records(window_days, daily_records)
+    segment_records = [
+        observed_records[index:index + STEADY_V5_LONG_TERM_SEGMENT_DAYS]
+        for index in range(0, len(observed_records), STEADY_V5_LONG_TERM_SEGMENT_DAYS)
+    ]
+    segment_count = len(segment_records)
+    segments = []
+    for segment_index, records in enumerate(segment_records):
+        metrics = _compute_steady_v5_long_term_metrics(records, strategy_baseline=strategy_baseline)
+        label = _steady_v5_long_term_segment_label(segment_index, segment_count)
+        total_hits = int(metrics.get("total_hits") or 0)
+        avg_alpha_pct = _as_float(metrics.get("avg_alpha_pct"))
+        avg_return_pct = _as_float(metrics.get("avg_return_pct"))
+        win_rate_pct = _as_float(metrics.get("win_rate_pct"))
+        if total_hits == 0:
+            summary = f"{label}沒有 steady_v5 命中，無法驗證該段 alpha 與勝率。"
+        else:
+            summary = (
+                f"{label}命中 {total_hits} 檔 / {metrics.get('hit_days') or 0} 天，"
+                f"平均 alpha {_metric_text(avg_alpha_pct, '%')}、"
+                f"勝率 {_metric_text(win_rate_pct, '%')}、"
+                f"平均隔日報酬 {_metric_text(avg_return_pct, '%')}。"
+            )
+        segments.append({
+            "segment_index": segment_index + 1,
+            "label": label,
+            "start_date": records[0].get("date") if records else None,
+            "end_date": records[-1].get("date") if records else None,
+            "observed_days": len(records),
+            "hit_days": metrics.get("hit_days"),
+            "total_hits": total_hits,
+            "avg_return_pct": avg_return_pct,
+            "win_rate_pct": win_rate_pct,
+            "avg_alpha_pct": avg_alpha_pct,
+            "alpha_positive": metrics.get("alpha_positive"),
+            "has_not_broken": metrics.get("has_not_broken"),
+            "summary": summary,
+        })
+
+    segments_with_hits = [item for item in segments if int(item.get("total_hits") or 0) > 0]
+    positive_segment_count = sum(1 for item in segments_with_hits if item.get("alpha_positive") is True)
+    negative_segment_count = sum(1 for item in segments_with_hits if item.get("alpha_positive") is False)
+    stable_segment_count = sum(1 for item in segments_with_hits if item.get("has_not_broken") is True)
+    unstable_segment_count = sum(1 for item in segments_with_hits if item.get("has_not_broken") is False)
+    all_segments_alpha_positive = bool(segments_with_hits) and negative_segment_count == 0
+    all_segments_not_broken = bool(segments_with_hits) and unstable_segment_count == 0
+    if not segments_with_hits:
+        alpha_summary = f"{window_days} 天視窗各分段都沒有 steady_v5 命中，無法分段驗證 alpha。"
+        winrate_summary = f"{window_days} 天視窗各分段都沒有 steady_v5 命中，無法分段驗證勝率。"
+    else:
+        alpha_summary = (
+            f"{window_days} 天視窗共有 {len(segments_with_hits)} 個有命中的 30 天分段，"
+            f"其中 {positive_segment_count} 段 alpha 為正、{negative_segment_count} 段 alpha 為負。"
+        )
+        winrate_summary = (
+            f"{window_days} 天視窗共有 {len(segments_with_hits)} 個有命中的 30 天分段，"
+            f"其中 {stable_segment_count} 段沒有崩壞、{unstable_segment_count} 段穩定性不足。"
+        )
+    return {
+        "window_days": window_days,
+        "is_ready": len(daily_records) >= window_days,
+        "segment_days": STEADY_V5_LONG_TERM_SEGMENT_DAYS,
+        "segments": segments,
+        "assessment": {
+            "segment_count": len(segments),
+            "segments_with_hits_count": len(segments_with_hits),
+            "positive_segment_count": positive_segment_count,
+            "negative_segment_count": negative_segment_count,
+            "stable_segment_count": stable_segment_count,
+            "unstable_segment_count": unstable_segment_count,
+            "all_segments_alpha_positive": all_segments_alpha_positive if segments_with_hits else None,
+            "all_segments_not_broken": all_segments_not_broken if segments_with_hits else None,
+            "alpha_summary": alpha_summary,
+            "winrate_summary": winrate_summary,
+        },
+    }
+
+
+def _longest_negative_streak(flags: List[Optional[bool]]) -> int:
+    longest = 0
+    current = 0
+    for flag in flags:
+        if flag is False:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
+
+
+def _build_steady_v5_rolling_validation(
+    window_days: int,
+    daily_records: List[Dict[str, Any]],
+    strategy_baseline: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    observed_records = _steady_v5_long_term_window_records(window_days, daily_records)
+    rolling_windows = []
+    if len(observed_records) >= STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS:
+        for end_index in range(
+            STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+            len(observed_records) + 1,
+            STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+        ):
+            start_index = end_index - STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS
+            records = observed_records[start_index:end_index]
+            metrics = _compute_steady_v5_long_term_metrics(records, strategy_baseline=strategy_baseline)
+            total_hits = int(metrics.get("total_hits") or 0)
+            avg_alpha_pct = _as_float(metrics.get("avg_alpha_pct"))
+            win_rate_pct = _as_float(metrics.get("win_rate_pct"))
+            avg_return_pct = _as_float(metrics.get("avg_return_pct"))
+            if total_hits == 0:
+                summary = f"第{len(rolling_windows) + 1} 個 10 天 rolling 視窗沒有 steady_v5 命中。"
+            else:
+                summary = (
+                    f"第{len(rolling_windows) + 1} 個 10 天 rolling 視窗，"
+                    f"平均 alpha {_metric_text(avg_alpha_pct, '%')}、"
+                    f"勝率 {_metric_text(win_rate_pct, '%')}、"
+                    f"平均隔日報酬 {_metric_text(avg_return_pct, '%')}。"
+                )
+            rolling_windows.append({
+                "window_index": len(rolling_windows) + 1,
+                "start_date": records[0].get("date") if records else None,
+                "end_date": records[-1].get("date") if records else None,
+                "observed_days": len(records),
+                "hit_days": metrics.get("hit_days"),
+                "total_hits": total_hits,
+                "avg_return_pct": avg_return_pct,
+                "win_rate_pct": win_rate_pct,
+                "avg_alpha_pct": avg_alpha_pct,
+                "alpha_positive": metrics.get("alpha_positive"),
+                "has_not_broken": metrics.get("has_not_broken"),
+                "summary": summary,
+            })
+
+    rolling_windows_with_hits = [item for item in rolling_windows if int(item.get("total_hits") or 0) > 0]
+    negative_window_count = sum(1 for item in rolling_windows_with_hits if item.get("alpha_positive") is False)
+    stable_window_count = sum(1 for item in rolling_windows_with_hits if item.get("has_not_broken") is True)
+    unstable_window_count = sum(1 for item in rolling_windows_with_hits if item.get("has_not_broken") is False)
+    longest_negative_streak = _longest_negative_streak([
+        item.get("alpha_positive") if int(item.get("total_hits") or 0) > 0 else None
+        for item in rolling_windows
+    ])
+    longest_unstable_streak = _longest_negative_streak([
+        item.get("has_not_broken") if int(item.get("total_hits") or 0) > 0 else None
+        for item in rolling_windows
+    ])
+    has_no_long_negative_streak = (
+        longest_negative_streak <= STEADY_V5_LONG_TERM_MAX_NEGATIVE_ROLLING_STREAK
+        if rolling_windows_with_hits else None
+    )
+    has_no_long_instability_streak = (
+        longest_unstable_streak <= STEADY_V5_LONG_TERM_MAX_NEGATIVE_ROLLING_STREAK
+        if rolling_windows_with_hits else None
+    )
+    if not rolling_windows_with_hits:
+        alpha_summary = f"{window_days} 天視窗的 10 天 rolling 視窗都沒有 steady_v5 命中，無法檢查 alpha 連續性。"
+        winrate_summary = f"{window_days} 天視窗的 10 天 rolling 視窗都沒有 steady_v5 命中，無法檢查勝率連續性。"
+    else:
+        alpha_summary = (
+            f"{window_days} 天視窗共有 {len(rolling_windows_with_hits)} 個有命中的 10 天 rolling 視窗，"
+            f"其中 {negative_window_count} 個 alpha 為負，最長連續負 alpha {longest_negative_streak} 窗。"
+        )
+        winrate_summary = (
+            f"{window_days} 天視窗共有 {len(rolling_windows_with_hits)} 個有命中的 10 天 rolling 視窗，"
+            f"其中 {stable_window_count} 窗沒有崩壞、{unstable_window_count} 窗穩定性不足，"
+            f"最長連續不穩定 {longest_unstable_streak} 窗。"
+        )
+    return {
+        "window_days": window_days,
+        "is_ready": len(daily_records) >= window_days,
+        "rolling_window_days": STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+        "step_days": STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+        "windows": rolling_windows,
+        "assessment": {
+            "window_count": len(rolling_windows),
+            "windows_with_hits_count": len(rolling_windows_with_hits),
+            "negative_window_count": negative_window_count,
+            "stable_window_count": stable_window_count,
+            "unstable_window_count": unstable_window_count,
+            "longest_negative_streak": longest_negative_streak,
+            "longest_unstable_streak": longest_unstable_streak,
+            "has_no_long_negative_streak": has_no_long_negative_streak,
+            "has_no_long_instability_streak": has_no_long_instability_streak,
+            "alpha_summary": alpha_summary,
+            "winrate_summary": winrate_summary,
+        },
+    }
+
+
+def _build_steady_v5_overall_alpha(validation_windows: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    return {
+        window_name: {
+            "window_days": item.get("window_days"),
+            "is_ready": item.get("is_ready"),
+            "observed_days": item.get("observed_days"),
+            "total_hits": item.get("total_hits"),
+            "avg_market_return_pct": item.get("avg_market_return_pct"),
+            "avg_alpha_pct": item.get("avg_alpha_pct"),
+            "alpha_positive": item.get("alpha_positive"),
+            "summary": item.get("summary"),
+        }
+        for window_name, item in validation_windows.items()
+    }
+
+
+def _build_steady_v5_overall_winrate(validation_windows: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    return {
+        window_name: {
+            "window_days": item.get("window_days"),
+            "is_ready": item.get("is_ready"),
+            "observed_days": item.get("observed_days"),
+            "total_hits": item.get("total_hits"),
+            "avg_return_pct": item.get("avg_return_pct"),
+            "win_rate_pct": item.get("win_rate_pct"),
+            "has_not_broken": item.get("has_not_broken"),
+            "summary": item.get("summary"),
+        }
+        for window_name, item in validation_windows.items()
+    }
+
+
+def _build_steady_v5_segmented_alpha(segmented_validation: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "segment_days": STEADY_V5_LONG_TERM_SEGMENT_DAYS,
+        "windows": {
+            window_name: {
+                "window_days": item.get("window_days"),
+                "is_ready": item.get("is_ready"),
+                "segments": [
+                    {
+                        "segment_index": segment.get("segment_index"),
+                        "label": segment.get("label"),
+                        "start_date": segment.get("start_date"),
+                        "end_date": segment.get("end_date"),
+                        "observed_days": segment.get("observed_days"),
+                        "hit_days": segment.get("hit_days"),
+                        "total_hits": segment.get("total_hits"),
+                        "avg_alpha_pct": segment.get("avg_alpha_pct"),
+                        "alpha_positive": segment.get("alpha_positive"),
+                        "summary": segment.get("summary"),
+                    }
+                    for segment in item.get("segments") or []
+                ],
+                "assessment": {
+                    "segment_count": (item.get("assessment") or {}).get("segment_count"),
+                    "segments_with_hits_count": (item.get("assessment") or {}).get("segments_with_hits_count"),
+                    "positive_segment_count": (item.get("assessment") or {}).get("positive_segment_count"),
+                    "negative_segment_count": (item.get("assessment") or {}).get("negative_segment_count"),
+                    "all_segments_alpha_positive": (item.get("assessment") or {}).get("all_segments_alpha_positive"),
+                    "summary": (item.get("assessment") or {}).get("alpha_summary"),
+                },
+            }
+            for window_name, item in segmented_validation.items()
+        },
+    }
+
+
+def _build_steady_v5_segmented_winrate(segmented_validation: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "segment_days": STEADY_V5_LONG_TERM_SEGMENT_DAYS,
+        "windows": {
+            window_name: {
+                "window_days": item.get("window_days"),
+                "is_ready": item.get("is_ready"),
+                "segments": [
+                    {
+                        "segment_index": segment.get("segment_index"),
+                        "label": segment.get("label"),
+                        "start_date": segment.get("start_date"),
+                        "end_date": segment.get("end_date"),
+                        "observed_days": segment.get("observed_days"),
+                        "hit_days": segment.get("hit_days"),
+                        "total_hits": segment.get("total_hits"),
+                        "avg_return_pct": segment.get("avg_return_pct"),
+                        "win_rate_pct": segment.get("win_rate_pct"),
+                        "has_not_broken": segment.get("has_not_broken"),
+                        "summary": segment.get("summary"),
+                    }
+                    for segment in item.get("segments") or []
+                ],
+                "assessment": {
+                    "segment_count": (item.get("assessment") or {}).get("segment_count"),
+                    "segments_with_hits_count": (item.get("assessment") or {}).get("segments_with_hits_count"),
+                    "stable_segment_count": (item.get("assessment") or {}).get("stable_segment_count"),
+                    "unstable_segment_count": (item.get("assessment") or {}).get("unstable_segment_count"),
+                    "all_segments_not_broken": (item.get("assessment") or {}).get("all_segments_not_broken"),
+                    "summary": (item.get("assessment") or {}).get("winrate_summary"),
+                },
+            }
+            for window_name, item in segmented_validation.items()
+        },
+    }
+
+
+def _build_steady_v5_rolling_alpha(rolling_validation: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "rolling_window_days": STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+        "step_days": STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+        "windows": {
+            window_name: {
+                "window_days": item.get("window_days"),
+                "is_ready": item.get("is_ready"),
+                "rolling_windows": [
+                    {
+                        "window_index": window.get("window_index"),
+                        "start_date": window.get("start_date"),
+                        "end_date": window.get("end_date"),
+                        "observed_days": window.get("observed_days"),
+                        "hit_days": window.get("hit_days"),
+                        "total_hits": window.get("total_hits"),
+                        "avg_alpha_pct": window.get("avg_alpha_pct"),
+                        "alpha_positive": window.get("alpha_positive"),
+                        "summary": window.get("summary"),
+                    }
+                    for window in item.get("windows") or []
+                ],
+                "assessment": {
+                    "window_count": (item.get("assessment") or {}).get("window_count"),
+                    "windows_with_hits_count": (item.get("assessment") or {}).get("windows_with_hits_count"),
+                    "negative_window_count": (item.get("assessment") or {}).get("negative_window_count"),
+                    "longest_negative_streak": (item.get("assessment") or {}).get("longest_negative_streak"),
+                    "has_no_long_negative_streak": (item.get("assessment") or {}).get("has_no_long_negative_streak"),
+                    "summary": (item.get("assessment") or {}).get("alpha_summary"),
+                },
+            }
+            for window_name, item in rolling_validation.items()
+        },
+    }
+
+
+def _build_steady_v5_rolling_winrate(rolling_validation: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "rolling_window_days": STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+        "step_days": STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+        "windows": {
+            window_name: {
+                "window_days": item.get("window_days"),
+                "is_ready": item.get("is_ready"),
+                "rolling_windows": [
+                    {
+                        "window_index": window.get("window_index"),
+                        "start_date": window.get("start_date"),
+                        "end_date": window.get("end_date"),
+                        "observed_days": window.get("observed_days"),
+                        "hit_days": window.get("hit_days"),
+                        "total_hits": window.get("total_hits"),
+                        "avg_return_pct": window.get("avg_return_pct"),
+                        "win_rate_pct": window.get("win_rate_pct"),
+                        "has_not_broken": window.get("has_not_broken"),
+                        "summary": window.get("summary"),
+                    }
+                    for window in item.get("windows") or []
+                ],
+                "assessment": {
+                    "window_count": (item.get("assessment") or {}).get("window_count"),
+                    "windows_with_hits_count": (item.get("assessment") or {}).get("windows_with_hits_count"),
+                    "stable_window_count": (item.get("assessment") or {}).get("stable_window_count"),
+                    "unstable_window_count": (item.get("assessment") or {}).get("unstable_window_count"),
+                    "longest_unstable_streak": (item.get("assessment") or {}).get("longest_unstable_streak"),
+                    "has_no_long_instability_streak": (item.get("assessment") or {}).get("has_no_long_instability_streak"),
+                    "summary": (item.get("assessment") or {}).get("winrate_summary"),
+                },
+            }
+            for window_name, item in rolling_validation.items()
+        },
+    }
+
+
+def _all_ready_window_assessment(validation: Dict[str, Dict[str, Any]], field_name: str) -> Optional[bool]:
+    ready_values = []
+    for item in validation.values():
+        if not item.get("is_ready"):
+            continue
+        ready_values.append((item.get("assessment") or {}).get(field_name))
+    if not ready_values or any(value is None for value in ready_values):
+        return None
+    return all(bool(value) for value in ready_values)
+
+
+def _build_steady_v5_long_term_assessment(
+    validation_windows: Dict[str, Dict[str, Any]],
+    segmented_validation: Optional[Dict[str, Dict[str, Any]]] = None,
+    rolling_validation: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
     short_window = validation_windows.get("60d") or {}
     long_window = validation_windows.get("120d") or {}
     short_ready = bool(short_window.get("is_ready"))
@@ -3835,6 +4280,10 @@ def _build_steady_v5_long_term_assessment(validation_windows: Dict[str, Dict[str
     long_alpha = long_window.get("alpha_positive")
     short_stable = short_window.get("has_not_broken")
     long_stable = long_window.get("has_not_broken")
+    segmented_alpha_confirmed = _all_ready_window_assessment(segmented_validation or {}, "all_segments_alpha_positive")
+    segmented_stability_confirmed = _all_ready_window_assessment(segmented_validation or {}, "all_segments_not_broken")
+    rolling_alpha_confirmed = _all_ready_window_assessment(rolling_validation or {}, "has_no_long_negative_streak")
+    rolling_winrate_confirmed = _all_ready_window_assessment(rolling_validation or {}, "has_no_long_instability_streak")
 
     if not short_ready:
         alpha_confirmed = None
@@ -3847,11 +4296,17 @@ def _build_steady_v5_long_term_assessment(validation_windows: Dict[str, Dict[str
     elif long_ready:
         alpha_confirmed = bool(short_alpha and long_alpha)
         stability_confirmed = bool(short_stable and long_stable)
-        not_overfit = bool(alpha_confirmed and stability_confirmed)
+        not_overfit = bool(
+            alpha_confirmed
+            and stability_confirmed
+            and segmented_alpha_confirmed
+            and segmented_stability_confirmed
+            and rolling_alpha_confirmed
+        )
         if not_overfit:
-            summary = "60 天與 120 天視窗都顯示 steady_v5 alpha 維持為正，且表現沒有崩壞。"
-        elif short_alpha and short_stable:
-            summary = "60 天視窗維持正 alpha 且沒有崩壞，但 120 天視窗尚未延續相同結論。"
+            summary = "60/120 天 overall、30 天分段與 10 天 rolling 都顯示 steady_v5 alpha 維持為正，且表現沒有崩壞。"
+        elif alpha_confirmed and stability_confirmed:
+            summary = "60 天與 120 天 overall 指標仍為正，但分段或 rolling 驗證沒有完全延續相同結論。"
         else:
             summary = "60 天與 120 天視窗未能同時確認 steady_v5 的正 alpha 與穩定性。"
     else:
@@ -3869,6 +4324,10 @@ def _build_steady_v5_long_term_assessment(validation_windows: Dict[str, Dict[str
         "secondary_window": "120d",
         "alpha_confirmed": alpha_confirmed,
         "stability_confirmed": stability_confirmed,
+        "segmented_alpha_confirmed": segmented_alpha_confirmed,
+        "segmented_stability_confirmed": segmented_stability_confirmed,
+        "rolling_alpha_confirmed": rolling_alpha_confirmed,
+        "rolling_winrate_confirmed": rolling_winrate_confirmed,
         "not_overfit": not_overfit,
         "long_window_ready": long_ready,
         "long_window_alpha_confirmed": long_alpha if long_ready else None,
@@ -3939,7 +4398,27 @@ def generate_steady_v5_long_term_validation_report(
         )
         for window_days in STEADY_V5_LONG_TERM_WINDOW_DAYS
     }
-    latest_assessment = _build_steady_v5_long_term_assessment(validation_windows)
+    segmented_validation = {
+        f"{window_days}d": _build_steady_v5_segmented_validation(
+            window_days,
+            daily_validation,
+            strategy_baseline=strategy_baseline,
+        )
+        for window_days in STEADY_V5_LONG_TERM_WINDOW_DAYS
+    }
+    rolling_validation = {
+        f"{window_days}d": _build_steady_v5_rolling_validation(
+            window_days,
+            daily_validation,
+            strategy_baseline=strategy_baseline,
+        )
+        for window_days in STEADY_V5_LONG_TERM_WINDOW_DAYS
+    }
+    latest_assessment = _build_steady_v5_long_term_assessment(
+        validation_windows,
+        segmented_validation=segmented_validation,
+        rolling_validation=rolling_validation,
+    )
 
     return {
         "report_version": STEADY_V5_LONG_TERM_VALIDATION_REPORT_VERSION,
@@ -3968,6 +4447,16 @@ def generate_steady_v5_long_term_validation_report(
                 "requires_positive_avg_return": True,
                 "description": f"窗口內 steady_v5 平均隔日報酬 > 0，且勝率 >= {STEADY_V4_TRACKING_STABLE_WIN_RATE_PCT}% 視為沒有崩壞。",
             },
+            "segmented": {
+                "segment_days": STEADY_V5_LONG_TERM_SEGMENT_DAYS,
+                "description": "把 60 天拆成前 30 天 / 後 30 天，120 天拆成 4 段，每段分開檢查 alpha、勝率與報酬。",
+            },
+            "rolling": {
+                "rolling_window_days": STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+                "step_days": STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+                "max_negative_streak_windows": STEADY_V5_LONG_TERM_MAX_NEGATIVE_ROLLING_STREAK,
+                "description": "每 10 天檢查一次 rolling alpha / winrate；連續 3 個 rolling 視窗 alpha 為負，視為長時間為負。",
+            },
             "history_requirement": {
                 "min_available_dates": STEADY_V5_LONG_TERM_MIN_AVAILABLE_DATES,
                 "description": "至少需要 125 個可回放日期，才能在市場基準對齊後形成完整 120 天可評估視窗。",
@@ -3975,6 +4464,12 @@ def generate_steady_v5_long_term_validation_report(
         },
         "strategy_baseline_snapshot": _summarize_strategy(strategy_baseline),
         "strategy_alpha_baseline_snapshot": ((strategy_report.get("strategy_alpha_profiles") or {}).get("steady_v5")) or {},
+        "overall_alpha": _build_steady_v5_overall_alpha(validation_windows),
+        "overall_winrate": _build_steady_v5_overall_winrate(validation_windows),
+        "segmented_alpha": _build_steady_v5_segmented_alpha(segmented_validation),
+        "segmented_winrate": _build_steady_v5_segmented_winrate(segmented_validation),
+        "rolling_alpha": _build_steady_v5_rolling_alpha(rolling_validation),
+        "rolling_winrate": _build_steady_v5_rolling_winrate(rolling_validation),
         "validation_windows": validation_windows,
         "latest_assessment": latest_assessment,
         "daily_validation": daily_validation,
