@@ -1,4 +1,4 @@
-"""v29 排序驗證層：每日 priority 快照、單因子、組合、策略、訊號密度、長期驗證與 regime 分析。"""
+"""v30 排序驗證層：每日 priority 快照、單因子、組合、策略、訊號密度、長期驗證、regime 分析與啟用判斷。"""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ STEADY_V4_TRACKING_REPORT_VERSION = "v25-steady-v4-tracking"
 STEADY_V4_ALPHA_BREAKDOWN_REPORT_VERSION = "v26-steady-v4-alpha-breakdown"
 STEADY_V5_LONG_TERM_VALIDATION_REPORT_VERSION = "v28-steady-v5-long-term-validation"
 STEADY_V5_REGIME_ANALYSIS_REPORT_VERSION = "v29-steady-v5-regime-analysis"
+STRATEGY_ACTIVATION_REPORT_VERSION = "v30-strategy-activation"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -56,6 +57,8 @@ STEADY_V5_REGIME_DIRECTIONAL_EFFICIENCY_THRESHOLD_PCT = 60.0
 STEADY_V5_REGIME_FRONT_SAMPLE_SIZE = 10
 STEADY_V5_REGIME_CONCENTRATION_SHARE_PCT = 50.0
 STEADY_V5_REGIME_VOLUME_EXPANSION_RATIO = 1.0
+STEADY_V5_ACTIVATION_TREND_WINDOW_DAYS = STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS
+STEADY_V5_ACTIVATION_DOWNWEIGHT_MIN_PASS_COUNT = 2
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -449,6 +452,10 @@ def _steady_v5_long_term_validation_path(base_dir: Optional[Path] = None) -> Pat
 
 def _steady_v5_regime_analysis_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "steady_v5_regime_analysis.json"
+
+
+def _strategy_activation_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "strategy_activation.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -4992,6 +4999,229 @@ def generate_steady_v5_regime_analysis_report(
     }
 
 
+def _simplify_steady_v5_capital_concentration(label: Optional[str]) -> Optional[str]:
+    normalized = str(label or "").strip()
+    if not normalized:
+        return None
+    if normalized == "分散輪動":
+        return "分散"
+    if normalized == "族群集中":
+        return "集中"
+    return normalized
+
+
+def _build_strategy_activation_market_snapshot(
+    as_of_date: str,
+    market_lookup: Dict[str, Optional[float]],
+    lookback_days: int = STEADY_V5_ACTIVATION_TREND_WINDOW_DAYS,
+) -> Dict[str, Any]:
+    market_dates = sorted(
+        date_str
+        for date_str, close in market_lookup.items()
+        if close is not None and DATE_PATTERN.match(str(date_str)) and str(date_str) <= as_of_date
+    )
+    window_dates = market_dates[-(lookback_days + 1):]
+    daily_market_returns = []
+    for current_date, next_date in zip(window_dates, window_dates[1:]):
+        market_return_pct = _market_return(current_date, next_date, market_lookup)
+        if market_return_pct is None:
+            continue
+        daily_market_returns.append({
+            "date": current_date,
+            "next_report_date": next_date,
+            "market_return_pct": market_return_pct,
+        })
+
+    snapshot = _build_steady_v5_regime_market_snapshot(daily_market_returns)
+    return {
+        **snapshot,
+        "as_of_date": as_of_date,
+        "lookback_days": lookback_days,
+        "available_return_days": len(daily_market_returns),
+        "window_start_date": daily_market_returns[0].get("date") if daily_market_returns else None,
+        "window_end_date": daily_market_returns[-1].get("next_report_date") if daily_market_returns else None,
+        "daily_market_returns": daily_market_returns,
+    }
+
+
+def _build_strategy_activation_gate_checks(
+    market_snapshot: Dict[str, Any],
+    flow_snapshot: Dict[str, Any],
+) -> Dict[str, Dict[str, Any]]:
+    capital_concentration = _simplify_steady_v5_capital_concentration(flow_snapshot.get("sector_concentration"))
+    checks = {
+        "market_trend": {
+            "label": "大盤趨勢",
+            "required": "上升",
+            "actual": market_snapshot.get("market_trend"),
+        },
+        "capital_concentration": {
+            "label": "資金集中度",
+            "required": "分散",
+            "actual": capital_concentration,
+        },
+        "volume": {
+            "label": "量能",
+            "required": "放量",
+            "actual": flow_snapshot.get("volume_regime"),
+        },
+    }
+    for check in checks.values():
+        check["passed"] = check.get("actual") == check.get("required")
+    return checks
+
+
+def _build_strategy_activation_decision(
+    as_of_date: str,
+    gate_checks: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    pass_count = sum(1 for check in gate_checks.values() if check.get("passed"))
+    total_count = len(gate_checks)
+    met_conditions = [check.get("label") for check in gate_checks.values() if check.get("passed")]
+    failed_conditions = [check.get("label") for check in gate_checks.values() if not check.get("passed")]
+    actual_state_text = "、".join(
+        f"{check.get('label')}{check.get('actual') or '資料不足'}"
+        for check in gate_checks.values()
+    )
+
+    if pass_count == total_count:
+        action = "啟用"
+        weight_multiplier = 1.0
+        steady_v5_enabled = True
+        summary = (
+            f"{as_of_date} {actual_state_text}，符合 steady_v5 的『上升 + 分散 + 放量』條件，"
+            "今日可啟用 steady_v5。"
+        )
+    elif pass_count >= STEADY_V5_ACTIVATION_DOWNWEIGHT_MIN_PASS_COUNT:
+        action = "降權"
+        weight_multiplier = 0.5
+        steady_v5_enabled = False
+        summary = (
+            f"{as_of_date} 只通過 {pass_count}/{total_count} 項條件（{actual_state_text}），"
+            "未達 steady_v5 完整啟用門檻，今日建議降權觀察。"
+        )
+    else:
+        action = "關閉"
+        weight_multiplier = 0.0
+        steady_v5_enabled = False
+        summary = (
+            f"{as_of_date} 只通過 {pass_count}/{total_count} 項條件（{actual_state_text}），"
+            "不符合 steady_v5 的適用市場，今日建議關閉。"
+        )
+
+    return {
+        "steady_v5_enabled": steady_v5_enabled,
+        "action": action,
+        "weight_multiplier": weight_multiplier,
+        "pass_count": pass_count,
+        "total_condition_count": total_count,
+        "met_conditions": met_conditions,
+        "failed_conditions": failed_conditions,
+        "sniper_unaffected": True,
+        "summary": summary,
+    }
+
+
+def generate_strategy_activation_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    regime_analysis_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    universe_lookup = universe_reports_by_date or {}
+    available_dates = sorted({
+        str(item.get("date") or "")
+        for item in ordered_reports
+        if DATE_PATTERN.match(str(item.get("date") or ""))
+    } | {
+        str(date_str)
+        for date_str in universe_lookup.keys()
+        if DATE_PATTERN.match(str(date_str))
+    })
+    if not available_dates:
+        raise ValueError("缺少 priority / universe 日期，無法建立 strategy_activation 報告。")
+
+    current_date = available_dates[-1]
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    flow_snapshot = _build_steady_v5_regime_flow_snapshot([
+        {"date": current_date},
+    ], universe_lookup)
+    market_snapshot = _build_strategy_activation_market_snapshot(current_date, market_lookup)
+    gate_checks = _build_strategy_activation_gate_checks(market_snapshot, flow_snapshot)
+    decision = _build_strategy_activation_decision(current_date, gate_checks)
+
+    if regime_analysis_report is None and ordered_reports:
+        regime_analysis_report = generate_steady_v5_regime_analysis_report(
+            ordered_reports,
+            market_prices=market_prices,
+            universe_reports_by_date=universe_lookup,
+        )
+    regime_answers = (regime_analysis_report or {}).get("answers") or {}
+
+    return {
+        "report_version": STRATEGY_ACTIVATION_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "as_of_date": current_date,
+        "activation_target": {
+            "strategy": "steady_v5",
+            "family": "steady",
+            "generation": "v5",
+            "unaffected_strategies": ["sniper", "sniper_v2"],
+            "uses_ai": False,
+        },
+        "assessment_rules": {
+            "market_trend": {
+                "required": "上升",
+                "lookback_days": STEADY_V5_ACTIVATION_TREND_WINDOW_DAYS,
+                "description": f"以最近 {STEADY_V5_ACTIVATION_TREND_WINDOW_DAYS} 個交易日的大盤累積報酬判斷；累積報酬 > 0 視為上升。",
+            },
+            "capital_concentration": {
+                "required": "分散",
+                "front_sample_size": STEADY_V5_REGIME_FRONT_SAMPLE_SIZE,
+                "top_two_category_share_threshold_pct": STEADY_V5_REGIME_CONCENTRATION_SHARE_PCT,
+                "description": "用當日前 10 名 universe 股票判斷；前兩大類別占比 < 50% 視為分散，否則視為集中。",
+            },
+            "volume": {
+                "required": "放量",
+                "front_sample_size": STEADY_V5_REGIME_FRONT_SAMPLE_SIZE,
+                "avg_volume_ratio_threshold": STEADY_V5_REGIME_VOLUME_EXPANSION_RATIO,
+                "description": "用當日前 10 名 universe 股票平均 volume_ratio 判斷；平均量比 >= 1 視為放量。",
+            },
+            "action_policy": {
+                "enable_when_all_pass": True,
+                "downweight_min_pass_count": STEADY_V5_ACTIVATION_DOWNWEIGHT_MIN_PASS_COUNT,
+                "description": "三項全過才啟用 steady_v5；通過 2 項時降權，否則關閉。",
+            },
+        },
+        "regime_basis": {
+            "source_report_version": (regime_analysis_report or {}).get("report_version"),
+            "clear_regime_detected": regime_answers.get("clear_regime_detected"),
+            "works_in": regime_answers.get("works_in"),
+            "fails_in": regime_answers.get("fails_in"),
+        },
+        "current_market_snapshot": {
+            "market_trend": market_snapshot,
+            "capital_concentration": {
+                "label": _simplify_steady_v5_capital_concentration(flow_snapshot.get("sector_concentration")),
+                "raw_label": flow_snapshot.get("sector_concentration"),
+                "top_two_category_share_pct": flow_snapshot.get("top_two_category_share_pct"),
+                "top_categories": flow_snapshot.get("top_categories") or [],
+                "front_sample_count": flow_snapshot.get("front_sample_count"),
+            },
+            "volume": {
+                "label": flow_snapshot.get("volume_regime"),
+                "avg_front_volume_ratio": flow_snapshot.get("avg_front_volume_ratio"),
+                "front_sample_count": flow_snapshot.get("front_sample_count"),
+                "missing_universe_dates": flow_snapshot.get("missing_universe_dates") or [],
+            },
+        },
+        "gate_checks": gate_checks,
+        "decision": decision,
+        "summary": decision.get("summary"),
+    }
+
+
 def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not ranked_items:
         return []
@@ -6036,6 +6266,10 @@ def save_steady_v5_regime_analysis_report(report: Dict[str, Any], base_dir: Opti
     return _save_json(_steady_v5_regime_analysis_path(base_dir), report)
 
 
+def save_strategy_activation_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_strategy_activation_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -6233,6 +6467,23 @@ def generate_steady_v5_regime_analysis_from_reports(base_dir: Optional[Path] = N
     return save_steady_v5_regime_analysis_report(report, base_dir=base_dir)
 
 
+def generate_strategy_activation_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    regime_analysis_report = generate_steady_v5_regime_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    report = generate_strategy_activation_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        regime_analysis_report=regime_analysis_report,
+    )
+    return save_strategy_activation_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -6302,6 +6553,7 @@ def backfill_priority_validation_reports(
     steady_v4_alpha_breakdown_path = generate_steady_v4_alpha_breakdown_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v5_long_term_validation_path = generate_steady_v5_long_term_validation_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v5_regime_analysis_path = generate_steady_v5_regime_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
+    strategy_activation_path = generate_strategy_activation_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -6323,6 +6575,7 @@ def backfill_priority_validation_reports(
         "steady_v4_alpha_breakdown_path": str(steady_v4_alpha_breakdown_path),
         "steady_v5_long_term_validation_path": str(steady_v5_long_term_validation_path),
         "steady_v5_regime_analysis_path": str(steady_v5_regime_analysis_path),
+        "strategy_activation_path": str(strategy_activation_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

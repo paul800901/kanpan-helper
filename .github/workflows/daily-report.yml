@@ -154,6 +154,10 @@ jobs:
             echo "Error: steady_v5 失效環境分析生成失敗，找不到 reports/steady_v5_regime_analysis.json"
             exit 1
           fi
+          if [ ! -f "reports/strategy_activation.json" ]; then
+            echo "Error: steady_v5 啟用判斷生成失敗，找不到 reports/strategy_activation.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
@@ -173,6 +177,7 @@ jobs:
           python -m json.tool reports/steady_v4_alpha_breakdown.json > /dev/null
           python -m json.tool reports/steady_v5_long_term_validation.json > /dev/null
           python -m json.tool reports/steady_v5_regime_analysis.json > /dev/null
+          python -m json.tool reports/strategy_activation.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports

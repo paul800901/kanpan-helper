@@ -21,7 +21,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, generate_steady_v5_long_term_validation_report, generate_steady_v5_regime_analysis_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, generate_steady_v5_long_term_validation_report, generate_steady_v5_regime_analysis_report, generate_strategy_activation_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -552,6 +552,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "steady_v4_alpha_breakdown.json").exists())
             self.assertTrue((reports_dir / "steady_v5_long_term_validation.json").exists())
             self.assertTrue((reports_dir / "steady_v5_regime_analysis.json").exists())
+            self.assertTrue((reports_dir / "strategy_activation.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
@@ -562,6 +563,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue(result["steady_v4_alpha_breakdown_path"].endswith("steady_v4_alpha_breakdown.json"))
             self.assertTrue(result["steady_v5_long_term_validation_path"].endswith("steady_v5_long_term_validation.json"))
             self.assertTrue(result["steady_v5_regime_analysis_path"].endswith("steady_v5_regime_analysis.json"))
+            self.assertTrue(result["strategy_activation_path"].endswith("strategy_activation.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -1088,6 +1090,69 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertTrue(analysis["answers"]["clear_regime_detected"])
         self.assertIn("steady_v5 較適合", analysis["answers"]["works_in"])
         self.assertIn("steady_v5 較容易在", analysis["answers"]["fails_in"])
+
+    def test_strategy_activation_report_filters_steady_v5_by_regime(self):
+        current_date = "2026-04-11"
+        market_prices = {
+            "2026-04-01": 100.0,
+            "2026-04-02": 101.0,
+            "2026-04-03": 101.8,
+            "2026-04-04": 102.5,
+            "2026-04-05": 103.0,
+            "2026-04-06": 103.8,
+            "2026-04-07": 104.5,
+            "2026-04-08": 105.4,
+            "2026-04-09": 106.1,
+            "2026-04-10": 106.8,
+            current_date: 107.5,
+        }
+        regime_analysis_report = {
+            "report_version": "v29-steady-v5-regime-analysis",
+            "answers": {
+                "clear_regime_detected": True,
+                "works_in": "steady_v5 較適合 大盤上升、震盪、分散輪動、放量 的市場。",
+                "fails_in": "steady_v5 較容易在 大盤下降、震盪、族群集中、放量 的市場變成負 alpha。",
+            },
+        }
+
+        distributed_activation = generate_strategy_activation_report(
+            [],
+            market_prices=market_prices,
+            universe_reports_by_date={
+                current_date: self.make_regime_universe_report(
+                    current_date,
+                    ["半導體", "電子", "金融", "航運", "水泥", "化工", "食品", "電信", "鋼鐵", "塑膠"],
+                    1.28,
+                ),
+            },
+            regime_analysis_report=regime_analysis_report,
+        )
+
+        self.assertEqual(distributed_activation["report_version"], "v30-strategy-activation")
+        self.assertEqual(distributed_activation["gate_checks"]["market_trend"]["actual"], "上升")
+        self.assertEqual(distributed_activation["gate_checks"]["capital_concentration"]["actual"], "分散")
+        self.assertEqual(distributed_activation["gate_checks"]["volume"]["actual"], "放量")
+        self.assertTrue(distributed_activation["decision"]["steady_v5_enabled"])
+        self.assertEqual(distributed_activation["decision"]["action"], "啟用")
+        self.assertTrue(distributed_activation["decision"]["sniper_unaffected"])
+
+        concentrated_activation = generate_strategy_activation_report(
+            [],
+            market_prices=market_prices,
+            universe_reports_by_date={
+                current_date: self.make_regime_universe_report(
+                    current_date,
+                    ["半導體", "半導體", "電子", "電子", "半導體", "電子", "半導體", "電子", "金融", "航運"],
+                    1.28,
+                ),
+            },
+            regime_analysis_report=regime_analysis_report,
+        )
+
+        self.assertFalse(concentrated_activation["decision"]["steady_v5_enabled"])
+        self.assertEqual(concentrated_activation["decision"]["action"], "降權")
+        self.assertEqual(concentrated_activation["gate_checks"]["capital_concentration"]["actual"], "集中")
+        self.assertEqual(concentrated_activation["decision"]["pass_count"], 2)
 
 
     def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):

@@ -188,8 +188,8 @@ def run_pipeline(
     print(f"[OK] Universe 報告已生成: {universe_path}")
     print(f"   包含 {universe_report['total_stocks']} 檔股票")
 
-    # Step 7: 產生 context / priority / factor 驗證層（v9 + v29）
-    print("\n[Step 7] 產生 Context、Priority、steady v5 跨時間驗證與失效環境分析報告")
+    # Step 7: 產生 context / priority / factor 驗證層（v9 + v30）
+    print("\n[Step 7] 產生 Context、Priority、steady v5 跨時間驗證、失效環境分析與啟用判斷報告")
     print("-" * 40)
 
     validation_result = backfill_priority_validation_reports(target_date=report_date)
@@ -207,6 +207,7 @@ def run_pipeline(
     steady_v4_alpha_breakdown_path = validation_result.get("steady_v4_alpha_breakdown_path")
     steady_v5_long_term_validation_path = validation_result.get("steady_v5_long_term_validation_path")
     steady_v5_regime_analysis_path = validation_result.get("steady_v5_regime_analysis_path")
+    strategy_activation_path = validation_result.get("strategy_activation_path")
 
     if context_path:
         print(f"[OK] Context 報告已就緒: {context_path}")
@@ -236,6 +237,8 @@ def run_pipeline(
         print(f"[OK] steady_v5 跨時間驗證已就緒: {steady_v5_long_term_validation_path}")
     if steady_v5_regime_analysis_path:
         print(f"[OK] steady_v5 失效環境分析已就緒: {steady_v5_regime_analysis_path}")
+    if strategy_activation_path:
+        print(f"[OK] steady_v5 啟用判斷已就緒: {strategy_activation_path}")
     if validation_result.get("evaluated_days") is not None:
         print(f"[OK] 已可評估樣本天數: {validation_result['evaluated_days']}")
     if validation_result.get("history_window"):
