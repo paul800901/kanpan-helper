@@ -5,13 +5,15 @@ const BASE = IS_GITHUB
     ? 'https://paul800901.github.io/kanpan-helper/reports'
     : '../reports';
 
-const CONTEXT_SCHEMA_VERSION = 'v8.1-context-card';
+const CONTEXT_SCHEMA_VERSION = 'v8.5-context-card';
 const REQUIRED_CARD_FIELDS = [
     'id',
     'title',
     'event',
     'anomaly',
     'reasoning_chain',
+    'keywords',
+    'themes',
     'confidence',
     'relation_to_technical',
     'source_type',
@@ -30,7 +32,10 @@ const PROHIBITED_TEXT_SNIPPETS = [
     '停損',
     '停利',
     '建議買',
-    '建議賣'
+    '建議賣',
+    '積極留意',
+    '可留意',
+    '布局'
 ];
 
 let indexData = null;
@@ -65,6 +70,24 @@ function toNum(value) {
     return Number.isFinite(num) ? num : null;
 }
 
+function averageNumbers(values) {
+    const nums = values.filter(value => Number.isFinite(value));
+    if (!nums.length) return null;
+    return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+}
+
+function uniqueStrings(values) {
+    const seen = new Set();
+    const items = [];
+    values.forEach(value => {
+        const text = String(value || '').trim();
+        if (!text || seen.has(text)) return;
+        seen.add(text);
+        items.push(text);
+    });
+    return items;
+}
+
 function formatPct(value, digits = 0) {
     if (value == null) return '--';
     return `${Number(value).toLocaleString('zh-TW', {
@@ -84,6 +107,16 @@ function formatNum(value, digits = 1) {
 function formatGeneratedAt(text) {
     if (!text) return '--';
     return String(text).replace('T', ' ').replace(/\+08:00$/, '');
+}
+
+function formatStrengthScore(snapshot) {
+    if (snapshot?.marketStrengthScore != null) {
+        return `${formatNum(snapshot.marketStrengthScore, 0)} 分`;
+    }
+    if (snapshot?.avgScore != null) {
+        return `${formatNum(snapshot.avgScore)} 分`;
+    }
+    return '--';
 }
 
 function showLoading(text = '載入情境卡中...') {
@@ -152,6 +185,17 @@ function parseAIDirection(text) {
     return '中性';
 }
 
+function parseMarketOverviewMeta(text) {
+    const source = String(text || '');
+    const scoreMatch = source.match(/(\d+(?:\.\d+)?)分/);
+    const strongMatch = source.match(/強勢股\s*(\d+)\s*檔/);
+
+    return {
+        strengthScore: toNum(scoreMatch?.[1]),
+        strongStockCount: toNum(strongMatch?.[1])
+    };
+}
+
 function summarizeCounter(counter, limit = 2) {
     const entries = Object.entries(counter || {}).sort((left, right) => right[1] - left[1]);
     if (!entries.length) return '分布未明';
@@ -199,6 +243,8 @@ function buildSnapshot(fullReport, universeReport, aiReport, activationReport) {
         return null;
     }
 
+    const summary = fullReport?.summary || {};
+    const marketMeta = parseMarketOverviewMeta(summary.market_overview);
     const topSample = [...stocks]
         .sort((left, right) => (toNum(left?.rank) ?? 999) - (toNum(right?.rank) ?? 999))
         .slice(0, Math.min(10, stocks.length));
@@ -206,6 +252,9 @@ function buildSnapshot(fullReport, universeReport, aiReport, activationReport) {
     const topCategoryEntries = getTopEntries(categoryCounter, 2);
     const topTwoTotal = topCategoryEntries.reduce((sum, [, count]) => sum + count, 0);
     const topTwoShare = topSample.length ? topTwoTotal / topSample.length : null;
+    const topSampleAvgVolumeRatio = averageNumbers(topSample.map(stock => {
+        return toNum(stock?.volume_ratio ?? stock?.indicators?.volume_ratio);
+    }));
 
     const hotStocks = stocks.filter(stock => {
         const volumeRatio = toNum(stock?.volume_ratio ?? stock?.indicators?.volume_ratio);
@@ -257,8 +306,10 @@ function buildSnapshot(fullReport, universeReport, aiReport, activationReport) {
         positiveCount,
         cautiousCount,
         topSampleCount: topSample.length,
+        topSampleAvgVolumeRatio,
         categoryCounter,
         topCategoryEntries,
+        topCategoryLabels: topCategoryEntries.map(([label]) => label),
         topTwoShare,
         hotStocks,
         hotCategoryCounter,
@@ -267,7 +318,10 @@ function buildSnapshot(fullReport, universeReport, aiReport, activationReport) {
         overlapCategories,
         technicalDirection,
         aiDirection: parseAIDirection(aiReport?.market_overview_ai),
-        marketOverview: String(fullReport?.summary?.market_overview || ''),
+        marketOverview: String(summary.market_overview || ''),
+        marketStrengthScore: marketMeta.strengthScore,
+        marketStrongCount: marketMeta.strongStockCount ?? (Array.isArray(summary.top_picks) ? summary.top_picks.length : null),
+        watchlistCount: Array.isArray(summary.watchlist) ? summary.watchlist.length : 0,
         aiMarketOverview: String(aiReport?.market_overview_ai || ''),
         generatedAt: selectGeneratedAt(
             universeReport?.generated_at,
@@ -316,13 +370,16 @@ function buildFallbackCard(index, reason, generatedAt) {
     return {
         id: `fallback-${index}`,
         title: `保底情境卡 ${index}`,
-        event: '目前可用市場資料不足，第三頁先保留固定載體。',
+        event: '目前可用市場資料不足，第三頁先保留弱訊號載體。',
         anomaly: reason,
         reasoning_chain: [
-            '本頁仍維持固定 schema，避免後續推理載體中斷。',
-            '目前沒有足夠資料支撐完整市場情境，因此先回退到系統保底描述。',
-            '這個 fallback 不影響首頁、股票總覽與個股頁的既有功能。'
+            '訊號 A：必要市場資料缺口過大，無法完成雙訊號以上的交叉判讀。',
+            '訊號 B：為了維持固定 schema，系統先保留 v8.5 的載體欄位，不中斷後續頁面使用。',
+            '交叉判讀：當前資訊不足以形成可驗證的弱訊號，所以只能回退到保底描述。',
+            '限制：這個 fallback 不影響首頁、股票總覽與個股頁的既有功能。'
         ],
+        keywords: ['資料不足', '固定載體'],
+        themes: ['fallback'],
         confidence: 'low',
         relation_to_technical: 'neutral',
         source_type: 'ui_fallback',
@@ -332,127 +389,179 @@ function buildFallbackCard(index, reason, generatedAt) {
 
 function createBreadthCard(snapshot) {
     if (!snapshot) {
-        return buildFallbackCard(1, '缺少 full/universe 報表，無法建立盤面廣度情境卡。');
+        return buildFallbackCard(1, '缺少 full/universe 報表，無法建立盤面廣度推理卡。');
     }
 
-    let event = '中高分樣本占優，盤面仍有可辨識的強弱層次。';
-    if (snapshot.positiveCount === snapshot.cautiousCount) {
-        event = '中高分與中低分樣本接近，盤面仍偏拉鋸。';
-    } else if (snapshot.positiveCount < snapshot.cautiousCount) {
-        event = '中低分樣本偏多，盤面整體結構仍偏保守。';
+    const breadthGap = snapshot.positiveCount - snapshot.cautiousCount;
+    const scoreText = formatStrengthScore(snapshot);
+    const strongCountText = snapshot.marketStrongCount != null ? `${snapshot.marketStrongCount} 檔` : '未提供';
+    const aiAligned = snapshot.aiDirection !== '中性' && snapshot.aiDirection === snapshot.technicalDirection;
+    let event = '市場廣度、總覽分數與 AI 方向同向，偏強結構具備可驗證的弱訊號。';
+
+    if (breadthGap < 0) {
+        event = aiAligned
+            ? '市場廣度與 AI 方向同時轉保守，偏弱結構已形成可追蹤弱訊號。'
+            : '市場廣度偏保守，但 AI 敘事沒有完全同步，偏弱訊號仍待驗證。';
+    } else if (Math.abs(breadthGap) < 6) {
+        event = '整體分數仍偏正面，但廣度優勢尚未拉開，市場只形成初步弱訊號。';
+    } else if (!aiAligned) {
+        event = snapshot.aiDirection === '中性'
+            ? '盤面廣度偏強，但 AI 敘事仍偏保留，偏強訊號需要後續驗證。'
+            : '盤面廣度與 AI 方向不同步，這層偏強訊號暫時只算待確認。';
     }
 
-    const confidence = snapshot.avgScore != null && Math.abs(snapshot.positiveCount - snapshot.cautiousCount) >= 6
-        ? 'high'
-        : 'medium';
+    let confidence = 'low';
+    if (Math.abs(breadthGap) >= 10 && snapshot.avgScore != null && snapshot.avgScore >= 60) {
+        confidence = aiAligned || snapshot.aiDirection === '中性' ? 'high' : 'medium';
+    } else if (Math.abs(breadthGap) >= 4 && snapshot.avgScore != null) {
+        confidence = 'medium';
+    }
 
     return {
         id: 'breadth-balance',
         title: '盤面廣度與強弱分布',
         event,
-        anomaly: `A/B 合計 ${snapshot.positiveCount} 檔，C/D 合計 ${snapshot.cautiousCount} 檔，平均分數約 ${formatNum(snapshot.avgScore)}。`,
+        anomaly: `市場總覽約 ${scoreText}，強勢樣本約 ${strongCountText}，A/B ${snapshot.positiveCount} 檔、C/D ${snapshot.cautiousCount} 檔。`,
         reasoning_chain: [
-            `當日可用樣本共 ${snapshot.totalCount} 檔，這張卡先用分數分布確認盤面是否仍有前段結構。`,
-            `目前 A/B 與 C/D 的差距為 ${Math.abs(snapshot.positiveCount - snapshot.cautiousCount)} 檔，可用來判斷盤面偏多還是偏保守。`,
-            '這張卡只描述市場結構，不延伸到個股名稱，也不提供任何操作結論。'
+            `訊號 A：市場總覽顯示平均強度約 ${scoreText}，強勢樣本約 ${strongCountText}，代表風險承擔沒有快速收縮。`,
+            `訊號 B：A/B 比 C/D ${breadthGap >= 0 ? `多 ${breadthGap} 檔` : `少 ${Math.abs(breadthGap)} 檔`}，平均分數約 ${formatNum(snapshot.avgScore)}，盤面不是只靠少數極端樣本撐住。`,
+            `交叉判讀：AI 方向目前為「${snapshot.aiDirection}」，${aiAligned ? '與橫截面結構同向，情緒端暫時有接到結構訊號。' : snapshot.aiDirection === '中性' ? '代表情緒端仍保留中性，這個弱訊號只完成一部分驗證。' : '與橫截面不同向，情緒端還沒有完全接球。'}`,
+            '限制：這張卡只保留市場層推理，不延伸到任何股票與操作結論。'
         ],
+        keywords: uniqueStrings(['市場廣度', breadthGap >= 0 ? '風險承擔' : '防守結構', `AI${snapshot.aiDirection}`]),
+        themes: uniqueStrings(['市場廣度', '情緒校準']),
         confidence,
         relation_to_technical: snapshot.technicalDirection === '中性' ? 'neutral' : 'aligned',
-        source_type: 'market_overview+score_distribution',
+        source_type: 'market_overview+score_distribution+ai_market_overview',
         generated_at: snapshot.generatedAt
     };
 }
 
-function createSectorCard(snapshot) {
+function createSectorCard(snapshot, activationReport) {
     if (!snapshot || !snapshot.topCategoryEntries.length) {
-        return buildFallbackCard(2, '缺少類別集中度資料，無法建立主軸收斂情境卡。', snapshot?.generatedAt);
+        return buildFallbackCard(2, '缺少類別集中度資料，無法建立主軸收斂推理卡。', snapshot?.generatedAt);
     }
 
+    const capitalLabel = String(activationReport?.current_market_snapshot?.capital_concentration?.label || '未提供');
+    const overlapText = snapshot.overlapCategories.length
+        ? snapshot.overlapCategories.join('、')
+        : '尚未與主軸明顯重疊';
     const topSummary = summarizeCounter(snapshot.categoryCounter);
-    let event = '前段樣本集中在少數類別，市場主軸偏收斂。';
-    if ((snapshot.topTwoShare || 0) < 0.6) {
-        event = (snapshot.topTwoShare || 0) >= 0.45
-            ? '前段類別已有主軸，但輪動仍未完全結束。'
-            : '前段類別分散，主軸尚未完全收斂。';
+    let event = '主軸集中與放量重疊同時出現，盤面開始形成可追蹤的弱主題。';
+
+    if ((snapshot.topTwoShare || 0) < 0.45) {
+        event = '前段類別仍偏分散，主題輪動尚未沉澱成穩定弱訊號。';
+    } else if (!snapshot.overlapCategories.length) {
+        event = '前段類別已有主軸，但放量訊號沒有同步跟上，主題仍在試圖成形。';
+    } else if (capitalLabel !== '集中') {
+        event = '前段主軸已有輪廓，但制度層仍把集中度視為可接受範圍，代表主題尚未完全鎖定。';
     }
 
     return {
         id: 'sector-concentration',
         title: '主軸集中度',
         event,
-        anomaly: `前 ${snapshot.topSampleCount} 名樣本中，前兩大類別占比約 ${formatPct((snapshot.topTwoShare || 0) * 100)}，主要落在 ${topSummary}。`,
+        anomaly: `前 ${snapshot.topSampleCount} 名樣本中，前兩大類別占比約 ${formatPct((snapshot.topTwoShare || 0) * 100)}，放量重疊類別為 ${overlapText}。`,
         reasoning_chain: [
-            `這張卡只看前 ${snapshot.topSampleCount} 名樣本，因為前段名次最能反映當日資金偏好的聚焦程度。`,
-            `當前兩大類別占比過高時，代表市場注意力集中；若占比下降，則代表主軸仍在輪動。`,
-            '這裡只保留類別與結構描述，不做題材到股票的映射，也不點名任何公司。'
+            `訊號 A：前 ${snapshot.topSampleCount} 名樣本裡，主軸目前集中在 ${topSummary}，代表資金注意力開始收斂。`,
+            `訊號 B：放量樣本與前段主軸重疊在 ${overlapText}，用來確認主題不是只有排名集中，還有量能呼應。`,
+            `訊號 C：steady_v5 的資金集中度欄位目前標記為「${capitalLabel}」，制度層也把這個結構納入環境判讀。`,
+            `${(snapshot.topTwoShare || 0) >= 0.45 && snapshot.overlapCategories.length ? '交叉判讀：類別集中與量能重疊同時存在，主題輪廓比較像可追蹤的弱訊號。' : '交叉判讀：集中度或量能其中一邊尚未到位，所以只能先視為題材輪動線索。'}`
         ],
-        confidence: (snapshot.topTwoShare || 0) >= 0.6 ? 'high' : 'medium',
-        relation_to_technical: (snapshot.topTwoShare || 0) >= 0.45 ? 'aligned' : 'neutral',
-        source_type: 'sector_concentration+universe',
+        keywords: uniqueStrings(['主軸收斂', '量能共振', capitalLabel === '集中' ? '集中驗證' : '輪動延續']),
+        themes: uniqueStrings(snapshot.topCategoryLabels.length ? snapshot.topCategoryLabels : ['市場主軸']),
+        confidence: (snapshot.topTwoShare || 0) >= 0.6 && snapshot.overlapCategories.length ? 'high' : (snapshot.topTwoShare || 0) >= 0.45 ? 'medium' : 'low',
+        relation_to_technical: (snapshot.topTwoShare || 0) >= 0.45 && snapshot.overlapCategories.length ? 'aligned' : 'neutral',
+        source_type: 'sector_concentration+volume_anomaly+strategy_activation',
         generated_at: snapshot.generatedAt
     };
 }
 
-function createVolumeCard(snapshot) {
+function createVolumeCard(snapshot, activationReport) {
     if (!snapshot) {
-        return buildFallbackCard(3, '缺少量能資料，無法建立量能異常情境卡。');
+        return buildFallbackCard(3, '缺少量能資料，無法建立量能擴散推理卡。');
     }
 
+    const volumeLabel = String(activationReport?.current_market_snapshot?.volume?.label || '未提供');
     const hotSummary = summarizeCounter(snapshot.hotCategoryCounter);
-    let event = '量能異常有形成群聚，但擴散仍集中在少數區塊。';
-    if (!snapshot.hotStocks.length) {
-        event = '量能異常有限，市場注意力尚未形成可辨識的擴散。';
-    } else if ((snapshot.hotShare || 0) < 0.08) {
-        event = '量能異常存在，但仍屬局部升溫，尚未形成明顯擴散。';
-    }
+    const frontAvgVolumeText = snapshot.topSampleAvgVolumeRatio != null
+        ? formatNum(snapshot.topSampleAvgVolumeRatio, 2)
+        : '--';
+    let event = '量能擴散與高分結構同步，市場注意力不是孤點放量。';
 
-    const overlapText = snapshot.overlapCategories.length
-        ? snapshot.overlapCategories.join('、')
-        : '目前與前段類別重疊有限';
+    if (!snapshot.hotStocks.length) {
+        event = '量能尚未形成有效擴散，市場只剩局部觀察訊號。';
+    } else if (volumeLabel !== '放量') {
+        event = '局部放量已出現，但制度層未確認整體放量，弱訊號仍偏早。';
+    } else if (snapshot.hotHighScoreCount < Math.max(1, Math.ceil(snapshot.hotStocks.length / 2))) {
+        event = '有放量，但高分結構承接不足，訊號品質仍待確認。';
+    }
 
     return {
         id: 'volume-focus',
         title: '量能異常與擴散',
         event,
-        anomaly: `量比大於等於 1.5 的樣本共 ${snapshot.hotStocks.length} 檔，占全體約 ${formatPct((snapshot.hotShare || 0) * 100)}；其中 ${snapshot.hotHighScoreCount} 檔同時位於 A/B 區。`,
+        anomaly: `量比大於等於 1.5 的樣本共 ${snapshot.hotStocks.length} 檔，占全體約 ${formatPct((snapshot.hotShare || 0) * 100)}；前段平均量比約 ${frontAvgVolumeText}，制度量能標記為「${volumeLabel}」。`,
         reasoning_chain: [
-            '量能不是用來下單，而是用來驗證當日市場注意力是否開始聚集。',
-            `目前放量樣本主要落在 ${hotSummary}，與前段主軸的重疊情況為 ${overlapText}。`,
-            '若放量樣本集中但沒有對應的前段結構，這張卡就只保留中性描述，不外推到股票層。'
+            `訊號 A：放量樣本主要落在 ${hotSummary}，共 ${snapshot.hotStocks.length} 檔，占全體約 ${formatPct((snapshot.hotShare || 0) * 100)}。`,
+            `訊號 B：放量樣本中有 ${snapshot.hotHighScoreCount} 檔同時位於 A/B 區，而整體 breadth 仍是 A/B ${snapshot.positiveCount} 對 C/D ${snapshot.cautiousCount}，代表量能不是只落在弱勢端。`,
+            `訊號 C：steady_v5 的量能欄位標記為「${volumeLabel}」，前段平均量比約 ${frontAvgVolumeText}，可用來確認放量是否只是零星雜訊。`,
+            `${snapshot.hotStocks.length >= 4 && snapshot.hotHighScoreCount >= 2 && volumeLabel === '放量' ? '交叉判讀：量能、廣度與制度量能同向，這層訊號比較像市場注意力已開始擴散。' : '交叉判讀：量能雖有變化，但廣度或制度層尚未完全接手，所以目前只能算弱訊號。'}`
         ],
-        confidence: snapshot.hotStocks.length >= 4 && snapshot.hotHighScoreCount >= 2 ? 'high' : snapshot.hotStocks.length ? 'medium' : 'low',
-        relation_to_technical: snapshot.hotHighScoreCount >= Math.max(1, Math.floor(snapshot.hotStocks.length / 2)) ? 'aligned' : 'neutral',
-        source_type: 'volume_anomaly+universe',
+        keywords: uniqueStrings(['量能擴散', '高分共振', volumeLabel === '放量' ? '放量驗證' : '量能保留']),
+        themes: uniqueStrings(snapshot.overlapCategories.length
+            ? [...snapshot.overlapCategories.slice(0, 2), '量能驗證']
+            : [...snapshot.topCategoryLabels.slice(0, 1), '量能驗證']),
+        confidence: snapshot.hotStocks.length >= 4 && snapshot.hotHighScoreCount >= 2 && volumeLabel === '放量'
+            ? 'high'
+            : snapshot.hotStocks.length >= 2
+                ? 'medium'
+                : 'low',
+        relation_to_technical: volumeLabel === '放量' && snapshot.hotHighScoreCount >= Math.max(1, Math.floor(snapshot.hotStocks.length / 2))
+            ? 'aligned'
+            : 'neutral',
+        source_type: 'volume_anomaly+score_distribution+strategy_activation',
         generated_at: snapshot.generatedAt
     };
 }
 
-function createAIOverlayCard(snapshot, aiReport) {
+function createAIOverlayCard(snapshot, aiReport, activationReport) {
     if (!snapshot || !String(aiReport?.market_overview_ai || '').trim()) {
         return null;
     }
 
     const relation = relationTone(snapshot.aiDirection, snapshot.technicalDirection);
-    let event = 'AI 摘要方向與橫截面資料一致，可作為市場敘事的輔助驗證。';
+    const passCount = toNum(activationReport?.decision?.pass_count) ?? 0;
+    const totalCount = toNum(activationReport?.decision?.total_condition_count) ?? 3;
+    const action = String(activationReport?.decision?.action || '未提供').trim() || '未提供';
+    let event = 'AI 敘事與橫截面、制度訊號大致同向，可作為市場情緒的弱驗證。';
+
     if (relation === 'conflict') {
-        event = 'AI 摘要方向與橫截面資料有落差，這張卡保留疑點而不延伸敘事。';
-    } else if (relation === 'neutral') {
-        event = 'AI 摘要提供方向感，但橫截面資料仍保留中性空間。';
+        event = 'AI 敘事方向與橫截面、制度訊號有落差，這張卡只保留分歧。';
+    } else if (relation === 'neutral' || passCount < 2) {
+        event = 'AI 敘事提供方向，但橫截面或制度訊號仍只做到部分驗證。';
     }
 
     return {
         id: 'ai-overlay',
         title: 'AI 摘要與技術面對照',
         event,
-        anomaly: `AI 市場總覽偏向「${snapshot.aiDirection}」，橫截面技術結構偏向「${snapshot.technicalDirection}」。`,
+        anomaly: `AI 方向「${snapshot.aiDirection}」，技術結構「${snapshot.technicalDirection}」，steady_v5 通過 ${passCount}/${totalCount} 項。`,
         reasoning_chain: [
-            'AI 市場總覽只拿來補充方向，不直接參與個股結論，也不允許自由點名股票。',
-            `目前平均分數約 ${formatNum(snapshot.avgScore)}，放量樣本占比約 ${formatPct((snapshot.hotShare || 0) * 100)}，可用來檢查 AI 敘事是否有市場結構支撐。`,
-            '當 AI 與橫截面一致時，情境可信度提高；若不一致，這張卡就保留分歧，不外推到買賣決策。'
+            `訊號 A：AI 只提供市場方向，這裡先把它壓縮成「${snapshot.aiDirection}」，不帶入任何股票敘事。`,
+            `訊號 B：橫截面目前平均分數約 ${formatNum(snapshot.avgScore)}，放量樣本占比約 ${formatPct((snapshot.hotShare || 0) * 100)}，用來檢查敘事是否有結構支撐。`,
+            `訊號 C：steady_v5 目前通過 ${passCount}/${totalCount} 項條件，狀態為「${action}」，可用來判斷制度面是否同意這個方向。`,
+            `${relation === 'aligned' ? '交叉判讀：AI、橫截面與制度訊號大致同向，這層敘事比較像可驗證的弱訊號。' : relation === 'neutral' ? '交叉判讀：AI 有方向，但橫截面或制度面還沒完全跟上，所以只能當補充線索。' : '交叉判讀：AI 與橫截面不同向，代表情緒端和市場結構存在落差。'}`
         ],
-        confidence: relation === 'aligned' && (snapshot.hotShare || 0) >= 0.08 ? 'high' : 'medium',
+        keywords: uniqueStrings(['AI對照', `AI${snapshot.aiDirection}`, `制度${action}`]),
+        themes: uniqueStrings(['情緒校準', '敘事驗證']),
+        confidence: relation === 'aligned' && passCount >= 2 && (snapshot.hotShare || 0) >= 0.08
+            ? 'high'
+            : relation === 'conflict'
+                ? 'low'
+                : 'medium',
         relation_to_technical: relation,
-        source_type: 'ai_market_overview+technical_snapshot',
+        source_type: 'ai_market_overview+score_distribution+volume_anomaly+strategy_activation',
         generated_at: selectGeneratedAt(aiReport?.generated_at, snapshot.generatedAt)
     };
 }
@@ -463,35 +572,58 @@ function createActivationCard(snapshot, activationReport) {
     }
 
     const passCount = toNum(activationReport?.decision?.pass_count) ?? 0;
-    const totalCount = toNum(activationReport?.decision?.total_condition_count) ?? 0;
+    const totalCount = toNum(activationReport?.decision?.total_condition_count) ?? 3;
     const action = String(activationReport?.decision?.action || '未提供').trim() || '未提供';
     const trend = String(activationReport?.current_market_snapshot?.market_trend?.market_trend || '--');
     const concentration = String(activationReport?.current_market_snapshot?.capital_concentration?.label || '--');
     const volume = String(activationReport?.current_market_snapshot?.volume?.label || '--');
+    const failedConditions = Array.isArray(activationReport?.decision?.failed_conditions)
+        ? activationReport.decision.failed_conditions.join('、')
+        : '無';
     const isAlignedDate = activationReport?.as_of_date === currentDate;
+    const breadthText = snapshot
+        ? `A/B ${snapshot.positiveCount} 對 C/D ${snapshot.cautiousCount}`
+        : 'breadth 未提供';
+    const concentrationShareText = snapshot?.topTwoShare != null
+        ? formatPct(snapshot.topTwoShare * 100)
+        : '--';
+    let event = 'steady_v5 條件不足，制度層與目前市場結構仍有缺口。';
 
-    let event = `steady_v5 目前狀態為「${action}」，市場環境仍有部分條件未齊。`;
     if (!isAlignedDate) {
-        event = `steady_v5 最新狀態為「${action}」，但目前選擇日期與啟用判斷日期不同。`;
+        event = 'steady_v5 最新環境判讀可作背景座標，但不能直接覆蓋所選日期。';
+    } else if (passCount === totalCount) {
+        event = 'steady_v5 適用環境完整，制度層與市場結構同向。';
+    } else if (passCount >= 2) {
+        event = 'steady_v5 只通過部分條件，顯示環境接近但還不是完整型態。';
     }
 
-    const relation = snapshot?.technicalDirection === '偏多' && trend === '上升'
+    const relation = trend === '上升' && snapshot?.technicalDirection === '偏多'
         ? 'aligned'
-        : 'neutral';
+        : trend === '上升' && snapshot?.technicalDirection === '偏保守'
+            ? 'conflict'
+            : 'neutral';
 
     return {
         id: 'regime-activation',
         title: 'steady_v5 啟用環境',
         event,
-        anomaly: `大盤趨勢 ${trend}、資金集中度 ${concentration}、量能 ${volume}，共通過 ${passCount}/${totalCount || 3} 項條件。`,
+        anomaly: `大盤趨勢 ${trend}、資金集中度 ${concentration}、量能 ${volume}；${breadthText}，前兩大類別占比約 ${concentrationShareText}。`,
         reasoning_chain: [
-            '這張卡只描述市場環境是否接近 steady_v5 的適用條件，不把策略判斷直接翻成買賣建議。',
-            '若啟用判斷日期與目前查看日期不同，這張卡就只作為背景補充，避免把不同日期的環境混在一起。',
-            '這裡保留的是 regime 與 activation 層訊號，供後續題材推理做市場背景參考。'
+            `訊號 A：steady_v5 目前通過 ${passCount}/${totalCount} 項條件，未通過的主要缺口是 ${failedConditions || '無'}。`,
+            `訊號 B：同一批市場橫截面資料裡，平均分數約 ${formatNum(snapshot?.avgScore)}，${breadthText}，代表風險承擔是否還撐得住。`,
+            `訊號 C：前兩大類別占比約 ${concentrationShareText}，而量能標記為「${volume}」，可用來判斷是分散輪動還是集中衝刺。`,
+            isAlignedDate
+                ? '同日校準：這張卡與目前日期對齊，所以可以拿來當制度背景。'
+                : `日期限制：啟用判斷日期為 ${activationReport.as_of_date}，與目前查看日期不同，只能當背景參考。`,
+            '限制：這張卡只保留制度與市場結構的交叉判讀，不轉成股票清單或操作指令。'
         ],
-        confidence: isAlignedDate ? 'medium' : 'low',
+        keywords: uniqueStrings(['制度門檻', '制度環境', concentration === '集中' ? '集中缺口' : '分散輪動']),
+        themes: uniqueStrings(['制度環境', '策略適配']),
+        confidence: isAlignedDate
+            ? (passCount === totalCount ? 'high' : passCount >= 2 ? 'medium' : 'low')
+            : 'low',
         relation_to_technical: relation,
-        source_type: 'strategy_activation+regime_snapshot',
+        source_type: 'strategy_activation+score_distribution+sector_concentration+volume_anomaly',
         generated_at: selectGeneratedAt(activationReport?.generated_at)
     };
 }
@@ -504,7 +636,9 @@ function cardTextFragments(card) {
         card.anomaly,
         card.source_type,
         card.generated_at,
-        ...(Array.isArray(card.reasoning_chain) ? card.reasoning_chain : [])
+        ...(Array.isArray(card.reasoning_chain) ? card.reasoning_chain : []),
+        ...(Array.isArray(card.keywords) ? card.keywords : []),
+        ...(Array.isArray(card.themes) ? card.themes : [])
     ].map(item => String(item || ''));
 }
 
@@ -513,7 +647,9 @@ function cardNarrativeFragments(card) {
         card.title,
         card.event,
         card.anomaly,
-        ...(Array.isArray(card.reasoning_chain) ? card.reasoning_chain : [])
+        ...(Array.isArray(card.reasoning_chain) ? card.reasoning_chain : []),
+        ...(Array.isArray(card.keywords) ? card.keywords : []),
+        ...(Array.isArray(card.themes) ? card.themes : [])
     ].map(item => String(item || ''));
 }
 
@@ -527,10 +663,15 @@ function isValidCard(card, bannedTerms) {
         }
     }
 
-    if (!Array.isArray(card.reasoning_chain) || card.reasoning_chain.length < 3) return false;
+    if (!Array.isArray(card.reasoning_chain) || card.reasoning_chain.length < 4) return false;
     if (!card.reasoning_chain.every(item => typeof item === 'string' && item.trim())) return false;
+    if (!Array.isArray(card.keywords) || card.keywords.length < 2) return false;
+    if (!card.keywords.every(item => typeof item === 'string' && item.trim())) return false;
+    if (!Array.isArray(card.themes) || card.themes.length < 1) return false;
+    if (!card.themes.every(item => typeof item === 'string' && item.trim())) return false;
     if (!VALID_CONFIDENCE.has(card.confidence)) return false;
     if (!VALID_RELATION.has(card.relation_to_technical)) return false;
+    if (card.source_type !== 'ui_fallback' && card.source_type.split('+').length < 2) return false;
 
     const texts = cardTextFragments(card);
     if (texts.some(text => PROHIBITED_TEXT_SNIPPETS.some(snippet => text.includes(snippet)))) {
@@ -551,7 +692,7 @@ function normalizeCards(cards, bannedTerms, generatedAt) {
         if (!card) return;
         normalized.push(isValidCard(card, bannedTerms)
             ? card
-            : buildFallbackCard(normalized.length + 1, '原始情境卡內容不符合 v8.1 固定 schema，已改用保底卡。', generatedAt));
+            : buildFallbackCard(normalized.length + 1, '原始情境卡內容不符合 v8.5 固定 schema，已改用保底卡。', generatedAt));
     });
 
     while (normalized.length < 3) {
@@ -559,6 +700,12 @@ function normalizeCards(cards, bannedTerms, generatedAt) {
     }
 
     return normalized.slice(0, 5);
+}
+
+function renderChipList(items, chipClass) {
+    return `<div class="scenario-chip-list">${items.map(item => {
+        return `<span class="signal-chip ${chipClass}">${esc(item)}</span>`;
+    }).join('')}</div>`;
 }
 
 function renderCard(card) {
@@ -590,6 +737,14 @@ function renderCard(card) {
                 <div class="scenario-row">
                     <div class="scenario-label">reasoning_chain</div>
                     <div class="scenario-text"><ul class="reasoning-list">${reasoningHTML}</ul></div>
+                </div>
+                <div class="scenario-row">
+                    <div class="scenario-label">keywords</div>
+                    <div class="scenario-text">${renderChipList(card.keywords, 'keyword-chip')}</div>
+                </div>
+                <div class="scenario-row">
+                    <div class="scenario-label">themes</div>
+                    <div class="scenario-text">${renderChipList(card.themes, 'theme-chip')}</div>
                 </div>
                 <div class="scenario-row">
                     <div class="scenario-label">source_type</div>
@@ -643,15 +798,15 @@ async function loadContextCards(date) {
 
         const cards = normalizeCards([
             createBreadthCard(snapshot),
-            createSectorCard(snapshot),
-            createVolumeCard(snapshot),
-            createAIOverlayCard(snapshot, aiReport),
+            createSectorCard(snapshot, activationReport),
+            createVolumeCard(snapshot, activationReport),
+            createAIOverlayCard(snapshot, aiReport, activationReport),
             createActivationCard(snapshot, activationReport)
         ], bannedTerms, generatedAt);
 
         const fallbackCount = cards.filter(card => card.source_type === 'ui_fallback').length;
         if (fallbackCount > 0) {
-            showFallbackBanner(`本頁已自動補上 ${fallbackCount} 張保底卡，原因是部分日期缺少資料，或原始內容不符合 v8.1 固定 schema。`);
+            showFallbackBanner(`本頁已自動補上 ${fallbackCount} 張保底卡，原因是部分日期缺少資料，或原始內容不符合 v8.5 固定 schema。`);
         } else {
             hideFallbackBanner();
         }

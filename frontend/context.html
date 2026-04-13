@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1b2a">
-    <meta name="description" content="市場情境卡 v8.1 - 只顯示市場層情境，不含個股名稱與買賣建議。">
-    <title>市場情境卡 - 看盤助手 v8.1</title>
+    <meta name="description" content="市場情境卡 v8.5 - 只顯示市場層弱訊號推理，不含個股名稱與操作指令。">
+    <title>市場情境卡 - 看盤助手 v8.5</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .page-shell {
@@ -270,6 +270,31 @@
             margin-bottom: 0;
         }
 
+        .scenario-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .signal-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .keyword-chip {
+            background: #edf4fb;
+            color: #1f4f80;
+        }
+
+        .theme-chip {
+            background: #eaf7ef;
+            color: #1f6a44;
+        }
+
         .scenario-footer {
             display: flex;
             align-items: center;
@@ -306,7 +331,7 @@
                 <a href="index.html" class="back-link">← 返回首頁</a>
             </div>
             <div class="header-title">市場情境卡</div>
-            <div class="header-subtitle">v8.1 只建立市場層情境載體，不輸出候選股、不點名股票，也不給買賣建議。</div>
+            <div class="header-subtitle">v8.5 升級為市場層弱訊號推理，不輸出候選股、不點名股票，也不產生操作指令。</div>
             <div class="header-controls">
                 <select id="dateSelect" class="context-date-select">
                     <option value="">載入中...</option>
@@ -318,7 +343,7 @@
 
         <main class="context-main">
             <section class="context-help">
-                本頁只使用既有市場總覽、分數分布、類股集中度、量能異常、AI 市場總覽與 steady_v5 啟用判斷等現成輸出，作為後續題材推理的基礎載體。不串新聞、不做股票映射，也不讓 AI 自由點名股票。
+                本頁只使用既有市場總覽、分數分布、類股集中度、量能異常、AI 市場總覽與 steady_v5 啟用判斷等現成輸出，將至少兩個以上訊號交叉成可驗證的弱訊號推理層。不串新聞、不做股票映射，也不讓 AI 自由點名股票。
             </section>
 
             <section class="schema-panel">
@@ -333,7 +358,7 @@
         </main>
     </div>
 
-    <script src="context.js?v=20260414-v81a"></script>
+    <script src="context.js?v=20260414-v85a"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js?v=20260414-v31b', { updateViaCache: 'none' })
