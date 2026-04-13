@@ -5,36 +5,51 @@ const BASE = IS_GITHUB
     ? 'https://paul800901.github.io/kanpan-helper/reports'
     : '../reports';
 
-const VALID_CONFIDENCE = new Set(['low', 'medium', 'high']);
-const VALID_RELATION = new Set(['aligned', 'conflict', 'neutral']);
+const CONTEXT_SCHEMA_VERSION = 'v8.1-context-card';
 const REQUIRED_CARD_FIELDS = [
     'id',
     'title',
     'event',
     'anomaly',
-    'keywords',
-    'themes',
-    'trace',
-    'candidate_stocks',
     'reasoning_chain',
     'confidence',
     'relation_to_technical',
     'source_type',
     'generated_at'
 ];
-
-const REQUIRED_TRACE_FIELDS = ['event', 'keywords', 'themes'];
-const REQUIRED_CANDIDATE_FIELDS = ['symbol', 'from_theme', 'trace_event', 'reason'];
+const VALID_CONFIDENCE = new Set(['low', 'medium', 'high']);
+const VALID_RELATION = new Set(['aligned', 'neutral', 'conflict']);
+const PROHIBITED_TEXT_SNIPPETS = [
+    '買進',
+    '買入',
+    '賣出',
+    '進場',
+    '出場',
+    '加碼',
+    '減碼',
+    '停損',
+    '停利',
+    '建議買',
+    '建議賣'
+];
 
 let indexData = null;
 let currentDate = null;
 let requestVersion = String(Date.now());
-let currentStrategyChoice = null;
 
 function buildFreshUrl(url, version = requestVersion) {
     const target = new URL(url, window.location.href);
     target.searchParams.set('_ts', version);
     return target.toString();
+}
+
+function fetchJSON(url) {
+    return fetch(buildFreshUrl(url), { cache: 'no-store' }).then(async response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${url}`);
+        }
+        return response.json();
+    });
 }
 
 function esc(text) {
@@ -50,232 +65,25 @@ function toNum(value) {
     return Number.isFinite(num) ? num : null;
 }
 
-function isConsecutiveInstitutionalBuy(label) {
-    if (!label) return false;
-    const text = String(label);
-    return text.includes('連') && text.includes('買');
-}
-
-function isCloseToMa5(close, ma5) {
-    if (close == null || ma5 == null || ma5 === 0) return false;
-    return Math.abs(close - ma5) / Math.abs(ma5) <= 0.01;
-}
-
-function getMa20Diff(close, ma20) {
-    if (close == null || ma20 == null || ma20 === 0) return null;
-    return (close - ma20) / ma20;
-}
-
-function downgradeBullishSummary(summary) {
-    if (summary.advice === '強勢續看') {
-        return {
-            advice: '可偏多觀察',
-            reason: '結構仍偏多，但量能或過熱需要再確認',
-            risk: '縮量或高檔過熱時，續攻失敗容易回檔'
-        };
-    }
-    if (summary.advice === '可偏多觀察') {
-        return {
-            advice: '先觀望',
-            reason: '偏多條件存在，但量能或過熱需要先消化',
-            risk: '追價後若量縮或高檔反轉，容易回落'
-        };
-    }
-    return summary;
-}
-
-const FINAL_ADVICE_PRIORITY = Object.freeze({
-    '暫不考慮': 1,
-    '暫不進場': 2,
-    '先觀望': 3,
-    '可留意': 4,
-    '可偏多觀察': 5,
-    '強勢續看': 6
-});
-
-function getAdvicePriority(advice) {
-    return FINAL_ADVICE_PRIORITY[advice] || 0;
-}
-
-function isAvoidAdvice(advice) {
-    return advice === '暫不考慮' || advice === '暫不進場';
-}
-
-function getDecisionSummary(stock) {
-    const indicators = stock?.indicators || {};
-    const signals = stock?.signals || {};
-
-    const score = toNum(stock?.score);
-    const close = toNum(indicators.close);
-    const ma5 = toNum(indicators.ma5);
-    const ma20 = toNum(indicators.ma20);
-    const k = toNum(indicators.k);
-    const volumeRatio = toNum(indicators.volume_ratio);
-    const institutional = String(
-        signals.institutional ?? stock?.institutional ?? stock?.institution_trend ?? ''
-    ).trim();
-    const ma20Diff = getMa20Diff(close, ma20);
-    const isWeakBelowMa20 = score != null && score < 60 && close != null && ma20 != null && close < ma20;
-    const hasBullishPenalty = (volumeRatio != null && volumeRatio < 1) || (k != null && k >= 80);
-
-    if (score != null && score < 50) {
-        return {
-            advice: '暫不考慮',
-            reason: '分數過低且結構偏弱',
-            risk: '下跌延續或反彈失敗'
-        };
-    }
-
-    const matches = [];
-
-    if (score != null && close != null && ma20 != null && score >= 80 && close > ma20) {
-        matches.push({
-            advice: '強勢續看',
-            reason: '評分高且結構偏強',
-            risk: '短線過熱時不宜追價',
-            priority: 5
-        });
-    }
-
-    if (close != null && ma20 != null && close > ma20 && isConsecutiveInstitutionalBuy(institutional)) {
-        matches.push({
-            advice: '可偏多觀察',
-            reason: '價格站上中期結構且法人偏多',
-            risk: '短線若爆量不續攻，容易追高回檔',
-            priority: 4
-        });
-    }
-
-    if (!isWeakBelowMa20 && close != null && ma20 != null && k != null && close < ma20 && k < 30) {
-        matches.push({
-            advice: '可留意',
-            reason: '低檔區出現反彈訊號',
-            risk: '尚未站回中期結構，反彈可能失敗',
-            priority: 3
-        });
-    }
-
-    if (
-        !isWeakBelowMa20 && (
-            (ma20Diff != null && ma20Diff < 0 && ma20Diff > -0.01) ||
-            (close != null && ma5 != null && volumeRatio != null && isCloseToMa5(close, ma5) && volumeRatio < 1)
-        )
-    ) {
-        matches.push({
-            advice: '先觀望',
-            reason: ma20Diff != null && ma20Diff < 0 && ma20Diff > -0.01
-                ? '貼近中期結構，先觀察是否重新站穩'
-                : '短線位置不差，但量能不足',
-            risk: ma20Diff != null && ma20Diff < 0 && ma20Diff > -0.01
-                ? '若無法站回中期結構，容易再度轉弱'
-                : '缺乏續航，容易震盪',
-            priority: 2
-        });
-    }
-
-    if (isWeakBelowMa20 || (ma20Diff != null && ma20Diff <= -0.01)) {
-        matches.push({
-            advice: '暫不進場',
-            reason: isWeakBelowMa20 ? '分數偏低且仍在中期壓力下方' : '仍在中期壓力下方',
-            risk: isWeakBelowMa20 ? '弱勢延續時，反彈容易失敗' : '容易出現反彈後再回落',
-            priority: 1
-        });
-    }
-
-    matches.sort((left, right) => right.priority - left.priority);
-
-    let summary = matches[0] || {
-        advice: '先觀望',
-        reason: '條件不足，方向不明',
-        risk: '短線震盪或反覆'
-    };
-
-    if (
-        hasBullishPenalty &&
-        (summary.advice === '強勢續看' || summary.advice === '可偏多觀察')
-    ) {
-        summary = downgradeBullishSummary(summary);
-    }
-
-    return summary;
-}
-
-function getZoneFlags(stock, summary = getDecisionSummary(stock)) {
-    const indicators = stock?.indicators || {};
-    const score = toNum(stock?.score);
-    const close = toNum(indicators.close);
-    const ma5 = toNum(indicators.ma5);
-    const ma20 = toNum(indicators.ma20);
-    const advice = summary?.advice || '先觀望';
-    const isWeakBelowMa20 = score != null && score < 60 && close != null && ma20 != null && close < ma20;
-    const pilotLow = ma5 != null ? ma5 * 0.98 : null;
-    const pilotHigh = ma5 != null ? ma5 * 1.02 : null;
-    const inPilotZone = close != null && pilotLow != null && pilotHigh != null && close >= pilotLow && close <= pilotHigh;
-
-    let inObserveZone = false;
-    if (!isAvoidAdvice(advice) && close != null && ma5 != null && close < ma5) {
-        inObserveZone = Math.abs(close - ma5) / Math.abs(ma5) <= 0.01;
-    }
-
-    return {
-        inPilotZone,
-        inObserveZone,
-        isWeakBlocked: isWeakBelowMa20
-    };
-}
-
-function buildTechnicalMap(fullReport) {
-    if (!fullReport || !Array.isArray(fullReport.stocks)) {
-        return new Map();
-    }
-
-    return new Map(fullReport.stocks.map(stock => {
-        const summary = getDecisionSummary(stock);
-        const indicators = stock?.indicators || {};
-        return [stock.symbol, {
-            symbol: stock.symbol,
-            name: stock.name || stock.symbol,
-            summary,
-            zoneFlags: getZoneFlags(stock, summary),
-            indicators: {
-                close: toNum(indicators.close),
-                ma5: toNum(indicators.ma5),
-                ma20: toNum(indicators.ma20),
-                k: toNum(indicators.k),
-                volumeRatio: toNum(indicators.volume_ratio)
-            },
-            raw: stock
-        }];
-    }));
-}
-
-function formatPercentValue(value) {
+function formatPct(value, digits = 0) {
     if (value == null) return '--';
     return `${Number(value).toLocaleString('zh-TW', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
     })}%`;
 }
 
-function formatGapThreshold(value) {
+function formatNum(value, digits = 1) {
     if (value == null) return '--';
-    return `${(Number(value) * 100).toLocaleString('zh-TW', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    })}%`;
+    return Number(value).toLocaleString('zh-TW', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+    });
 }
 
-function validateStrategyAnalysisReport(report) {
-    if (!report || typeof report !== 'object') return false;
-    if (!['v16-strategy-analysis', 'v19-strategy-analysis', 'v22-strategy-analysis', 'v24-strategy-analysis', 'v27-strategy-analysis'].includes(report.report_version)) return false;
-    if (!report.strategies || typeof report.strategies !== 'object') return false;
-    return Boolean(report.strategies.sniper && report.strategies.steady);
-}
-
-function validateSignalDensityReport(report) {
-    if (!report || typeof report !== 'object') return false;
-    if (report.report_version !== 'v17-signal-density-analysis') return false;
-    return Array.isArray(report.daily_hit_counts);
+function formatGeneratedAt(text) {
+    if (!text) return '--';
+    return String(text).replace('T', ' ').replace(/\+08:00$/, '');
 }
 
 function showLoading(text = '載入情境卡中...') {
@@ -283,8 +91,8 @@ function showLoading(text = '載入情境卡中...') {
     loading.textContent = text;
     loading.style.display = 'block';
     document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('candidateOverview').style.display = 'none';
     document.getElementById('cardList').style.display = 'none';
+    hideFallbackBanner();
 }
 
 function showEmpty(text) {
@@ -292,142 +100,199 @@ function showEmpty(text) {
     const empty = document.getElementById('emptyState');
     empty.textContent = text;
     empty.style.display = 'block';
-    document.getElementById('candidateOverview').style.display = 'none';
     document.getElementById('cardList').style.display = 'none';
 }
 
-function updateHeaderMeta(reportVersion, count) {
-    document.getElementById('schemaChip').textContent = reportVersion ? `schema ${reportVersion}` : 'schema --';
+function showFallbackBanner(text) {
+    const banner = document.getElementById('fallbackBanner');
+    banner.textContent = text;
+    banner.style.display = 'block';
+}
+
+function hideFallbackBanner() {
+    const banner = document.getElementById('fallbackBanner');
+    banner.textContent = '';
+    banner.style.display = 'none';
+}
+
+function renderSchemaFields() {
+    const list = document.getElementById('schemaFieldList');
+    list.innerHTML = REQUIRED_CARD_FIELDS
+        .map(field => `<span class="schema-field-chip">${esc(field)}</span>`)
+        .join('');
+}
+
+function updateHeaderMeta(count) {
+    document.getElementById('schemaChip').textContent = `schema ${CONTEXT_SCHEMA_VERSION}`;
     document.getElementById('countChip').textContent = `${count} 張卡`;
 }
 
-function fetchJSON(url) {
-    return fetch(buildFreshUrl(url), { cache: 'no-store' }).then(async response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        return response.json();
+function buildDateDropdown() {
+    const select = document.getElementById('dateSelect');
+    const reports = Array.isArray(indexData?.reports)
+        ? indexData.reports.filter(report => report?.has_full || report?.has_universe)
+        : [];
+
+    if (!reports.length) {
+        select.innerHTML = '<option value="">無可用日期</option>';
+        return;
+    }
+
+    select.innerHTML = reports.map(report => {
+        const selected = report.date === currentDate ? ' selected' : '';
+        const suffix = report.date === indexData.latest_date ? ' (最新)' : '';
+        return `<option value="${report.date}"${selected}>${report.date}${suffix}</option>`;
+    }).join('');
+}
+
+function parseAIDirection(text) {
+    const source = String(text || '');
+    if (/偏多|強勢|主流|積極|續強/.test(source)) return '偏多';
+    if (/偏保守|保守|防守|轉弱|震盪|分歧|觀望/.test(source)) return '偏保守';
+    return '中性';
+}
+
+function summarizeCounter(counter, limit = 2) {
+    const entries = Object.entries(counter || {}).sort((left, right) => right[1] - left[1]);
+    if (!entries.length) return '分布未明';
+    return entries.slice(0, limit).map(([label, count]) => `${label}${count} 項`).join('、');
+}
+
+function getTopEntries(counter, limit = 2) {
+    return Object.entries(counter || {}).sort((left, right) => right[1] - left[1]).slice(0, limit);
+}
+
+function buildCategoryCounter(stocks) {
+    const counter = {};
+    stocks.forEach(stock => {
+        const category = String(stock?.category || '其他').trim() || '其他';
+        counter[category] = (counter[category] || 0) + 1;
     });
+    return counter;
 }
 
-function validateContextCard(card) {
-    if (!card || typeof card !== 'object') return false;
-    for (const field of REQUIRED_CARD_FIELDS) {
-        if (!(field in card)) return false;
-    }
+function gradeLabel(stock) {
+    const grade = String(stock?.score_grade || '').trim().toUpperCase();
+    if (grade) return grade;
+    const score = toNum(stock?.score);
+    if (score == null) return 'U';
+    if (score >= 75) return 'A';
+    if (score >= 60) return 'B';
+    if (score >= 45) return 'C';
+    return 'D';
+}
 
-    if (!Array.isArray(card.reasoning_chain) || card.reasoning_chain.length < 3 || card.reasoning_chain.length > 4) {
-        return false;
-    }
-    if (!Array.isArray(card.keywords) || card.keywords.length < 2 || card.keywords.length > 4) return false;
-    if (!Array.isArray(card.themes) || card.themes.length < 2 || card.themes.length > 4) return false;
-    if (!VALID_CONFIDENCE.has(card.confidence)) return false;
-    if (!VALID_RELATION.has(card.relation_to_technical)) return false;
-
-    const textFields = ['id', 'title', 'event', 'anomaly', 'source_type', 'generated_at'];
-    for (const field of textFields) {
-        if (typeof card[field] !== 'string' || !card[field].trim()) {
-            return false;
+function selectGeneratedAt(...values) {
+    for (const value of values) {
+        if (typeof value === 'string' && value.trim()) {
+            return value;
         }
     }
-
-    if (!card.keywords.every(item => typeof item === 'string' && item.trim())) return false;
-    if (!card.themes.every(item => typeof item === 'string' && item.trim())) return false;
-    return card.reasoning_chain.every(item => typeof item === 'string' && item.trim());
+    return new Date().toISOString();
 }
 
-function validateTraceCatalog(catalog) {
-    if (!catalog || typeof catalog !== 'object') return false;
-    if (typeof catalog.keyword_dictionary_version !== 'string' || !catalog.keyword_dictionary_version) return false;
-    if (typeof catalog.theme_taxonomy_version !== 'string' || !catalog.theme_taxonomy_version) return false;
-    if (typeof catalog.event_trace_version !== 'string' || !catalog.event_trace_version) return false;
-    if (!catalog.keyword_dictionary || typeof catalog.keyword_dictionary !== 'object') return false;
-    if (!catalog.theme_taxonomy || typeof catalog.theme_taxonomy !== 'object') return false;
-    if (!catalog.event_trace_map || typeof catalog.event_trace_map !== 'object') return false;
-    return true;
-}
-
-function validateStockMappingCatalog(catalog) {
-    if (!catalog || typeof catalog !== 'object') return false;
-    if (catalog.theme_stock_mapping_version !== 'context-theme-stocks-v1') return false;
-    if (!catalog.theme_stock_rules || typeof catalog.theme_stock_rules !== 'object') return false;
-    if (!catalog.themes_to_stocks || typeof catalog.themes_to_stocks !== 'object') return false;
-    return true;
-}
-
-function validateTrace(card, catalog) {
-    const trace = card.trace;
-    if (!trace || typeof trace !== 'object') return false;
-    for (const field of REQUIRED_TRACE_FIELDS) {
-        if (!(field in trace)) return false;
+function buildSnapshot(fullReport, universeReport, aiReport, activationReport) {
+    const universeStocks = Array.isArray(universeReport?.stocks) ? universeReport.stocks : [];
+    const fullStocks = Array.isArray(fullReport?.stocks) ? fullReport.stocks : [];
+    const stocks = universeStocks.length ? universeStocks : fullStocks;
+    if (!stocks.length) {
+        return null;
     }
-    if (typeof trace.event !== 'string' || !trace.event.trim()) return false;
-    if (!(trace.event in catalog.event_trace_map)) return false;
-    if (!Array.isArray(trace.keywords) || trace.keywords.length < 2 || trace.keywords.length > 4) return false;
-    if (!Array.isArray(trace.themes) || trace.themes.length < 2 || trace.themes.length > 4) return false;
-    if (!trace.keywords.every(id => typeof id === 'string' && catalog.keyword_dictionary[id])) return false;
-    if (!trace.themes.every(id => typeof id === 'string' && catalog.theme_taxonomy[id])) return false;
 
-    const expectedKeywords = trace.keywords.map(id => catalog.keyword_dictionary[id]);
-    const expectedThemes = trace.themes.map(id => catalog.theme_taxonomy[id].label);
-    if (JSON.stringify(expectedKeywords) !== JSON.stringify(card.keywords)) return false;
-    if (JSON.stringify(expectedThemes) !== JSON.stringify(card.themes)) return false;
-    return true;
-}
+    const topSample = [...stocks]
+        .sort((left, right) => (toNum(left?.rank) ?? 999) - (toNum(right?.rank) ?? 999))
+        .slice(0, Math.min(10, stocks.length));
+    const categoryCounter = buildCategoryCounter(topSample);
+    const topCategoryEntries = getTopEntries(categoryCounter, 2);
+    const topTwoTotal = topCategoryEntries.reduce((sum, [, count]) => sum + count, 0);
+    const topTwoShare = topSample.length ? topTwoTotal / topSample.length : null;
 
-function validateCandidateStocks(card, report) {
-    if (!Array.isArray(card.candidate_stocks)) return false;
-    return card.candidate_stocks.every(candidate => {
-        if (!candidate || typeof candidate !== 'object') return false;
-        for (const field of REQUIRED_CANDIDATE_FIELDS) {
-            if (typeof candidate[field] !== 'string' || !candidate[field].trim()) return false;
-        }
-        if (candidate.trace_event !== card.trace.event) return false;
-        if (!card.trace.themes.includes(candidate.from_theme)) return false;
-        const mapped = report.stock_mapping_catalog.themes_to_stocks[candidate.from_theme];
-        if (!Array.isArray(mapped) || !mapped.includes(candidate.symbol)) return false;
-        return true;
+    const hotStocks = stocks.filter(stock => {
+        const volumeRatio = toNum(stock?.volume_ratio ?? stock?.indicators?.volume_ratio);
+        return volumeRatio != null && volumeRatio >= 1.5;
     });
-}
+    const hotCategoryCounter = buildCategoryCounter(hotStocks);
+    const hotHighScoreCount = hotStocks.filter(stock => {
+        const grade = gradeLabel(stock);
+        return grade === 'A' || grade === 'B';
+    }).length;
+    const overlapCategories = getTopEntries(categoryCounter, 3)
+        .map(([category]) => category)
+        .filter(category => hotCategoryCounter[category]);
 
-function validateContextReport(report) {
-    if (!report || typeof report !== 'object') return false;
-    if (report.report_version !== 'v9-context') return false;
-    if (!validateTraceCatalog(report.trace_catalog)) return false;
-    if (!validateStockMappingCatalog(report.stock_mapping_catalog)) return false;
-    if (!Array.isArray(report.cards) || report.cards.length === 0) return false;
-    return report.cards.every(card => (
-        validateContextCard(card)
-        && validateTrace(card, report.trace_catalog)
-        && validateCandidateStocks(card, report)
-    ));
-}
+    let avgScore = 0;
+    let positiveCount = 0;
+    let cautiousCount = 0;
+    let counted = 0;
 
-function createFallbackCard(reason) {
-    const now = new Date().toISOString();
+    stocks.forEach(stock => {
+        const score = toNum(stock?.score);
+        if (score != null) {
+            avgScore += score;
+            counted += 1;
+        }
+        const grade = gradeLabel(stock);
+        if (grade === 'A' || grade === 'B') {
+            positiveCount += 1;
+        } else if (grade === 'C' || grade === 'D') {
+            cautiousCount += 1;
+        }
+    });
+
+    avgScore = counted ? avgScore / counted : null;
+
+    let technicalDirection = '中性';
+    if (avgScore != null) {
+        if (avgScore >= 65 && positiveCount >= cautiousCount) {
+            technicalDirection = '偏多';
+        } else if (avgScore < 55 || cautiousCount > positiveCount) {
+            technicalDirection = '偏保守';
+        }
+    }
+
     return {
-        id: 'ui-fallback',
-        title: '情境卡暫時不可用',
-        event: '本頁仍可正常開啟，但目前沒有可用的情境卡資料。',
-        anomaly: reason,
-        keywords: ['資料不足', '頁面保底'],
-        themes: ['系統保底', '情境待補'],
-        trace: {
-            event: 'context_unavailable',
-            keywords: ['data_shortage', 'ui_fallback'],
-            themes: ['system_fallback', 'trace_pending']
-        },
-        candidate_stocks: [],
-        reasoning_chain: [
-            '目前無法取得符合 v9 固定 schema、trace chain 與股票映射的資料。',
-            '目前只回退到頁面保底訊息，不影響首頁與個股頁。',
-            '情境卡資料補齊後，頁面會自動恢復正常顯示。'
-        ],
-        confidence: 'low',
-        relation_to_technical: 'neutral',
-        source_type: 'ui_fallback',
-        generated_at: now
+        date: currentDate,
+        totalCount: stocks.length,
+        avgScore,
+        positiveCount,
+        cautiousCount,
+        topSampleCount: topSample.length,
+        categoryCounter,
+        topCategoryEntries,
+        topTwoShare,
+        hotStocks,
+        hotCategoryCounter,
+        hotShare: stocks.length ? hotStocks.length / stocks.length : null,
+        hotHighScoreCount,
+        overlapCategories,
+        technicalDirection,
+        aiDirection: parseAIDirection(aiReport?.market_overview_ai),
+        marketOverview: String(fullReport?.summary?.market_overview || ''),
+        aiMarketOverview: String(aiReport?.market_overview_ai || ''),
+        generatedAt: selectGeneratedAt(
+            universeReport?.generated_at,
+            fullReport?.generated_at,
+            aiReport?.generated_at,
+            activationReport?.generated_at
+        )
     };
+}
+
+function collectBannedTerms(fullReport, universeReport) {
+    const terms = new Set();
+    const sources = [];
+    if (Array.isArray(fullReport?.stocks)) sources.push(fullReport.stocks);
+    if (Array.isArray(universeReport?.stocks)) sources.push(universeReport.stocks);
+
+    sources.forEach(stocks => {
+        stocks.forEach(stock => {
+            const symbol = String(stock?.symbol || '').trim();
+            const name = String(stock?.name || '').trim();
+            if (symbol) terms.add(symbol);
+            if (name) terms.add(name);
+        });
+    });
+    return terms;
 }
 
 function relationLabel(value) {
@@ -442,677 +307,299 @@ function confidenceLabel(value) {
     return '低可信';
 }
 
-function formatGeneratedAt(text) {
-    if (!text) return '--';
-    return text.replace('T', ' ').replace(/\+08:00$/, '');
+function relationTone(aiDirection, technicalDirection) {
+    if (aiDirection === '中性' || technicalDirection === '中性') return 'neutral';
+    return aiDirection === technicalDirection ? 'aligned' : 'conflict';
 }
 
-function renderTagList(items, className) {
-    return items.map(item => `<span class="tag-chip ${className}">${esc(item)}</span>`).join('');
-}
-
-function renderTraceList(items) {
-    return items.map(item => `<span class="trace-chip">${esc(item)}</span>`).join('');
-}
-
-function eventLabel(eventId, eventMap) {
-    return eventMap[eventId] || eventId;
-}
-
-function themeLabel(themeId, catalog) {
-    return catalog?.theme_taxonomy?.[themeId]?.label || themeId;
-}
-
-function getAdviceToneClass(advice) {
-    if (advice === '強勢續看' || advice === '可偏多觀察' || advice === '可留意') {
-        return 'positive';
-    }
-    if (advice === '先觀望') {
-        return 'watch';
-    }
-    return 'avoid';
-}
-
-function getZonePriority(zoneFlags) {
-    if (zoneFlags?.inPilotZone) return 2;
-    if (zoneFlags?.inObserveZone) return 1;
-    return 0;
-}
-
-function getZonePriorityLabel(zoneFlags) {
-    if (zoneFlags?.inPilotZone) return '試單區優先';
-    if (zoneFlags?.inObserveZone) return '觀察區次優先';
-    return '區間外';
-}
-
-function formatPriorityRank(rank) {
-    return String(rank).padStart(2, '0');
-}
-
-function getSortedUniverseDates() {
-    if (!Array.isArray(indexData?.reports)) {
-        return [];
-    }
-
-    return indexData.reports
-        .filter(report => report?.has_universe === true && typeof report.date === 'string')
-        .map(report => report.date)
-        .sort();
-}
-
-function getPreviousUniverseDate(date) {
-    const dates = getSortedUniverseDates();
-    const index = dates.indexOf(date);
-    if (index <= 0) {
-        return null;
-    }
-    return dates[index - 1];
-}
-
-function isStrategyLowPosition(technical, lowerThirdCutoff) {
-    const close = toNum(technical?.indicators?.close);
-    const ma20 = toNum(technical?.indicators?.ma20);
-    const gap = getMa20Diff(close, ma20);
-    return gap != null && lowerThirdCutoff != null && gap <= lowerThirdCutoff;
-}
-
-function isStrategyJustBreakMa20(currentTechnical, previousTechnical) {
-    const previousClose = toNum(previousTechnical?.indicators?.close);
-    const previousMa20 = toNum(previousTechnical?.indicators?.ma20);
-    const currentClose = toNum(currentTechnical?.indicators?.close);
-    const currentMa20 = toNum(currentTechnical?.indicators?.ma20);
-
-    return previousClose != null
-        && previousMa20 != null
-        && previousMa20 !== 0
-        && currentClose != null
-        && currentMa20 != null
-        && currentMa20 !== 0
-        && previousClose >= previousMa20
-        && currentClose < currentMa20;
-}
-
-function isStrategyLowKTurnUp(currentTechnical, previousTechnical) {
-    const previousK = toNum(previousTechnical?.indicators?.k);
-    const currentK = toNum(currentTechnical?.indicators?.k);
-    return previousK != null
-        && currentK != null
-        && currentK < 30
-        && currentK > previousK;
-}
-
-function buildStrategyMatchMap(overview, report) {
-    const matches = {
-        sniper: [],
-        steady: []
-    };
-    const strategyAnalysis = report?.strategy_analysis;
-    const technicalMap = report?.technical_map instanceof Map ? report.technical_map : new Map();
-    const previousTechnicalMap = report?.previous_technical_map instanceof Map ? report.previous_technical_map : new Map();
-    const lowerThirdCutoff = toNum(strategyAnalysis?.low_position_definition?.lower_third_cutoff);
-
-    if (!strategyAnalysis || lowerThirdCutoff == null || !overview?.sortedItems?.length) {
-        return matches;
-    }
-
-    overview.sortedItems.forEach(item => {
-        const currentTechnical = technicalMap.get(item.symbol);
-        const previousTechnical = previousTechnicalMap.get(item.symbol);
-        if (!currentTechnical) {
-            return;
-        }
-
-        const isLowPosition = isStrategyLowPosition(currentTechnical, lowerThirdCutoff);
-        if (!isLowPosition) {
-            return;
-        }
-
-        const baseMatch = {
-            ...item,
-            name: currentTechnical.name || item.symbol,
-            explanation: buildPriorityExplanation(item, currentTechnical)
-        };
-
-        if (isStrategyJustBreakMa20(currentTechnical, previousTechnical)) {
-            matches.sniper.push({
-                ...baseMatch,
-                reasons: ['剛跌破 MA20', '低位因子']
-            });
-        }
-
-        if (isStrategyLowKTurnUp(currentTechnical, previousTechnical)) {
-            matches.steady.push({
-                ...baseMatch,
-                reasons: ['KD 低檔翻揚', '低位因子']
-            });
-        }
-    });
-
-    return matches;
-}
-
-function getStrategyRoleLabels(strategyAnalysis) {
+function buildFallbackCard(index, reason, generatedAt) {
     return {
-        highReturn: strategyAnalysis?.style_choice?.high_return?.strategy || null,
-        steady: strategyAnalysis?.style_choice?.steady?.strategy || null
+        id: `fallback-${index}`,
+        title: `保底情境卡 ${index}`,
+        event: '目前可用市場資料不足，第三頁先保留固定載體。',
+        anomaly: reason,
+        reasoning_chain: [
+            '本頁仍維持固定 schema，避免後續推理載體中斷。',
+            '目前沒有足夠資料支撐完整市場情境，因此先回退到系統保底描述。',
+            '這個 fallback 不影響首頁、股票總覽與個股頁的既有功能。'
+        ],
+        confidence: 'low',
+        relation_to_technical: 'neutral',
+        source_type: 'ui_fallback',
+        generated_at: generatedAt || new Date().toISOString()
     };
 }
 
-function renderStrategyMatchList(matches) {
-    if (!matches.length) {
-        return '<div class="strategy-empty">目前候選清單中，暫時沒有符合這條策略的標的。</div>';
+function createBreadthCard(snapshot) {
+    if (!snapshot) {
+        return buildFallbackCard(1, '缺少 full/universe 報表，無法建立盤面廣度情境卡。');
     }
 
-    return `<div class="strategy-match-list">${matches.map(match => `
-        <div class="strategy-match-item">
-            <div class="strategy-match-top">
-                <div class="strategy-match-symbol-line">
-                    <span class="strategy-match-rank">#${formatPriorityRank(match.priorityRank)}</span>
-                    <span class="strategy-match-symbol">${esc(match.symbol)}</span>
-                    <span class="strategy-match-name">${esc(match.name)}</span>
-                </div>
-                <span class="strategy-match-count">${match.events.length} 個情境</span>
-            </div>
-            <div class="strategy-match-note">策略命中：${esc(match.reasons.join(' + '))}</div>
-            <div class="strategy-match-meta">既有排序依據：${esc(match.explanation)}</div>
-        </div>
-    `).join('')}</div>`;
-}
-
-function getSignalDaySummary(signalDensity) {
-    if (!signalDensity || !Array.isArray(signalDensity.daily_hit_counts)) {
-        return null;
+    let event = '中高分樣本占優，盤面仍有可辨識的強弱層次。';
+    if (snapshot.positiveCount === snapshot.cautiousCount) {
+        event = '中高分與中低分樣本接近，盤面仍偏拉鋸。';
+    } else if (snapshot.positiveCount < snapshot.cautiousCount) {
+        event = '中低分樣本偏多，盤面整體結構仍偏保守。';
     }
 
-    return signalDensity.daily_hit_counts.find(item => item?.date === currentDate) || null;
-}
-
-function getSignalWeekSummary(signalDensity) {
-    if (!signalDensity || !Array.isArray(signalDensity.weekly_hit_counts) || !currentDate) {
-        return null;
-    }
-
-    return signalDensity.weekly_hit_counts.find(item => (
-        typeof item?.start_date === 'string'
-        && typeof item?.end_date === 'string'
-        && currentDate >= item.start_date
-        && currentDate <= item.end_date
-    )) || null;
-}
-
-function renderSignalDensityDiagnostic(strategyName, report) {
-    const signalDensity = report?.signal_density;
-    const daySummary = getSignalDaySummary(signalDensity);
-    if (!daySummary) {
-        return '';
-    }
-
-    const weekSummary = getSignalWeekSummary(signalDensity);
-    const strategyHitsToday = Number(daySummary?.strategy_hits?.[strategyName] || 0);
-    const strategyHitsThisWeek = Number(weekSummary?.strategy_hits?.[strategyName] || 0);
-    const blocker = daySummary?.strategy_blockers?.[strategyName] || null;
-    const todayStrictest = daySummary?.strictest_condition || null;
-    const overallStrictest = signalDensity?.overall_condition_density?.strictest_condition || null;
-    const totalCandidates = Number(daySummary?.candidate_count || 0);
-
-    const todayStrictestText = todayStrictest
-        ? `${todayStrictest.label} ${todayStrictest.pass_count}/${totalCandidates}`
-        : '--';
-    const strategyBlockerText = blocker?.strictest_condition
-        ? `${blocker.strictest_condition.label} ${blocker.strictest_condition.pass_count}/${totalCandidates}`
-        : '--';
-    const overallStrictestText = overallStrictest
-        ? `${overallStrictest.label} ${formatPercentValue(overallStrictest.pass_rate_pct)}`
-        : '--';
-
-    return `
-        <div class="strategy-density-shell">
-            <div class="strategy-density-title">v17 訊號密度診斷</div>
-            <div class="strategy-density-grid">
-                <div class="strategy-density-item">
-                    <div class="strategy-density-label">今日命中</div>
-                    <div class="strategy-density-value">${esc(String(strategyHitsToday))}</div>
-                </div>
-                <div class="strategy-density-item">
-                    <div class="strategy-density-label">本週命中</div>
-                    <div class="strategy-density-value">${esc(String(strategyHitsThisWeek))}</div>
-                </div>
-                <div class="strategy-density-item">
-                    <div class="strategy-density-label">今日最嚴</div>
-                    <div class="strategy-density-value strategy-density-value-sm">${esc(todayStrictestText)}</div>
-                </div>
-                <div class="strategy-density-item">
-                    <div class="strategy-density-label">本策略卡點</div>
-                    <div class="strategy-density-value strategy-density-value-sm">${esc(strategyBlockerText)}</div>
-                </div>
-            </div>
-            <div class="strategy-density-note">${esc(daySummary?.zero_hit_diagnosis?.summary || '')}</div>
-            <div class="strategy-density-note">${esc(blocker?.summary || '')}</div>
-            <div class="strategy-density-foot">歷史最嚴條件：${esc(overallStrictestText)}</div>
-        </div>
-    `;
-}
-
-function renderStrategyFocusPanel(strategyName, strategy, matches, report) {
-    const previousUniverseDate = report?.previous_universe_date;
-    const lowerThirdCutoff = toNum(report?.strategy_analysis?.low_position_definition?.lower_third_cutoff);
-    const previousNote = previousUniverseDate
-        ? `當前歸屬判定會參考 ${previousUniverseDate} 與 ${currentDate} 兩天的技術資料。`
-        : '目前缺少前一個交易日 universe，當前歸屬僅能顯示歷史統計差異。';
-
-    return `
-        <div class="strategy-focus-head">
-            <div>
-                <div class="strategy-focus-title">已選風格：${esc(strategy.label)}</div>
-                <div class="strategy-focus-meta">${esc(strategy.selection_hint)}</div>
-            </div>
-            <div class="strategy-focus-side">低位門檻 ${esc(formatGapThreshold(lowerThirdCutoff))}</div>
-        </div>
-        <div class="strategy-focus-caption">${esc(previousNote)}</div>
-        ${renderStrategyMatchList(matches)}
-        ${renderSignalDensityDiagnostic(strategyName, report)}
-    `;
-}
-
-function renderStrategySection(overview, report) {
-    const strategyAnalysis = report?.strategy_analysis;
-    if (!strategyAnalysis || !strategyAnalysis.strategies) {
-        return '';
-    }
-
-    const strategies = strategyAnalysis.strategies;
-    const strategyNames = Array.isArray(strategyAnalysis.strategy_names)
-        ? strategyAnalysis.strategy_names.filter(name => strategies[name])
-        : Object.keys(strategies);
-    if (!strategyNames.length) {
-        return '';
-    }
-
-    const matchMap = buildStrategyMatchMap(overview, report);
-    const roleLabels = getStrategyRoleLabels(strategyAnalysis);
-    const selectedKey = strategies[currentStrategyChoice]
-        ? currentStrategyChoice
-        : roleLabels.highReturn || strategyNames[0];
-    currentStrategyChoice = selectedKey;
-
-    const cardsHTML = strategyNames.map(strategyName => {
-        const strategy = strategies[strategyName];
-        const isSelected = strategyName === selectedKey;
-        const currentMatchCount = (matchMap[strategyName] || []).length;
-        const badges = [];
-        if (roleLabels.highReturn === strategyName) {
-            badges.push('<span class="strategy-role-chip strategy-role-return">高報酬代表</span>');
-        }
-        if (roleLabels.steady === strategyName) {
-            badges.push('<span class="strategy-role-chip strategy-role-steady">穩定代表</span>');
-        }
-
-        return `
-            <button type="button" class="strategy-card${isSelected ? ' active' : ''}" data-strategy-choice="${esc(strategyName)}">
-                <div class="strategy-card-top">
-                    <div>
-                        <div class="strategy-title-line">
-                            <span class="strategy-title">${esc(strategy.label)}</span>
-                            <span class="strategy-style-chip">${esc(strategy.style_focus)}</span>
-                        </div>
-                        <div class="strategy-card-desc">${esc(strategy.description)}</div>
-                    </div>
-                    <div class="strategy-role-row">${badges.join('')}</div>
-                </div>
-                <div class="strategy-metric-grid">
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-label">平均報酬</div>
-                        <div class="strategy-metric-value">${esc(formatPercentValue(strategy.avg_return_pct))}</div>
-                    </div>
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-label">勝率</div>
-                        <div class="strategy-metric-value">${esc(formatPercentValue(strategy.win_rate_pct))}</div>
-                    </div>
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-label">樣本數</div>
-                        <div class="strategy-metric-value">${esc(String(strategy.sample_count ?? 0))}</div>
-                    </div>
-                </div>
-                <div class="strategy-card-note">${esc(strategy.selection_hint)}</div>
-                <div class="strategy-card-current">目前候選符合 ${esc(String(currentMatchCount))} 檔</div>
-            </button>`;
-    }).join('');
-
-    return `
-        <section class="strategy-section" id="strategySection">
-            <div class="strategy-section-head">
-                <div class="strategy-section-title">策略視角</div>
-                <div class="strategy-section-meta">這裡只把候選拆成「高報酬」與「穩定」兩種風格供你選擇；下方 v10.5 優先清單排序完全不變。</div>
-            </div>
-            <div class="strategy-card-grid">${cardsHTML}</div>
-            <div class="strategy-focus-shell" id="strategyFocusShell">${renderStrategyFocusPanel(selectedKey, strategies[selectedKey], matchMap[selectedKey] || [], report)}</div>
-        </section>`;
-}
-
-function bindStrategySelector(overview, report) {
-    const section = document.getElementById('strategySection');
-    const focusShell = document.getElementById('strategyFocusShell');
-    if (!section || !focusShell || !report?.strategy_analysis?.strategies) {
-        return;
-    }
-
-    const matchMap = buildStrategyMatchMap(overview, report);
-    const strategies = report.strategy_analysis.strategies;
-
-    section.querySelectorAll('[data-strategy-choice]').forEach(button => {
-        button.addEventListener('click', () => {
-            const strategyName = button.getAttribute('data-strategy-choice');
-            if (!strategies[strategyName]) {
-                return;
-            }
-            currentStrategyChoice = strategyName;
-            section.querySelectorAll('[data-strategy-choice]').forEach(item => {
-                item.classList.toggle('active', item === button);
-            });
-            focusShell.innerHTML = renderStrategyFocusPanel(strategyName, strategies[strategyName], matchMap[strategyName] || [], report);
-        });
-    });
-}
-
-function renderTechnicalChips(technical) {
-    if (!technical) {
-        return '<div class="overview-tech-list"><span class="overview-status-chip tech-missing">主報表缺技術資料</span></div>';
-    }
-
-    const { summary, zoneFlags } = technical;
-    const chips = [
-        `<span class="overview-status-chip advice-${getAdviceToneClass(summary.advice)}">${esc(summary.advice)}</span>`,
-        `<span class="overview-status-chip ${zoneFlags.inPilotZone ? 'flag-on' : 'flag-off'}">${zoneFlags.inPilotZone ? '位於試單區' : '未在試單區'}</span>`,
-        `<span class="overview-status-chip ${zoneFlags.inObserveZone ? 'flag-on' : 'flag-off'}">${zoneFlags.inObserveZone ? '位於觀察區' : '未在觀察區'}</span>`,
-        `<span class="overview-status-chip ${zoneFlags.isWeakBlocked ? 'flag-blocked' : 'flag-clear'}">${zoneFlags.isWeakBlocked ? '弱股封鎖' : '非弱股'}</span>`
-    ];
-
-    return `<div class="overview-tech-list">${chips.join('')}</div>`;
-}
-
-function compareOverviewItems(left, right, technicalMap) {
-    const leftTechnical = technicalMap instanceof Map ? technicalMap.get(left.symbol) : null;
-    const rightTechnical = technicalMap instanceof Map ? technicalMap.get(right.symbol) : null;
-
-    const eventDiff = right.events.length - left.events.length;
-    if (eventDiff !== 0) return eventDiff;
-
-    const adviceDiff = getAdvicePriority(rightTechnical?.summary?.advice) - getAdvicePriority(leftTechnical?.summary?.advice);
-    if (adviceDiff !== 0) return adviceDiff;
-
-    const zoneDiff = getZonePriority(rightTechnical?.zoneFlags) - getZonePriority(leftTechnical?.zoneFlags);
-    if (zoneDiff !== 0) return zoneDiff;
-
-    return left.firstSeenOrder - right.firstSeenOrder;
-}
-
-function buildPriorityExplanation(item, technical) {
-    const advice = technical?.summary?.advice || '技術資料不足';
-    const zone = getZonePriorityLabel(technical?.zoneFlags);
-    return `${item.events.length} 情境 > ${advice} > ${zone}`;
-}
-
-function buildCandidateOverview(report) {
-    const cards = Array.isArray(report?.cards) ? report.cards : [];
-    const eventMap = {};
-    const entries = new Map();
-    const groupOrder = [];
-    const technicalMap = report?.technical_map instanceof Map ? report.technical_map : new Map();
-    let firstSeenOrder = 0;
-
-    for (const card of cards) {
-        eventMap[card.trace.event] = card.title;
-        for (const candidate of card.candidate_stocks) {
-            const existing = entries.get(candidate.symbol);
-            if (!existing) {
-                const next = {
-                    symbol: candidate.symbol,
-                    primaryTheme: candidate.from_theme,
-                    themes: [candidate.from_theme],
-                    events: [candidate.trace_event],
-                    firstSeenOrder
-                };
-                entries.set(candidate.symbol, next);
-                firstSeenOrder += 1;
-                if (!groupOrder.includes(candidate.from_theme)) {
-                    groupOrder.push(candidate.from_theme);
-                }
-                continue;
-            }
-            if (!existing.themes.includes(candidate.from_theme)) {
-                existing.themes.push(candidate.from_theme);
-            }
-            if (!existing.events.includes(candidate.trace_event)) {
-                existing.events.push(candidate.trace_event);
-            }
-        }
-    }
-
-    const sortedItems = Array.from(entries.values()).sort((left, right) => compareOverviewItems(left, right, technicalMap));
-    sortedItems.forEach((item, index) => {
-        item.priorityRank = index + 1;
-    });
-
-    const grouped = groupOrder.map(themeId => ({
-        themeId,
-        items: sortedItems.filter(item => item.primaryTheme === themeId)
-    })).filter(group => group.items.length > 0);
+    const confidence = snapshot.avgScore != null && Math.abs(snapshot.positiveCount - snapshot.cautiousCount) >= 6
+        ? 'high'
+        : 'medium';
 
     return {
-        totalUnique: entries.size,
-        groups: grouped,
-        eventMap,
-        sortedItems
+        id: 'breadth-balance',
+        title: '盤面廣度與強弱分布',
+        event,
+        anomaly: `A/B 合計 ${snapshot.positiveCount} 檔，C/D 合計 ${snapshot.cautiousCount} 檔，平均分數約 ${formatNum(snapshot.avgScore)}。`,
+        reasoning_chain: [
+            `當日可用樣本共 ${snapshot.totalCount} 檔，這張卡先用分數分布確認盤面是否仍有前段結構。`,
+            `目前 A/B 與 C/D 的差距為 ${Math.abs(snapshot.positiveCount - snapshot.cautiousCount)} 檔，可用來判斷盤面偏多還是偏保守。`,
+            '這張卡只描述市場結構，不延伸到個股名稱，也不提供任何操作結論。'
+        ],
+        confidence,
+        relation_to_technical: snapshot.technicalDirection === '中性' ? 'neutral' : 'aligned',
+        source_type: 'market_overview+score_distribution',
+        generated_at: snapshot.generatedAt
     };
 }
 
-function renderPriorityList(overview, report) {
-    const itemsHTML = overview.sortedItems.map(item => {
-        const technical = report?.technical_map instanceof Map ? report.technical_map.get(item.symbol) : null;
-        const technicalHTML = renderTechnicalChips(technical);
-        const stockName = technical?.name ? `<span class="priority-name">${esc(technical.name)}</span>` : '';
-        const explanation = buildPriorityExplanation(item, technical);
-
-        return `
-            <div class="priority-item">
-                <div class="priority-rank">#${formatPriorityRank(item.priorityRank)}</div>
-                <div class="priority-content">
-                    <div class="priority-top">
-                        <div class="priority-symbol-line">
-                            <span class="priority-symbol">${esc(item.symbol)}</span>
-                            ${stockName}
-                        </div>
-                        <span class="priority-count">${item.events.length} 個情境</span>
-                    </div>
-                    ${technicalHTML}
-                    <div class="priority-explain">排序依據：${esc(explanation)}</div>
-                </div>
-            </div>`;
-    }).join('');
-
-    return `
-        <section class="priority-section">
-            <div class="priority-section-head">
-                <div class="priority-section-title">優先關注清單</div>
-                <div class="priority-section-meta">排序規則：先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。</div>
-            </div>
-            <div class="priority-list">${itemsHTML}</div>
-        </section>`;
-}
-
-function renderOverviewGroup(group, report, eventMap) {
-    const itemsHTML = group.items.map(item => {
-        const technical = report?.technical_map instanceof Map ? report.technical_map.get(item.symbol) : null;
-        const themeHTML = renderTagList(item.themes.map(themeId => themeLabel(themeId, report.trace_catalog)), 'theme-chip');
-        const eventHTML = item.events
-            .map(eventId => `<span class="overview-event-chip" title="${esc(eventLabel(eventId, eventMap))}">${esc(eventId)}</span>`)
-            .join('');
-        const technicalHTML = renderTechnicalChips(technical);
-        const stockName = technical?.name ? `<span class="overview-name">${esc(technical.name)}</span>` : '';
-        const explanation = buildPriorityExplanation(item, technical);
-
-        return `
-            <div class="overview-item">
-                <div class="overview-item-top">
-                    <div class="overview-symbol-line">
-                        <span class="overview-symbol">${esc(item.symbol)}</span>
-                        ${stockName}
-                    </div>
-                    <div class="overview-item-meta">
-                        <span class="overview-priority-chip">#${formatPriorityRank(item.priorityRank)}</span>
-                        <span class="overview-count">${item.events.length} 個情境</span>
-                    </div>
-                </div>
-                ${technicalHTML}
-                <div class="overview-priority-note">排序依據：${esc(explanation)}</div>
-                <div class="overview-row">
-                    <span class="overview-label">themes</span>
-                    <div class="tag-list">${themeHTML}</div>
-                </div>
-                <div class="overview-row">
-                    <span class="overview-label">events</span>
-                    <div class="overview-event-list">${eventHTML}</div>
-                </div>
-            </div>`;
-    }).join('');
-
-    return `
-        <section class="overview-group">
-            <div class="overview-group-head">
-                <div class="overview-group-title">${esc(themeLabel(group.themeId, report.trace_catalog))}</div>
-                <div class="overview-group-count">${group.items.length} 檔</div>
-            </div>
-            <div class="overview-group-list">${itemsHTML}</div>
-        </section>`;
-}
-
-function renderCandidateOverview(report) {
-    const section = document.getElementById('candidateOverview');
-    const meta = document.getElementById('overviewMeta');
-    const body = document.getElementById('overviewBody');
-    const overview = buildCandidateOverview(report);
-
-    if (!overview.totalUnique) {
-        meta.textContent = '目前沒有可收斂的候選股票。';
-        body.innerHTML = '<div class="overview-empty">底層原始候選仍保留，但目前沒有可顯示的收斂清單。</div>';
-        section.style.display = 'block';
-        return;
+function createSectorCard(snapshot) {
+    if (!snapshot || !snapshot.topCategoryEntries.length) {
+        return buildFallbackCard(2, '缺少類別集中度資料，無法建立主軸收斂情境卡。', snapshot?.generatedAt);
     }
 
-    meta.textContent = `跨卡去重後共 ${overview.totalUnique} 檔；優先層只用「情境數 > 技術面 > 試單區」排序，不改原始候選資料與 summary。`;
-    body.innerHTML = `${renderStrategySection(overview, report)}${renderPriorityList(overview, report)}<div class="overview-group-shell"><div class="overview-group-shell-title">依題材分組</div>${overview.groups
-        .map(group => renderOverviewGroup(group, report, overview.eventMap))
-        .join('')}</div>`;
-    bindStrategySelector(overview, report);
-    section.style.display = 'block';
-}
-
-function renderCandidateStocks(candidateStocks, report) {
-    if (!candidateStocks.length) {
-        return '<div class="candidate-empty">這張卡目前沒有對應的固定候選股票池。</div>';
+    const topSummary = summarizeCounter(snapshot.categoryCounter);
+    let event = '前段樣本集中在少數類別，市場主軸偏收斂。';
+    if ((snapshot.topTwoShare || 0) < 0.6) {
+        event = (snapshot.topTwoShare || 0) >= 0.45
+            ? '前段類別已有主軸，但輪動仍未完全結束。'
+            : '前段類別分散，主軸尚未完全收斂。';
     }
 
-    const items = candidateStocks.map(candidate => `
-        <div class="candidate-item">
-            <div class="candidate-top">
-                <span class="candidate-symbol">${esc(candidate.symbol)}</span>
-                <span class="candidate-theme">${esc(themeLabel(candidate.from_theme, report.trace_catalog))}</span>
-            </div>
-            <div class="candidate-meta">event: ${esc(candidate.trace_event)}</div>
-            <div class="candidate-reason">${esc(candidate.reason)}</div>
-        </div>
-    `).join('');
-
-    return `<div class="candidate-list">${items}</div>`;
+    return {
+        id: 'sector-concentration',
+        title: '主軸集中度',
+        event,
+        anomaly: `前 ${snapshot.topSampleCount} 名樣本中，前兩大類別占比約 ${formatPct((snapshot.topTwoShare || 0) * 100)}，主要落在 ${topSummary}。`,
+        reasoning_chain: [
+            `這張卡只看前 ${snapshot.topSampleCount} 名樣本，因為前段名次最能反映當日資金偏好的聚焦程度。`,
+            `當前兩大類別占比過高時，代表市場注意力集中；若占比下降，則代表主軸仍在輪動。`,
+            '這裡只保留類別與結構描述，不做題材到股票的映射，也不點名任何公司。'
+        ],
+        confidence: (snapshot.topTwoShare || 0) >= 0.6 ? 'high' : 'medium',
+        relation_to_technical: (snapshot.topTwoShare || 0) >= 0.45 ? 'aligned' : 'neutral',
+        source_type: 'sector_concentration+universe',
+        generated_at: snapshot.generatedAt
+    };
 }
 
-function renderCard(card, report) {
+function createVolumeCard(snapshot) {
+    if (!snapshot) {
+        return buildFallbackCard(3, '缺少量能資料，無法建立量能異常情境卡。');
+    }
+
+    const hotSummary = summarizeCounter(snapshot.hotCategoryCounter);
+    let event = '量能異常有形成群聚，但擴散仍集中在少數區塊。';
+    if (!snapshot.hotStocks.length) {
+        event = '量能異常有限，市場注意力尚未形成可辨識的擴散。';
+    } else if ((snapshot.hotShare || 0) < 0.08) {
+        event = '量能異常存在，但仍屬局部升溫，尚未形成明顯擴散。';
+    }
+
+    const overlapText = snapshot.overlapCategories.length
+        ? snapshot.overlapCategories.join('、')
+        : '目前與前段類別重疊有限';
+
+    return {
+        id: 'volume-focus',
+        title: '量能異常與擴散',
+        event,
+        anomaly: `量比大於等於 1.5 的樣本共 ${snapshot.hotStocks.length} 檔，占全體約 ${formatPct((snapshot.hotShare || 0) * 100)}；其中 ${snapshot.hotHighScoreCount} 檔同時位於 A/B 區。`,
+        reasoning_chain: [
+            '量能不是用來下單，而是用來驗證當日市場注意力是否開始聚集。',
+            `目前放量樣本主要落在 ${hotSummary}，與前段主軸的重疊情況為 ${overlapText}。`,
+            '若放量樣本集中但沒有對應的前段結構，這張卡就只保留中性描述，不外推到股票層。'
+        ],
+        confidence: snapshot.hotStocks.length >= 4 && snapshot.hotHighScoreCount >= 2 ? 'high' : snapshot.hotStocks.length ? 'medium' : 'low',
+        relation_to_technical: snapshot.hotHighScoreCount >= Math.max(1, Math.floor(snapshot.hotStocks.length / 2)) ? 'aligned' : 'neutral',
+        source_type: 'volume_anomaly+universe',
+        generated_at: snapshot.generatedAt
+    };
+}
+
+function createAIOverlayCard(snapshot, aiReport) {
+    if (!snapshot || !String(aiReport?.market_overview_ai || '').trim()) {
+        return null;
+    }
+
+    const relation = relationTone(snapshot.aiDirection, snapshot.technicalDirection);
+    let event = 'AI 摘要方向與橫截面資料一致，可作為市場敘事的輔助驗證。';
+    if (relation === 'conflict') {
+        event = 'AI 摘要方向與橫截面資料有落差，這張卡保留疑點而不延伸敘事。';
+    } else if (relation === 'neutral') {
+        event = 'AI 摘要提供方向感，但橫截面資料仍保留中性空間。';
+    }
+
+    return {
+        id: 'ai-overlay',
+        title: 'AI 摘要與技術面對照',
+        event,
+        anomaly: `AI 市場總覽偏向「${snapshot.aiDirection}」，橫截面技術結構偏向「${snapshot.technicalDirection}」。`,
+        reasoning_chain: [
+            'AI 市場總覽只拿來補充方向，不直接參與個股結論，也不允許自由點名股票。',
+            `目前平均分數約 ${formatNum(snapshot.avgScore)}，放量樣本占比約 ${formatPct((snapshot.hotShare || 0) * 100)}，可用來檢查 AI 敘事是否有市場結構支撐。`,
+            '當 AI 與橫截面一致時，情境可信度提高；若不一致，這張卡就保留分歧，不外推到買賣決策。'
+        ],
+        confidence: relation === 'aligned' && (snapshot.hotShare || 0) >= 0.08 ? 'high' : 'medium',
+        relation_to_technical: relation,
+        source_type: 'ai_market_overview+technical_snapshot',
+        generated_at: selectGeneratedAt(aiReport?.generated_at, snapshot.generatedAt)
+    };
+}
+
+function createActivationCard(snapshot, activationReport) {
+    if (!activationReport || typeof activationReport !== 'object') {
+        return null;
+    }
+
+    const passCount = toNum(activationReport?.decision?.pass_count) ?? 0;
+    const totalCount = toNum(activationReport?.decision?.total_condition_count) ?? 0;
+    const action = String(activationReport?.decision?.action || '未提供').trim() || '未提供';
+    const trend = String(activationReport?.current_market_snapshot?.market_trend?.market_trend || '--');
+    const concentration = String(activationReport?.current_market_snapshot?.capital_concentration?.label || '--');
+    const volume = String(activationReport?.current_market_snapshot?.volume?.label || '--');
+    const isAlignedDate = activationReport?.as_of_date === currentDate;
+
+    let event = `steady_v5 目前狀態為「${action}」，市場環境仍有部分條件未齊。`;
+    if (!isAlignedDate) {
+        event = `steady_v5 最新狀態為「${action}」，但目前選擇日期與啟用判斷日期不同。`;
+    }
+
+    const relation = snapshot?.technicalDirection === '偏多' && trend === '上升'
+        ? 'aligned'
+        : 'neutral';
+
+    return {
+        id: 'regime-activation',
+        title: 'steady_v5 啟用環境',
+        event,
+        anomaly: `大盤趨勢 ${trend}、資金集中度 ${concentration}、量能 ${volume}，共通過 ${passCount}/${totalCount || 3} 項條件。`,
+        reasoning_chain: [
+            '這張卡只描述市場環境是否接近 steady_v5 的適用條件，不把策略判斷直接翻成買賣建議。',
+            '若啟用判斷日期與目前查看日期不同，這張卡就只作為背景補充，避免把不同日期的環境混在一起。',
+            '這裡保留的是 regime 與 activation 層訊號，供後續題材推理做市場背景參考。'
+        ],
+        confidence: isAlignedDate ? 'medium' : 'low',
+        relation_to_technical: relation,
+        source_type: 'strategy_activation+regime_snapshot',
+        generated_at: selectGeneratedAt(activationReport?.generated_at)
+    };
+}
+
+function cardTextFragments(card) {
+    return [
+        card.id,
+        card.title,
+        card.event,
+        card.anomaly,
+        card.source_type,
+        card.generated_at,
+        ...(Array.isArray(card.reasoning_chain) ? card.reasoning_chain : [])
+    ].map(item => String(item || ''));
+}
+
+function isValidCard(card, bannedTerms) {
+    if (!card || typeof card !== 'object') return false;
+    if (REQUIRED_CARD_FIELDS.some(field => !(field in card))) return false;
+
+    for (const field of ['id', 'title', 'event', 'anomaly', 'source_type', 'generated_at']) {
+        if (typeof card[field] !== 'string' || !card[field].trim()) {
+            return false;
+        }
+    }
+
+    if (!Array.isArray(card.reasoning_chain) || card.reasoning_chain.length < 3) return false;
+    if (!card.reasoning_chain.every(item => typeof item === 'string' && item.trim())) return false;
+    if (!VALID_CONFIDENCE.has(card.confidence)) return false;
+    if (!VALID_RELATION.has(card.relation_to_technical)) return false;
+
+    const texts = cardTextFragments(card);
+    if (texts.some(text => PROHIBITED_TEXT_SNIPPETS.some(snippet => text.includes(snippet)))) {
+        return false;
+    }
+    if (texts.some(text => Array.from(bannedTerms).some(term => term && text.includes(term)))) {
+        return false;
+    }
+
+    return true;
+}
+
+function normalizeCards(cards, bannedTerms, generatedAt) {
+    const normalized = [];
+
+    cards.forEach(card => {
+        if (!card) return;
+        normalized.push(isValidCard(card, bannedTerms)
+            ? card
+            : buildFallbackCard(normalized.length + 1, '原始情境卡內容不符合 v8.1 固定 schema，已改用保底卡。', generatedAt));
+    });
+
+    while (normalized.length < 3) {
+        normalized.push(buildFallbackCard(normalized.length + 1, '可用市場資料不足，已補上保底卡。', generatedAt));
+    }
+
+    return normalized.slice(0, 5);
+}
+
+function renderCard(card) {
     const reasoningHTML = card.reasoning_chain
         .map(item => `<li class="reasoning-item">${esc(item)}</li>`)
         .join('');
-    const keywordsHTML = renderTagList(card.keywords, 'keyword-chip');
-    const themesHTML = renderTagList(card.themes, 'theme-chip');
-    const traceKeywordsHTML = renderTraceList(card.trace.keywords);
-    const traceThemesHTML = renderTraceList(card.trace.themes);
-    const candidatesHTML = renderCandidateStocks(card.candidate_stocks, report);
 
     return `
         <article class="scenario-card" data-card-id="${esc(card.id)}">
             <div class="scenario-card-top">
-                <div class="scenario-card-title">${esc(card.title)}</div>
+                <div class="scenario-title-block">
+                    <div class="scenario-id">${esc(card.id)}</div>
+                    <div class="scenario-card-title">${esc(card.title)}</div>
+                </div>
                 <div class="scenario-card-meta">
                     <span class="meta-chip confidence-${esc(card.confidence)}">${esc(confidenceLabel(card.confidence))}</span>
                     <span class="meta-chip relation-${esc(card.relation_to_technical)}">${esc(relationLabel(card.relation_to_technical))}</span>
                 </div>
             </div>
-            <div class="scenario-row">
-                <div class="scenario-label">事件</div>
-                <div class="scenario-text">${esc(card.event)}</div>
-            </div>
-            <div class="scenario-row">
-                <div class="scenario-label">異常點</div>
-                <div class="scenario-text">${esc(card.anomaly)}</div>
-            </div>
-            <div class="scenario-row">
-                <div class="scenario-label">關鍵詞</div>
-                <div class="scenario-text"><div class="tag-list">${keywordsHTML}</div></div>
-            </div>
-            <div class="scenario-row">
-                <div class="scenario-label">題材</div>
-                <div class="scenario-text"><div class="tag-list">${themesHTML}</div></div>
-            </div>
-            <div class="scenario-row">
-                <div class="scenario-label">追溯鏈</div>
-                <div class="scenario-text">
-                    <div class="trace-block">
-                        <div class="trace-caption">event → keywords → themes</div>
-                        <div class="trace-line"><span class="trace-chip trace-event">${esc(card.trace.event)}</span></div>
-                        <div class="trace-arrow">↓</div>
-                        <div class="trace-line">${traceKeywordsHTML}</div>
-                        <div class="trace-arrow">↓</div>
-                        <div class="trace-line">${traceThemesHTML}</div>
-                    </div>
+            <div class="scenario-grid">
+                <div class="scenario-row">
+                    <div class="scenario-label">event</div>
+                    <div class="scenario-text">${esc(card.event)}</div>
                 </div>
-            </div>
-            <div class="scenario-row">
-                <div class="scenario-label">候選股票</div>
-                <div class="scenario-text">${candidatesHTML}</div>
-            </div>
-            <div class="scenario-row">
-                <div class="scenario-label">推論鏈</div>
-                <div class="scenario-text">
-                    <ul class="reasoning-list">${reasoningHTML}</ul>
+                <div class="scenario-row">
+                    <div class="scenario-label">anomaly</div>
+                    <div class="scenario-text">${esc(card.anomaly)}</div>
+                </div>
+                <div class="scenario-row">
+                    <div class="scenario-label">reasoning_chain</div>
+                    <div class="scenario-text"><ul class="reasoning-list">${reasoningHTML}</ul></div>
+                </div>
+                <div class="scenario-row">
+                    <div class="scenario-label">source_type</div>
+                    <div class="scenario-text">${esc(card.source_type)}</div>
                 </div>
             </div>
             <div class="scenario-footer">
-                <span>source: ${esc(card.source_type)}</span>
-                <span>generated: ${esc(formatGeneratedAt(card.generated_at))}</span>
+                <span>generated_at: ${esc(formatGeneratedAt(card.generated_at))}</span>
+                <span>schema: ${esc(CONTEXT_SCHEMA_VERSION)}</span>
             </div>
         </article>`;
 }
 
-function renderCards(cards, reportVersion, report) {
-    updateHeaderMeta(reportVersion, cards.length);
+function renderCards(cards) {
+    updateHeaderMeta(cards.length);
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
-    renderCandidateOverview(report);
     const list = document.getElementById('cardList');
-    list.innerHTML = cards.map(card => renderCard(card, report)).join('');
+    list.innerHTML = cards.map(renderCard).join('');
     list.style.display = 'grid';
-}
-
-function buildDateDropdown() {
-    const select = document.getElementById('dateSelect');
-    if (!indexData?.reports?.length) {
-        select.innerHTML = '<option value="">無可用日期</option>';
-        return;
-    }
-
-    select.innerHTML = indexData.reports.map(report => {
-        const selected = report.date === currentDate ? ' selected' : '';
-        const suffix = report.date === indexData.latest_date ? ' (最新)' : '';
-        return `<option value="${report.date}"${selected}>${report.date}${suffix}</option>`;
-    }).join('');
 }
 
 async function loadIndex() {
@@ -1120,84 +607,74 @@ async function loadIndex() {
 }
 
 async function loadContextCards(date) {
-    showLoading(`載入 ${date} 情境卡中...`);
+    showLoading(`載入 ${date} 市場情境卡中...`);
+
     try {
-        const previousUniverseDate = getPreviousUniverseDate(date);
-        const [contextResult, universeResult, fullResult, strategyResult, signalDensityResult, previousUniverseResult] = await Promise.allSettled([
-            fetchJSON(`${BASE}/${date}-context.json`),
-            fetchJSON(`${BASE}/${date}-universe.json`),
+        const [fullResult, universeResult, aiResult, activationResult] = await Promise.allSettled([
             fetchJSON(`${BASE}/${date}.json`),
-            fetchJSON(`${BASE}/strategy_analysis.json`),
-            fetchJSON(`${BASE}/signal_density.json`),
-            previousUniverseDate ? fetchJSON(`${BASE}/${previousUniverseDate}-universe.json`) : Promise.resolve(null)
+            fetchJSON(`${BASE}/${date}-universe.json`),
+            fetchJSON(`${BASE}/${date}-ai.json`),
+            fetchJSON(`${BASE}/strategy_activation.json`)
         ]);
 
-        if (contextResult.status !== 'fulfilled') {
-            throw contextResult.reason;
+        const fullReport = fullResult.status === 'fulfilled' ? fullResult.value : null;
+        const universeReport = universeResult.status === 'fulfilled' ? universeResult.value : null;
+        const aiReport = aiResult.status === 'fulfilled' ? aiResult.value : null;
+        const activationReport = activationResult.status === 'fulfilled' ? activationResult.value : null;
+
+        const snapshot = buildSnapshot(fullReport, universeReport, aiReport, activationReport);
+        const generatedAt = selectGeneratedAt(
+            universeReport?.generated_at,
+            fullReport?.generated_at,
+            aiReport?.generated_at,
+            activationReport?.generated_at
+        );
+        const bannedTerms = collectBannedTerms(fullReport, universeReport);
+
+        const cards = normalizeCards([
+            createBreadthCard(snapshot),
+            createSectorCard(snapshot),
+            createVolumeCard(snapshot),
+            createAIOverlayCard(snapshot, aiReport),
+            createActivationCard(snapshot, activationReport)
+        ], bannedTerms, generatedAt);
+
+        const fallbackCount = cards.filter(card => card.source_type === 'ui_fallback').length;
+        if (fallbackCount > 0) {
+            showFallbackBanner(`本頁已自動補上 ${fallbackCount} 張保底卡，原因是部分日期缺少 universe、AI 或 activation 資料。`);
+        } else {
+            hideFallbackBanner();
         }
 
-        const report = contextResult.value;
-        if (!validateContextReport(report)) {
-            const fallback = createFallbackCard('情境卡格式不符合固定 schema，已改用頁面保底訊息。');
-            renderCards([fallback], 'fallback', {
-                cards: [fallback],
-                trace_catalog: { theme_taxonomy: {} },
-                stock_mapping_catalog: { themes_to_stocks: {} },
-                technical_map: new Map()
-            });
-            return;
-        }
-
-        renderCards(report.cards, report.report_version, {
-            ...report,
-            technical_map: universeResult.status === 'fulfilled'
-                ? buildTechnicalMap(universeResult.value)
-                : fullResult.status === 'fulfilled'
-                    ? buildTechnicalMap(fullResult.value)
-                    : new Map(),
-            previous_technical_map: previousUniverseResult.status === 'fulfilled' && previousUniverseResult.value
-                ? buildTechnicalMap(previousUniverseResult.value)
-                : new Map(),
-            previous_universe_date: previousUniverseDate,
-            strategy_analysis: strategyResult.status === 'fulfilled' && validateStrategyAnalysisReport(strategyResult.value)
-                ? strategyResult.value
-                : null,
-            signal_density: signalDensityResult.status === 'fulfilled' && validateSignalDensityReport(signalDensityResult.value)
-                ? signalDensityResult.value
-                : null
-        });
+        renderCards(cards);
     } catch (error) {
-        const fallback = createFallbackCard(`找不到 ${date}-context.json 或載入失敗。`);
-        renderCards([fallback], 'fallback', {
-            cards: [fallback],
-            trace_catalog: { theme_taxonomy: {} },
-            stock_mapping_catalog: { themes_to_stocks: {} },
-            technical_map: new Map(),
-            previous_technical_map: new Map(),
-            previous_universe_date: null,
-            strategy_analysis: null,
-            signal_density: null
-        });
+        const fallbackCards = normalizeCards([], new Set(), new Date().toISOString());
+        showFallbackBanner('資料載入失敗，已回退到保底卡。');
+        renderCards(fallbackCards);
     }
 }
 
 async function init() {
+    renderSchemaFields();
+
     try {
         await loadIndex();
         currentDate = new URLSearchParams(window.location.search).get('date') || indexData.latest_date;
         buildDateDropdown();
+
         document.getElementById('dateSelect').addEventListener('change', async event => {
             currentDate = event.target.value;
+            requestVersion = String(Date.now());
             const nextUrl = new URL(window.location.href);
             nextUrl.searchParams.set('date', currentDate);
             window.history.replaceState({}, '', nextUrl.toString());
-            requestVersion = String(Date.now());
             await loadContextCards(currentDate);
         });
+
         await loadContextCards(currentDate);
     } catch (error) {
-        updateHeaderMeta('fallback', 1);
-        showEmpty('情境頁初始化失敗，請稍後重新整理。');
+        updateHeaderMeta(3);
+        showEmpty('情境頁初始化失敗，已停止載入。');
     }
 }
 
