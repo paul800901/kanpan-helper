@@ -1,4 +1,4 @@
-﻿/* 看盤助手 v6 - 正式版樣式 */
+﻿/* 看盤助手 v30 - 正式版樣式 */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
@@ -161,6 +161,170 @@ body {
     font-size: 14px;
     color: #f0a500;
     min-width: 18px;
+}
+
+/* ======== ACTIVATION SECTION ======== */
+.activation-section {
+    padding: 14px 16px 0;
+}
+
+.activation-card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 4px 14px rgba(13, 27, 42, 0.08);
+    border: 1px solid #d9e4f1;
+}
+
+.activation-card.enabled {
+    border-color: #b8dfc0;
+    background: linear-gradient(180deg, #f7fff8 0%, #ffffff 100%);
+}
+
+.activation-card.downweight {
+    border-color: #ffd58f;
+    background: linear-gradient(180deg, #fffaf1 0%, #ffffff 100%);
+}
+
+.activation-card.disabled {
+    border-color: #f2c2c2;
+    background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+}
+
+.activation-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.activation-kicker {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6c7a89;
+    margin-bottom: 4px;
+}
+
+.activation-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #18324a;
+}
+
+.activation-status {
+    min-width: fit-content;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.activation-status.enabled {
+    background: #dff3e3;
+    color: #1f7a36;
+}
+
+.activation-status.downweight {
+    background: #fff1d8;
+    color: #b96a00;
+}
+
+.activation-status.disabled {
+    background: #fde3e3;
+    color: #b42318;
+}
+
+.activation-summary {
+    font-size: 15px;
+    line-height: 1.65;
+    color: #243b53;
+    margin-bottom: 10px;
+}
+
+.activation-note {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #edf3fb;
+    color: #486581;
+    font-size: 13px;
+}
+
+.activation-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.activation-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: #eff5fb;
+    color: #334e68;
+    font-size: 13px;
+}
+
+.activation-gates {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.activation-gate {
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #d9e4f1;
+    background: #f8fbff;
+}
+
+.activation-gate.passed {
+    border-color: #b8dfc0;
+    background: #f4fff6;
+}
+
+.activation-gate.failed {
+    border-color: #ffd58f;
+    background: #fff9f0;
+}
+
+.activation-gate-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #627d98;
+    margin-bottom: 6px;
+}
+
+.activation-gate-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #102a43;
+    margin-bottom: 2px;
+}
+
+.activation-gate-rule {
+    font-size: 12px;
+    color: #7b8794;
+}
+
+@media (max-width: 720px) {
+    .activation-header {
+        flex-direction: column;
+    }
+
+    .activation-status {
+        align-self: flex-start;
+    }
+
+    .activation-gates {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ======== GROUP SECTION ======== */

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1b2a">
-    <meta name="description" content="看盤助手 v6 - AI 智能股票分析">
-    <title>看盤助手 v6</title>
+    <meta name="description" content="看盤助手 v30 - AI 摘要與 steady_v5 啟用判斷">
+    <title>看盤助手 v30</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="style.css">
@@ -17,7 +17,7 @@
         <div class="header-top">
             <div class="app-brand">
                 <span class="app-title">看盤助手</span>
-                <span class="version-badge">v6 AI</span>
+                <span class="version-badge">v30</span>
             </div>
             <button class="reload-btn" id="reloadBtn" title="重新載入最新報告">↻</button>
         </div>
@@ -38,13 +38,29 @@
         <!-- 載入狀態 -->
         <div class="loading-state" id="loadingState">
             <div class="loading-spinner"></div>
-            <div class="loading-text">載入 AI 報告中...</div>
+            <div class="loading-text">載入 AI 報告與策略判斷中...</div>
         </div>
 
         <!-- AI 市場總覽 -->
         <section class="ai-overview" id="aiOverview" style="display:none">
             <div class="overview-text" id="marketOverviewAI"></div>
             <div class="focus-list" id="focusList"></div>
+        </section>
+
+        <section class="activation-section" id="activationSection" style="display:none">
+            <div class="activation-card" id="activationCard">
+                <div class="activation-header">
+                    <div>
+                        <div class="activation-kicker">steady_v5 啟用判斷</div>
+                        <div class="activation-title" id="activationTitle">今日策略過濾</div>
+                    </div>
+                    <div class="activation-status" id="activationStatus">--</div>
+                </div>
+                <div class="activation-summary" id="activationSummary"></div>
+                <div class="activation-note" id="activationNote" style="display:none"></div>
+                <div class="activation-meta" id="activationMeta"></div>
+                <div class="activation-gates" id="activationGates"></div>
+            </div>
         </section>
 
         <!-- 分群說明 -->
@@ -94,10 +110,10 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260412-cachefix"></script>
+    <script src="app.js?v=20260414-v30"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js?v=20260412-cachefix', { updateViaCache: 'none' })
+            navigator.serviceWorker.register('service-worker.js?v=20260414-v30', { updateViaCache: 'none' })
                 .then(reg => reg.update())
                 .catch(err => console.log('SW 錯誤:', err));
         }

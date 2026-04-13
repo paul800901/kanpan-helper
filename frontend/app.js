@@ -1,12 +1,13 @@
 ﻿/**
- * 看盤助手 v6 - 正式版
- * 讀取 YYYY-MM-DD-lite.json + YYYY-MM-DD-ai.json，純 v6 AI 顯示。
+ * 看盤助手 v30 - 首頁
+ * 讀取 YYYY-MM-DD-lite.json + YYYY-MM-DD-ai.json + strategy_activation.json。
  */
 
 // === State ===
 let liteData = null;
 let aiData = null;
 let fullData = null;
+let activationData = null;
 let indexData = null;
 let currentDate = null;
 
@@ -530,10 +531,11 @@ async function loadIndex() {
 }
 
 async function loadReports(date) {
-    const [lite, ai, full] = await Promise.allSettled([
+    const [lite, ai, full, activation] = await Promise.allSettled([
         fetchJSON(`${BASE}/${date}-lite.json`),
         fetchJSON(`${BASE}/${date}-ai.json`),
-        fetchJSON(`${BASE}/${date}.json`)
+        fetchJSON(`${BASE}/${date}.json`),
+        fetchJSON(`${BASE}/strategy_activation.json`)
     ]);
     if (lite.status === 'rejected') {
         throw new Error(`lite 報告載入失敗: ${lite.reason.message}`);
@@ -541,10 +543,14 @@ async function loadReports(date) {
     if (full.status === 'rejected') {
         console.warn(`${date}.json 不存在，首頁決策摘要將使用保底訊息`);
     }
+    if (activation.status === 'rejected') {
+        console.warn(`strategy_activation.json 不存在，首頁將隱藏 steady_v5 啟用判斷: ${activation.reason.message}`);
+    }
     return {
         lite: lite.value,
         ai: ai.status === 'fulfilled' ? ai.value : null,
-        full: full.status === 'fulfilled' ? full.value : null
+        full: full.status === 'fulfilled' ? full.value : null,
+        activation: activation.status === 'fulfilled' ? activation.value : null
     };
 }
 
@@ -577,6 +583,7 @@ function updateDateBadge() {
 function showLoading() {
     document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('aiOverview').style.display = 'none';
+    document.getElementById('activationSection').style.display = 'none';
     document.getElementById('groupSection').style.display = 'none';
     document.getElementById('stockSection').style.display = 'none';
     document.getElementById('footerBar').style.display = 'none';
@@ -611,6 +618,70 @@ function renderAIOverview() {
         overviewEl.textContent = liteData?.summary?.market_overview || '今日市場資料已載入';
         focusEl.innerHTML = '';
     }
+}
+
+function getActivationTone(action) {
+    if (action === '啟用') return 'enabled';
+    if (action === '降權') return 'downweight';
+    return 'disabled';
+}
+
+function renderStrategyActivation() {
+    const section = document.getElementById('activationSection');
+    const card = document.getElementById('activationCard');
+    const titleEl = document.getElementById('activationTitle');
+    const statusEl = document.getElementById('activationStatus');
+    const summaryEl = document.getElementById('activationSummary');
+    const noteEl = document.getElementById('activationNote');
+    const metaEl = document.getElementById('activationMeta');
+    const gatesEl = document.getElementById('activationGates');
+
+    if (!activationData) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const action = activationData?.decision?.action || '--';
+    const weightMultiplier = activationData?.decision?.weight_multiplier;
+    const currentMarket = activationData?.current_market_snapshot || {};
+    const gateChecks = activationData?.gate_checks || {};
+    const isAlignedToSelectedDate = activationData?.as_of_date === currentDate;
+    const tone = getActivationTone(action);
+
+    card.className = `activation-card ${tone}`;
+    titleEl.textContent = isAlignedToSelectedDate
+        ? '今日策略過濾'
+        : `最新策略過濾（${activationData?.as_of_date || '--'}）`;
+    statusEl.textContent = weightMultiplier != null ? `${action} ${weightMultiplier}x` : action;
+    statusEl.className = `activation-status ${tone}`;
+    summaryEl.textContent = activationData?.summary || '目前沒有 steady_v5 啟用判斷。';
+
+    if (isAlignedToSelectedDate) {
+        noteEl.style.display = 'none';
+        noteEl.textContent = '';
+    } else {
+        noteEl.style.display = 'block';
+        noteEl.textContent = `你正在查看 ${currentDate}，這張卡顯示的是最新日期 ${activationData?.as_of_date || '--'} 的 steady_v5 啟用判斷。`;
+    }
+
+    const trendLabel = currentMarket?.market_trend?.market_trend || '--';
+    const concentrationLabel = currentMarket?.capital_concentration?.label || '--';
+    const volumeLabel = currentMarket?.volume?.label || '--';
+    metaEl.innerHTML = `
+        <span class="activation-meta-item">大盤趨勢 <b>${esc(trendLabel)}</b></span>
+        <span class="activation-meta-item">資金集中度 <b>${esc(concentrationLabel)}</b></span>
+        <span class="activation-meta-item">量能 <b>${esc(volumeLabel)}</b></span>
+    `;
+
+    gatesEl.innerHTML = Object.values(gateChecks).map(check => `
+        <div class="activation-gate ${check.passed ? 'passed' : 'failed'}">
+            <div class="activation-gate-label">${esc(check.label)}</div>
+            <div class="activation-gate-value">${esc(check.actual || '--')}</div>
+            <div class="activation-gate-rule">需求 ${esc(check.required || '--')}</div>
+        </div>
+    `).join('');
+
+    section.style.display = 'block';
 }
 
 // === Render: Groups ===
@@ -779,12 +850,14 @@ async function loadAndRender(date) {
         liteData = result.lite;
         aiData   = result.ai;
         fullData = result.full;
+        activationData = result.activation;
 
         if (!aiData) {
             console.warn(`${date}-ai.json 不存在，以基礎資料顯示`);
         }
 
         renderAIOverview();
+        renderStrategyActivation();
         renderGroups();
         renderStockCards();
         renderFooter();
