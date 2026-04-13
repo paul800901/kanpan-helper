@@ -82,6 +82,19 @@ function downgradeBullishSummary(summary) {
     return summary;
 }
 
+const FINAL_ADVICE_PRIORITY = Object.freeze({
+    '暫不考慮': 1,
+    '暫不進場': 2,
+    '先觀望': 3,
+    '可留意': 4,
+    '可偏多觀察': 5,
+    '強勢續看': 6
+});
+
+function getAdvicePriority(advice) {
+    return FINAL_ADVICE_PRIORITY[advice] || 0;
+}
+
 function isAvoidAdvice(advice) {
     return advice === '暫不考慮' || advice === '暫不進場';
 }
@@ -420,6 +433,22 @@ function getAdviceToneClass(advice) {
     return 'avoid';
 }
 
+function getZonePriority(zoneFlags) {
+    if (zoneFlags?.inPilotZone) return 2;
+    if (zoneFlags?.inObserveZone) return 1;
+    return 0;
+}
+
+function getZonePriorityLabel(zoneFlags) {
+    if (zoneFlags?.inPilotZone) return '試單區優先';
+    if (zoneFlags?.inObserveZone) return '觀察區次優先';
+    return '區間外';
+}
+
+function formatPriorityRank(rank) {
+    return String(rank).padStart(2, '0');
+}
+
 function renderTechnicalChips(technical) {
     if (!technical) {
         return '<div class="overview-tech-list"><span class="overview-status-chip tech-missing">主報表缺技術資料</span></div>';
@@ -436,11 +465,35 @@ function renderTechnicalChips(technical) {
     return `<div class="overview-tech-list">${chips.join('')}</div>`;
 }
 
+function compareOverviewItems(left, right, technicalMap) {
+    const leftTechnical = technicalMap instanceof Map ? technicalMap.get(left.symbol) : null;
+    const rightTechnical = technicalMap instanceof Map ? technicalMap.get(right.symbol) : null;
+
+    const eventDiff = right.events.length - left.events.length;
+    if (eventDiff !== 0) return eventDiff;
+
+    const adviceDiff = getAdvicePriority(rightTechnical?.summary?.advice) - getAdvicePriority(leftTechnical?.summary?.advice);
+    if (adviceDiff !== 0) return adviceDiff;
+
+    const zoneDiff = getZonePriority(rightTechnical?.zoneFlags) - getZonePriority(leftTechnical?.zoneFlags);
+    if (zoneDiff !== 0) return zoneDiff;
+
+    return left.firstSeenOrder - right.firstSeenOrder;
+}
+
+function buildPriorityExplanation(item, technical) {
+    const advice = technical?.summary?.advice || '技術資料不足';
+    const zone = getZonePriorityLabel(technical?.zoneFlags);
+    return `${item.events.length} 情境 > ${advice} > ${zone}`;
+}
+
 function buildCandidateOverview(report) {
     const cards = Array.isArray(report?.cards) ? report.cards : [];
     const eventMap = {};
     const entries = new Map();
     const groupOrder = [];
+    const technicalMap = report?.technical_map instanceof Map ? report.technical_map : new Map();
+    let firstSeenOrder = 0;
 
     for (const card of cards) {
         eventMap[card.trace.event] = card.title;
@@ -451,9 +504,11 @@ function buildCandidateOverview(report) {
                     symbol: candidate.symbol,
                     primaryTheme: candidate.from_theme,
                     themes: [candidate.from_theme],
-                    events: [candidate.trace_event]
+                    events: [candidate.trace_event],
+                    firstSeenOrder
                 };
                 entries.set(candidate.symbol, next);
+                firstSeenOrder += 1;
                 if (!groupOrder.includes(candidate.from_theme)) {
                     groupOrder.push(candidate.from_theme);
                 }
@@ -468,16 +523,56 @@ function buildCandidateOverview(report) {
         }
     }
 
+    const sortedItems = Array.from(entries.values()).sort((left, right) => compareOverviewItems(left, right, technicalMap));
+    sortedItems.forEach((item, index) => {
+        item.priorityRank = index + 1;
+    });
+
     const grouped = groupOrder.map(themeId => ({
         themeId,
-        items: Array.from(entries.values()).filter(item => item.primaryTheme === themeId)
+        items: sortedItems.filter(item => item.primaryTheme === themeId)
     })).filter(group => group.items.length > 0);
 
     return {
         totalUnique: entries.size,
         groups: grouped,
-        eventMap
+        eventMap,
+        sortedItems
     };
+}
+
+function renderPriorityList(overview, report) {
+    const itemsHTML = overview.sortedItems.map(item => {
+        const technical = report?.technical_map instanceof Map ? report.technical_map.get(item.symbol) : null;
+        const technicalHTML = renderTechnicalChips(technical);
+        const stockName = technical?.name ? `<span class="priority-name">${esc(technical.name)}</span>` : '';
+        const explanation = buildPriorityExplanation(item, technical);
+
+        return `
+            <div class="priority-item">
+                <div class="priority-rank">#${formatPriorityRank(item.priorityRank)}</div>
+                <div class="priority-content">
+                    <div class="priority-top">
+                        <div class="priority-symbol-line">
+                            <span class="priority-symbol">${esc(item.symbol)}</span>
+                            ${stockName}
+                        </div>
+                        <span class="priority-count">${item.events.length} 個情境</span>
+                    </div>
+                    ${technicalHTML}
+                    <div class="priority-explain">排序依據：${esc(explanation)}</div>
+                </div>
+            </div>`;
+    }).join('');
+
+    return `
+        <section class="priority-section">
+            <div class="priority-section-head">
+                <div class="priority-section-title">優先關注清單</div>
+                <div class="priority-section-meta">排序規則：先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。</div>
+            </div>
+            <div class="priority-list">${itemsHTML}</div>
+        </section>`;
 }
 
 function renderOverviewGroup(group, report, eventMap) {
@@ -489,6 +584,7 @@ function renderOverviewGroup(group, report, eventMap) {
             .join('');
         const technicalHTML = renderTechnicalChips(technical);
         const stockName = technical?.name ? `<span class="overview-name">${esc(technical.name)}</span>` : '';
+        const explanation = buildPriorityExplanation(item, technical);
 
         return `
             <div class="overview-item">
@@ -497,9 +593,13 @@ function renderOverviewGroup(group, report, eventMap) {
                         <span class="overview-symbol">${esc(item.symbol)}</span>
                         ${stockName}
                     </div>
-                    <span class="overview-count">${item.events.length} 個情境</span>
+                    <div class="overview-item-meta">
+                        <span class="overview-priority-chip">#${formatPriorityRank(item.priorityRank)}</span>
+                        <span class="overview-count">${item.events.length} 個情境</span>
+                    </div>
                 </div>
                 ${technicalHTML}
+                <div class="overview-priority-note">排序依據：${esc(explanation)}</div>
                 <div class="overview-row">
                     <span class="overview-label">themes</span>
                     <div class="tag-list">${themeHTML}</div>
@@ -534,10 +634,10 @@ function renderCandidateOverview(report) {
         return;
     }
 
-    meta.textContent = `跨卡去重後共 ${overview.totalUnique} 檔，依首次命中題材分組，保留完整 themes、events 與 v7.2/v7.1 技術標記，不做排序。`;
-    body.innerHTML = overview.groups
+    meta.textContent = `跨卡去重後共 ${overview.totalUnique} 檔；優先層只用「情境數 > 技術面 > 試單區」排序，不改原始候選資料與 summary。`;
+    body.innerHTML = `${renderPriorityList(overview, report)}<div class="overview-group-shell"><div class="overview-group-shell-title">依題材分組</div>${overview.groups
         .map(group => renderOverviewGroup(group, report, overview.eventMap))
-        .join('');
+        .join('')}</div>`;
     section.style.display = 'block';
 }
 
