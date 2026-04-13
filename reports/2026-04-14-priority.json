@@ -1,0 +1,725 @@
+{
+  "report_version": "v12-priority-validation",
+  "date": "2026-04-14",
+  "generated_at": "2026-04-14T01:12:52.732606+08:00",
+  "evaluation_horizon": "next_available_report",
+  "next_report_date": null,
+  "sort_rule": {
+    "description": "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。",
+    "keys": [
+      "hit_count desc",
+      "advice_priority desc",
+      "zone_priority desc",
+      "first_seen_order asc"
+    ]
+  },
+  "source_reports": {
+    "context": "2026-04-14-context.json",
+    "universe": "2026-04-14-universe.json",
+    "next_universe": null
+  },
+  "candidate_count": 14,
+  "top1_symbols": [
+    "2327"
+  ],
+  "top3_symbols": [
+    "2327",
+    "2395",
+    "2357"
+  ],
+  "top5_symbols": [
+    "2327",
+    "2395",
+    "2357",
+    "2382",
+    "2308"
+  ],
+  "evaluation": {
+    "evaluated_candidate_count": 0,
+    "top1_evaluated_count": 0,
+    "top3_evaluated_count": 0,
+    "top5_evaluated_count": 0,
+    "all_avg_return_pct": null,
+    "top1_avg_return_pct": null,
+    "top3_avg_return_pct": null,
+    "top5_avg_return_pct": null,
+    "all_win_rate_pct": null,
+    "top1_win_rate_pct": null,
+    "top3_win_rate_pct": null,
+    "top5_win_rate_pct": null
+  },
+  "candidates": [
+    {
+      "priority_rank": 1,
+      "symbol": "2327",
+      "name": "國巨",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 0,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2327 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 83.0,
+        "close": 303.5,
+        "ma5": 279.5,
+        "ma20": 265.62,
+        "k": 78.19,
+        "volume_ratio": 3.56,
+        "institutional": "連2買",
+        "advice": "強勢續看",
+        "advice_priority": 6,
+        "reason": "評分高且結構偏強",
+        "risk": "短線過熱時不宜追價",
+        "zone_label": "區間外",
+        "zone_priority": 0,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "4 情境 > 強勢續看 > 區間外",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 2,
+      "symbol": "2395",
+      "name": "研華",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 1,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2395 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 75.0,
+        "close": 342.5,
+        "ma5": 341.5,
+        "ma20": 336.62,
+        "k": 67.19,
+        "volume_ratio": 0.83,
+        "institutional": "連1買",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "偏多條件存在，但量能或過熱需要先消化",
+        "risk": "追價後若量縮或高檔反轉，容易回落",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "4 情境 > 先觀望 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 3,
+      "symbol": "2357",
+      "name": "華碩",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 4,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2357 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 61.0,
+        "close": 578.0,
+        "ma5": 567.2,
+        "ma20": 571.9,
+        "k": 67.31,
+        "volume_ratio": 0.75,
+        "institutional": "連2賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "4 情境 > 先觀望 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 4,
+      "symbol": "2382",
+      "name": "廣達",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 2,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2382 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 73.0,
+        "close": 319.0,
+        "ma5": 310.0,
+        "ma20": 291.85,
+        "k": 84.25,
+        "volume_ratio": 0.9,
+        "institutional": "連1賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "區間外",
+        "zone_priority": 0,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "4 情境 > 先觀望 > 區間外",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 5,
+      "symbol": "2308",
+      "name": "台達電",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 3,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2308 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 68.0,
+        "close": 1740.0,
+        "ma5": 1660.0,
+        "ma20": 1502.5,
+        "k": 85.8,
+        "volume_ratio": 0.58,
+        "institutional": "連1賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "區間外",
+        "zone_priority": 0,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "4 情境 > 先觀望 > 區間外",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 6,
+      "symbol": "2301",
+      "name": "光寶科",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 5,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2301 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 58.0,
+        "close": 153.5,
+        "ma5": 153.8,
+        "ma20": 155.62,
+        "k": 61.07,
+        "volume_ratio": 1.71,
+        "institutional": "連1賣",
+        "advice": "暫不進場",
+        "advice_priority": 2,
+        "reason": "分數偏低且仍在中期壓力下方",
+        "risk": "弱勢延續時，反彈容易失敗",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": true
+      },
+      "priority_explanation": "4 情境 > 暫不進場 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 7,
+      "symbol": "2317",
+      "name": "鴻海",
+      "primary_theme": "electronics_axis",
+      "primary_theme_label": "電子主軸",
+      "themes": [
+        "electronics_axis"
+      ],
+      "theme_labels": [
+        "電子主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 6,
+      "reasons": [
+        "電子主軸 依固定 mapping 對應類別 電子；2317 在當日 universe 的類別為 電子，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 55.0,
+        "close": 200.0,
+        "ma5": 198.8,
+        "ma20": 200.88,
+        "k": 69.54,
+        "volume_ratio": 0.64,
+        "institutional": "連1買",
+        "advice": "暫不進場",
+        "advice_priority": 2,
+        "reason": "分數偏低且仍在中期壓力下方",
+        "risk": "弱勢延續時，反彈容易失敗",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": true
+      },
+      "priority_explanation": "4 情境 > 暫不進場 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 8,
+      "symbol": "2330",
+      "name": "台積電",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 8,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；2330 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 73.0,
+        "close": 1990.0,
+        "ma5": 1951.0,
+        "ma20": 1863.0,
+        "k": 89.8,
+        "volume_ratio": 0.82,
+        "institutional": "連1賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "2 情境 > 先觀望 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 9,
+      "symbol": "2303",
+      "name": "聯電",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 9,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；2303 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 73.0,
+        "close": 60.1,
+        "ma5": 60.14,
+        "ma20": 58.59,
+        "k": 70.96,
+        "volume_ratio": 1.5,
+        "institutional": "連1賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": true,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "2 情境 > 先觀望 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 10,
+      "symbol": "3034",
+      "name": "聯詠",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 11,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；3034 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 66.0,
+        "close": 394.5,
+        "ma5": 392.8,
+        "ma20": 385.35,
+        "k": 56.62,
+        "volume_ratio": 0.51,
+        "institutional": "連2賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "短線位置不差，但量能不足",
+        "risk": "缺乏續航，容易震盪",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "2 情境 > 先觀望 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 11,
+      "symbol": "3711",
+      "name": "日月光投控",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 7,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；3711 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 78.0,
+        "close": 417.5,
+        "ma5": 387.5,
+        "ma20": 356.88,
+        "k": 86.68,
+        "volume_ratio": 1.37,
+        "institutional": "連2賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "區間外",
+        "zone_priority": 0,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "2 情境 > 先觀望 > 區間外",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 12,
+      "symbol": "2454",
+      "name": "聯發科",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 10,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；2454 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 66.0,
+        "close": 1620.0,
+        "ma5": 1564.0,
+        "ma20": 1603.0,
+        "k": 63.91,
+        "volume_ratio": 1.15,
+        "institutional": "連2賣",
+        "advice": "先觀望",
+        "advice_priority": 3,
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+        "zone_label": "區間外",
+        "zone_priority": 0,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "2 情境 > 先觀望 > 區間外",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 13,
+      "symbol": "2363",
+      "name": "矽統",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 13,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；2363 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 50.0,
+        "close": 46.75,
+        "ma5": 47.38,
+        "ma20": 48.91,
+        "k": 23.74,
+        "volume_ratio": 0.9,
+        "institutional": "連1賣",
+        "advice": "暫不進場",
+        "advice_priority": 2,
+        "reason": "分數偏低且仍在中期壓力下方",
+        "risk": "弱勢延續時，反彈容易失敗",
+        "zone_label": "試單區優先",
+        "zone_priority": 2,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": true
+      },
+      "priority_explanation": "2 情境 > 暫不進場 > 試單區優先",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 14,
+      "symbol": "2408",
+      "name": "南亞科",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 2,
+      "first_seen_order": 12,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；2408 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 63.0,
+        "close": 225.5,
+        "ma5": 214.9,
+        "ma20": 227.85,
+        "k": 53.2,
+        "volume_ratio": 0.86,
+        "institutional": "連2買",
+        "advice": "暫不進場",
+        "advice_priority": 2,
+        "reason": "仍在中期壓力下方",
+        "risk": "容易出現反彈後再回落",
+        "zone_label": "區間外",
+        "zone_priority": 0,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "2 情境 > 暫不進場 > 區間外",
+      "next_report_validation": null
+    }
+  ]
+}
