@@ -1,4 +1,4 @@
-"""v24 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v25 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -24,12 +24,15 @@ SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 STEADY_V2_BLOCKER_REPORT_VERSION = "v20-steady-v2-blockers"
 TIMING_ALIGNMENT_REPORT_VERSION = "v21-timing-alignment"
 STEADY_V2_SIGNATURE_REPORT_VERSION = "v23-steady-v2-signature"
+STEADY_V4_TRACKING_REPORT_VERSION = "v25-steady-v4-tracking"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
 MA20_V2_BAND_PCT = 0.02
 MA20_V2_RECENT_BREAK_LOOKBACK = 3
 TIMING_ALIGNMENT_LOOKAHEAD_DAYS = [1, 2, 3]
+STEADY_V4_TRACKING_WINDOW_DAYS = [20, 50]
+STEADY_V4_TRACKING_STABLE_WIN_RATE_PCT = 60.0
 STEADY_V2_SIGNATURE_SHARP_DROP_THRESHOLD_PCT = -3.0
 STEADY_V4_K_MIN = 24.0
 STEADY_V4_K_MAX = 30.0
@@ -324,6 +327,10 @@ def _timing_alignment_path(base_dir: Optional[Path] = None) -> Path:
 
 def _steady_v2_signature_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "steady_v2_signature.json"
+
+
+def _steady_v4_tracking_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "steady_v4_tracking.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -1246,6 +1253,208 @@ def _ma20_gap_pct_as_percent(sample: Dict[str, Any]) -> Optional[float]:
     if gap_pct is None:
         return None
     return _round_number(gap_pct * 100)
+
+
+def _build_steady_v4_tracking_hit(sample: Dict[str, Any]) -> Dict[str, Any]:
+    candidate = sample.get("candidate") or {}
+    return {
+        "symbol": candidate.get("symbol"),
+        "name": candidate.get("name"),
+        "priority_rank": candidate.get("priority_rank"),
+        "next_day_return_pct": _as_float(sample.get("return_pct")),
+        "close": _round_number(_candidate_metric(sample, "close")),
+        "k_value": _round_number(_candidate_metric(sample, "k")),
+        "ma20_gap_pct": _ma20_gap_pct_as_percent(sample),
+        "volume_ratio": _round_number(_candidate_metric(sample, "volume_ratio")),
+    }
+
+
+def _build_steady_v4_tracking_day_summary(
+    report: Dict[str, Any],
+    day_samples: List[Dict[str, Any]],
+    market_return_pct: Optional[float],
+    factor_names: List[str],
+    lower_third_cutoff: Optional[float],
+) -> Dict[str, Any]:
+    matched_samples = [
+        sample for sample in day_samples
+        if all(_sample_matches_factor(sample, factor_name, lower_third_cutoff) for factor_name in factor_names)
+    ]
+    hits = [_build_steady_v4_tracking_hit(sample) for sample in matched_samples]
+    hit_returns = [
+        value for value in (_as_float(hit.get("next_day_return_pct")) for hit in hits)
+        if value is not None
+    ]
+    avg_return_pct = _mean(hit_returns)
+    win_rate_pct = _win_rate(hit_returns)
+    edge_vs_market_pct = _safe_diff(avg_return_pct, market_return_pct)
+    has_edge_vs_market = edge_vs_market_pct > 0 if edge_vs_market_pct is not None else None
+    hit_symbols = [str(hit.get("symbol") or "") for hit in hits if str(hit.get("symbol") or "")]
+    evaluated_candidate_count = len(day_samples)
+    hit_count = len(hits)
+
+    if hit_count == 0:
+        summary = f"{report.get('date')} steady_v4 0 檔，當天沒有可追蹤的隔日報酬。"
+    else:
+        symbol_text = "、".join(hit_symbols)
+        market_text = (
+            f"，相對大盤 edge {_metric_text(edge_vs_market_pct, '%')}"
+            if edge_vs_market_pct is not None else ""
+        )
+        summary = (
+            f"{report.get('date')} steady_v4 命中 {hit_count} 檔（{symbol_text}），"
+            f"平均隔日報酬 {_metric_text(avg_return_pct, '%')}、"
+            f"勝率 {_metric_text(win_rate_pct, '%')}{market_text}。"
+        )
+
+    return {
+        "date": report.get("date"),
+        "next_report_date": report.get("next_report_date"),
+        "candidate_count": int(report.get("candidate_count") or len(report.get("candidates") or [])),
+        "evaluated_candidate_count": evaluated_candidate_count,
+        "market_return_pct": market_return_pct,
+        "steady_v4_hit_count": hit_count,
+        "steady_v4_hit_rate_pct": _round_number((hit_count / evaluated_candidate_count) * 100) if evaluated_candidate_count else None,
+        "avg_return_pct": avg_return_pct,
+        "win_rate_pct": win_rate_pct,
+        "edge_vs_market_pct": edge_vs_market_pct,
+        "has_edge_vs_market": has_edge_vs_market,
+        "hit_symbols": hit_symbols,
+        "steady_v4_hits": hits,
+        "summary": summary,
+    }
+
+
+def _build_steady_v4_tracking_window_summary(
+    window_days: int,
+    daily_records: List[Dict[str, Any]],
+    strategy_baseline: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    observed_records = list(daily_records[-window_days:]) if len(daily_records) > window_days else list(daily_records)
+    observed_days = len(observed_records)
+    hit_day_records = [record for record in observed_records if int(record.get("steady_v4_hit_count") or 0) > 0]
+    hit_returns: List[float] = []
+    market_returns_for_hits: List[float] = []
+
+    for record in hit_day_records:
+        market_return_pct = _as_float(record.get("market_return_pct"))
+        for hit in record.get("steady_v4_hits") or []:
+            next_day_return_pct = _as_float(hit.get("next_day_return_pct"))
+            if next_day_return_pct is None:
+                continue
+            hit_returns.append(next_day_return_pct)
+            if market_return_pct is not None:
+                market_returns_for_hits.append(market_return_pct)
+
+    total_hits = len(hit_returns)
+    avg_return_pct = _mean(hit_returns)
+    win_rate_pct = _win_rate(hit_returns)
+    market_avg_return_pct = _mean(market_returns_for_hits)
+    edge_vs_market_pct = _safe_diff(avg_return_pct, market_avg_return_pct)
+    hit_days = len(hit_day_records)
+    positive_hit_day_count = sum(1 for record in hit_day_records if ((_as_float(record.get("avg_return_pct")) or 0) > 0))
+    edge_day_count = sum(1 for record in hit_day_records if record.get("has_edge_vs_market") is True)
+    baseline_avg_return_pct = _as_float((strategy_baseline or {}).get("avg_return_pct"))
+    baseline_win_rate_pct = _as_float((strategy_baseline or {}).get("win_rate_pct"))
+    is_ready = len(daily_records) >= window_days
+    is_stable = (
+        avg_return_pct is not None
+        and win_rate_pct is not None
+        and avg_return_pct > 0
+        and win_rate_pct >= STEADY_V4_TRACKING_STABLE_WIN_RATE_PCT
+    ) if total_hits else None
+    has_edge = edge_vs_market_pct > 0 if edge_vs_market_pct is not None and total_hits else None
+
+    if observed_days == 0:
+        summary = f"目前沒有可用資料建立 steady_v4 的 {window_days} 天追蹤視窗。"
+    elif total_hits == 0:
+        readiness_text = "" if is_ready else f"目前僅累積 {observed_days} 天，尚未滿 {window_days} 天；"
+        summary = f"{readiness_text}最近 {observed_days} 個可評估交易日內 steady_v4 沒有命中，無法判定穩定性與 edge。"
+    else:
+        readiness_text = "" if is_ready else f"目前僅累積 {observed_days} 天，尚未滿 {window_days} 天；"
+        stability_text = "表現穩定" if is_stable else "穩定性不足"
+        edge_text = "仍有 edge" if has_edge else "edge 不明顯"
+        market_text = (
+            f"，相對大盤 edge {_metric_text(edge_vs_market_pct, '%')}"
+            if edge_vs_market_pct is not None else ""
+        )
+        summary = (
+            f"{readiness_text}最近 {observed_days} 個可評估交易日內，steady_v4 命中 {total_hits} 檔 / {hit_days} 天，"
+            f"平均隔日報酬 {_metric_text(avg_return_pct, '%')}、"
+            f"勝率 {_metric_text(win_rate_pct, '%')}{market_text}，{stability_text}、{edge_text}。"
+        )
+
+    return {
+        "window_days": window_days,
+        "is_ready": is_ready,
+        "observed_days": observed_days,
+        "start_date": observed_records[0].get("date") if observed_records else None,
+        "end_date": observed_records[-1].get("date") if observed_records else None,
+        "hit_days": hit_days,
+        "hit_day_rate_pct": _round_number((hit_days / observed_days) * 100) if observed_days else None,
+        "positive_hit_day_count": positive_hit_day_count,
+        "positive_hit_day_rate_pct": _round_number((positive_hit_day_count / hit_days) * 100) if hit_days else None,
+        "edge_day_count": edge_day_count,
+        "edge_day_rate_pct": _round_number((edge_day_count / hit_days) * 100) if hit_days else None,
+        "total_hits": total_hits,
+        "avg_daily_hit_count": _round_number(total_hits / observed_days) if observed_days else None,
+        "avg_return_pct": avg_return_pct,
+        "win_rate_pct": win_rate_pct,
+        "market_avg_return_pct": market_avg_return_pct,
+        "edge_vs_market_pct": edge_vs_market_pct,
+        "avg_return_delta_vs_strategy_baseline": _safe_diff(avg_return_pct, baseline_avg_return_pct),
+        "win_rate_delta_vs_strategy_baseline": _safe_diff(win_rate_pct, baseline_win_rate_pct),
+        "is_stable": is_stable,
+        "has_edge": has_edge,
+        "summary": summary,
+    }
+
+
+def _build_steady_v4_tracking_assessment(tracking_windows: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    short_window = tracking_windows.get("20d") or {}
+    long_window = tracking_windows.get("50d") or {}
+    short_ready = bool(short_window.get("is_ready"))
+    long_ready = bool(long_window.get("is_ready"))
+    short_stable = short_window.get("is_stable")
+    short_edge = short_window.get("has_edge")
+    long_stable = long_window.get("is_stable")
+    long_edge = long_window.get("has_edge")
+
+    if not short_ready:
+        summary = (
+            f"目前只累積 {short_window.get('observed_days') or 0} 天，"
+            "20 天視窗尚未完成，先持續記錄 steady_v4 的逐日表現。"
+        )
+        stability_confirmed = None
+        edge_confirmed = None
+    elif long_ready:
+        stability_confirmed = bool(short_stable and long_stable)
+        edge_confirmed = bool(short_edge and long_edge)
+        if stability_confirmed and edge_confirmed:
+            summary = "20 天與 50 天視窗都顯示 steady_v4 仍維持穩定，且相對大盤仍有 edge。"
+        elif short_stable and short_edge:
+            summary = "20 天視窗仍穩定且有 edge，但 50 天視窗未完全延續相同結論。"
+        else:
+            summary = "20 天與 50 天視窗未能同時確認 steady_v4 的穩定性與 edge。"
+    else:
+        stability_confirmed = short_stable
+        edge_confirmed = short_edge
+        summary = (
+            f"20 天視窗{'確認穩定' if short_stable else '未確認穩定'}，"
+            f"{'仍有 edge' if short_edge else 'edge 不明顯'}；"
+            "50 天視窗尚未累積完成。"
+        )
+
+    return {
+        "primary_window": "20d",
+        "secondary_window": "50d",
+        "stability_confirmed": stability_confirmed,
+        "edge_confirmed": edge_confirmed,
+        "long_window_ready": long_ready,
+        "long_window_stability_confirmed": long_stable if long_ready else None,
+        "long_window_edge_confirmed": long_edge if long_ready else None,
+        "summary": summary,
+    }
 
 
 def _recent_close_history(sample: Dict[str, Any]) -> List[float]:
@@ -2755,6 +2964,96 @@ def generate_steady_v2_signature_report(
     }
 
 
+def generate_steady_v4_tracking_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    strategy_analysis_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    strategy_report = strategy_analysis_report or generate_strategy_analysis_report(
+        ordered_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, _ = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+
+    low_position_definition = strategy_report.get("low_position_definition") or {}
+    lower_third_cutoff = _as_float(low_position_definition.get("lower_third_cutoff"))
+    factor_names = list((STRATEGY_V4_DEFINITIONS.get("steady_v4") or {}).get("factor_names") or [])
+    trading_samples_by_date: Dict[str, List[Dict[str, Any]]] = {}
+    for sample in trading_samples:
+        date_str = str(sample.get("date") or "")
+        if not date_str:
+            continue
+        trading_samples_by_date.setdefault(date_str, []).append(sample)
+
+    daily_tracking = []
+    for report in ordered_reports:
+        date_str = str(report.get("date") or "")
+        next_report_date = str(report.get("next_report_date") or "")
+        market_return_pct = _market_return(date_str, next_report_date, market_lookup)
+        if market_return_pct is None:
+            continue
+        daily_tracking.append(
+            _build_steady_v4_tracking_day_summary(
+                report,
+                trading_samples_by_date.get(date_str, []),
+                market_return_pct,
+                factor_names,
+                lower_third_cutoff,
+            )
+        )
+
+    strategy_baseline = ((strategy_report.get("strategies_v4") or {}).get("steady_v4")) or {}
+    tracking_windows = {
+        f"{window_days}d": _build_steady_v4_tracking_window_summary(
+            window_days,
+            daily_tracking,
+            strategy_baseline=strategy_baseline,
+        )
+        for window_days in STEADY_V4_TRACKING_WINDOW_DAYS
+    }
+    latest_assessment = _build_steady_v4_tracking_assessment(tracking_windows)
+
+    return {
+        "report_version": STEADY_V4_TRACKING_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": strategy_report.get("evaluation_horizon"),
+        "evaluated_days": len(daily_tracking),
+        "candidate_samples": len(trading_samples),
+        "tracking_target": {
+            "strategy": "steady_v4",
+            "family": "steady",
+            "generation": "v4",
+            "description": STRATEGY_V4_DEFINITIONS["steady_v4"]["description"],
+            "selection_hint": STRATEGY_V4_DEFINITIONS["steady_v4"]["selection_hint"],
+            "factor_names": factor_names,
+        },
+        "assessment_rules": {
+            "stability": {
+                "min_win_rate_pct": STEADY_V4_TRACKING_STABLE_WIN_RATE_PCT,
+                "requires_positive_avg_return": True,
+                "description": f"窗口內 steady_v4 平均隔日報酬 > 0，且勝率 >= {STEADY_V4_TRACKING_STABLE_WIN_RATE_PCT}%",
+            },
+            "edge": {
+                "benchmark": "same_day_market_return_per_hit",
+                "description": "窗口內 steady_v4 平均隔日報酬高於同期間命中樣本對應的大盤隔日報酬平均",
+            },
+        },
+        "strategy_baseline_snapshot": _summarize_strategy(strategy_baseline),
+        "tracking_windows": tracking_windows,
+        "latest_assessment": latest_assessment,
+        "daily_tracking": daily_tracking,
+        "summary": latest_assessment.get("summary"),
+    }
+
+
 def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not ranked_items:
         return []
@@ -3732,6 +4031,10 @@ def save_steady_v2_signature_report(report: Dict[str, Any], base_dir: Optional[P
     return _save_json(_steady_v2_signature_path(base_dir), report)
 
 
+def save_steady_v4_tracking_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_steady_v4_tracking_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -3854,6 +4157,23 @@ def generate_steady_v2_signature_from_reports(base_dir: Optional[Path] = None, m
     return save_steady_v2_signature_report(report, base_dir=base_dir)
 
 
+def generate_steady_v4_tracking_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    strategy_report = generate_strategy_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    report = generate_steady_v4_tracking_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+    )
+    return save_steady_v4_tracking_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -3919,6 +4239,7 @@ def backfill_priority_validation_reports(
     steady_v2_blockers_path = generate_steady_v2_blockers_from_reports(base_dir=base_dir, market_prices=market_prices)
     timing_alignment_path = generate_timing_alignment_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v2_signature_path = generate_steady_v2_signature_from_reports(base_dir=base_dir, market_prices=market_prices)
+    steady_v4_tracking_path = generate_steady_v4_tracking_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -3936,6 +4257,7 @@ def backfill_priority_validation_reports(
         "steady_v2_blockers_path": str(steady_v2_blockers_path),
         "timing_alignment_path": str(timing_alignment_path),
         "steady_v2_signature_path": str(steady_v2_signature_path),
+        "steady_v4_tracking_path": str(steady_v4_tracking_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,
