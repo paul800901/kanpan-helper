@@ -1,4 +1,4 @@
-"""v20 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v21 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -22,11 +22,13 @@ FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
 STRATEGY_ANALYSIS_REPORT_VERSION = "v19-strategy-analysis"
 SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 STEADY_V2_BLOCKER_REPORT_VERSION = "v20-steady-v2-blockers"
+TIMING_ALIGNMENT_REPORT_VERSION = "v21-timing-alignment"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
 MA20_V2_BAND_PCT = 0.02
 MA20_V2_RECENT_BREAK_LOOKBACK = 3
+TIMING_ALIGNMENT_LOOKAHEAD_DAYS = [1, 2, 3]
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -223,6 +225,10 @@ def _signal_density_path(base_dir: Optional[Path] = None) -> Path:
 
 def _steady_v2_blockers_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "steady_v2_blockers.json"
+
+
+def _timing_alignment_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "timing_alignment.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -1761,6 +1767,355 @@ def generate_steady_v2_blockers_report(
     }
 
 
+def _sorted_universe_dates(universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]]) -> List[str]:
+    return sorted(
+        str(date_str)
+        for date_str in (universe_reports_by_date or {}).keys()
+        if DATE_PATTERN.match(str(date_str))
+    )
+
+
+def _build_universe_stock_lookup_by_date(
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]],
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    return {
+        str(date_str): {
+            str(stock.get("symbol") or ""): stock
+            for stock in ((report or {}).get("stocks") or [])
+        }
+        for date_str, report in (universe_reports_by_date or {}).items()
+        if DATE_PATTERN.match(str(date_str))
+    }
+
+
+def _stock_indicator_metric(stock: Optional[Dict[str, Any]], metric: str) -> Optional[float]:
+    return _as_float((((stock or {}).get("indicators") or {}).get(metric)))
+
+
+def _stock_close_return_pct(
+    current_stock: Optional[Dict[str, Any]],
+    next_stock: Optional[Dict[str, Any]],
+) -> Optional[float]:
+    current_close = _stock_indicator_metric(current_stock, "close")
+    next_close = _stock_indicator_metric(next_stock, "close")
+    if current_close in (None, 0) or next_close is None:
+        return None
+    return _round_number(((next_close - current_close) / current_close) * 100)
+
+
+def _build_universe_alignment_sample(
+    symbol: str,
+    ordered_dates: List[str],
+    universe_lookup_by_date: Dict[str, Dict[str, Dict[str, Any]]],
+    date_index: int,
+) -> Dict[str, Any]:
+    target_date = ordered_dates[date_index]
+    previous_date = ordered_dates[date_index - 1] if date_index > 0 else None
+    recent_dates = ordered_dates[max(0, date_index - (MA20_V2_RECENT_BREAK_LOOKBACK - 1)):date_index + 1]
+
+    return {
+        "date": target_date,
+        "previous_date": previous_date,
+        "current_universe_stock": (universe_lookup_by_date.get(target_date) or {}).get(symbol),
+        "previous_universe_stock": (universe_lookup_by_date.get(previous_date or "") or {}).get(symbol),
+        "recent_universe_history": [
+            {
+                "date": history_date,
+                "stock": (universe_lookup_by_date.get(history_date) or {}).get(symbol),
+            }
+            for history_date in recent_dates
+        ],
+    }
+
+
+def generate_timing_alignment_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+
+    kd_samples = [sample for sample in trading_samples if _is_low_k_turn_up(sample)]
+    universe_dates = _sorted_universe_dates(universe_reports_by_date)
+    universe_lookup_by_date = _build_universe_stock_lookup_by_date(universe_reports_by_date)
+    universe_date_to_index = {date_str: index for index, date_str in enumerate(universe_dates)}
+
+    delay_stats = {
+        delay: {
+            "available_count": 0,
+            "aligned_count": 0,
+            "first_alignment_count": 0,
+            "aligned_gaps": [],
+            "first_alignment_returns": [],
+        }
+        for delay in TIMING_ALIGNMENT_LOOKAHEAD_DAYS
+    }
+    first_alignment_counts: Dict[Optional[int], int] = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0,
+        None: 0,
+    }
+    event_returns: List[float] = []
+    event_closes: List[float] = []
+    event_gaps: List[float] = []
+    event_samples: List[Dict[str, Any]] = []
+    already_in_ma20_v2_count = 0
+
+    for sample in kd_samples:
+        current_date = str(sample.get("date") or "")
+        symbol = str((sample.get("candidate") or {}).get("symbol") or "")
+        current_index = universe_date_to_index.get(current_date)
+        if not symbol or current_index is None:
+            continue
+
+        event_return = _as_float(sample.get("return_pct"))
+        if event_return is not None:
+            event_returns.append(event_return)
+
+        event_close = _candidate_metric(sample, "close")
+        if event_close is not None:
+            event_closes.append(event_close)
+
+        event_gap = _ma20_gap_pct(sample)
+        if event_gap is not None:
+            event_gaps.append(event_gap)
+
+        event_in_ma20_v2 = _is_ma20_v2(sample)
+        if event_in_ma20_v2:
+            already_in_ma20_v2_count += 1
+
+        first_alignment_delay: Optional[int] = 0 if event_in_ma20_v2 else None
+        lookahead: Dict[str, Dict[str, Any]] = {}
+
+        for delay in TIMING_ALIGNMENT_LOOKAHEAD_DAYS:
+            delay_key = f"day_{delay}"
+            target_index = current_index + delay
+            if target_index >= len(universe_dates):
+                lookahead[delay_key] = {
+                    "available": False,
+                    "date": None,
+                    "close": None,
+                    "ma20_gap_pct": None,
+                    "in_ma20_v2": False,
+                    "first_alignment": False,
+                    "entry_return_pct": None,
+                }
+                continue
+
+            target_date = universe_dates[target_index]
+            alignment_sample = _build_universe_alignment_sample(symbol, universe_dates, universe_lookup_by_date, target_index)
+            target_stock = alignment_sample.get("current_universe_stock")
+            available = target_stock is not None
+            if available:
+                delay_stats[delay]["available_count"] += 1
+
+            in_ma20_v2 = _is_ma20_v2(alignment_sample) if available else False
+            target_gap = _ma20_gap_pct(alignment_sample) if available else None
+            if in_ma20_v2:
+                delay_stats[delay]["aligned_count"] += 1
+                if target_gap is not None:
+                    delay_stats[delay]["aligned_gaps"].append(target_gap)
+
+            next_stock = None
+            if target_index + 1 < len(universe_dates):
+                next_stock = (universe_lookup_by_date.get(universe_dates[target_index + 1]) or {}).get(symbol)
+            entry_return = _stock_close_return_pct(target_stock, next_stock) if in_ma20_v2 else None
+
+            if first_alignment_delay is None and in_ma20_v2:
+                first_alignment_delay = delay
+                delay_stats[delay]["first_alignment_count"] += 1
+                if entry_return is not None:
+                    delay_stats[delay]["first_alignment_returns"].append(entry_return)
+
+            lookahead[delay_key] = {
+                "available": available,
+                "date": target_date,
+                "close": _stock_indicator_metric(target_stock, "close"),
+                "ma20_gap_pct": target_gap,
+                "in_ma20_v2": in_ma20_v2,
+                "first_alignment": False,
+                "entry_return_pct": entry_return,
+            }
+
+        first_alignment_counts[first_alignment_delay] = first_alignment_counts.get(first_alignment_delay, 0) + 1
+        if first_alignment_delay in TIMING_ALIGNMENT_LOOKAHEAD_DAYS:
+            lookahead[f"day_{first_alignment_delay}"]["first_alignment"] = True
+
+        event_samples.append({
+            "symbol": symbol,
+            "date": current_date,
+            "event_day": {
+                "close": event_close,
+                "ma20_gap_pct": event_gap,
+                "return_pct": event_return,
+                "in_ma20_v2": event_in_ma20_v2,
+            },
+            "first_alignment_delay_days": first_alignment_delay,
+            "lookahead": lookahead,
+        })
+
+    kd_event_sample_count = len(event_samples)
+    delay_alignment = {
+        f"day_{delay}": {
+            "delay_days": delay,
+            "available_sample_count": stats["available_count"],
+            "aligned_count": stats["aligned_count"],
+            "aligned_rate_pct": _round_number((stats["aligned_count"] / stats["available_count"]) * 100) if stats["available_count"] else None,
+            "first_alignment_count": stats["first_alignment_count"],
+            "first_alignment_rate_pct": _round_number((stats["first_alignment_count"] / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+            "avg_ma20_gap_pct_when_aligned": _mean(stats["aligned_gaps"]),
+            "first_alignment_avg_return_pct": _mean(stats["first_alignment_returns"]),
+            "first_alignment_win_rate_pct": _win_rate(stats["first_alignment_returns"]),
+            "first_alignment_evaluated_count": len(stats["first_alignment_returns"]),
+        }
+        for delay, stats in delay_stats.items()
+    }
+
+    first_alignment_distribution = {
+        "day_0": {
+            "delay_days": 0,
+            "sample_count": first_alignment_counts.get(0, 0),
+            "sample_rate_pct": _round_number((first_alignment_counts.get(0, 0) / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+        },
+        "day_1": {
+            "delay_days": 1,
+            "sample_count": first_alignment_counts.get(1, 0),
+            "sample_rate_pct": _round_number((first_alignment_counts.get(1, 0) / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+        },
+        "day_2": {
+            "delay_days": 2,
+            "sample_count": first_alignment_counts.get(2, 0),
+            "sample_rate_pct": _round_number((first_alignment_counts.get(2, 0) / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+        },
+        "day_3": {
+            "delay_days": 3,
+            "sample_count": first_alignment_counts.get(3, 0),
+            "sample_rate_pct": _round_number((first_alignment_counts.get(3, 0) / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+        },
+        "no_alignment_within_3d": {
+            "delay_days": None,
+            "sample_count": first_alignment_counts.get(None, 0),
+            "sample_rate_pct": _round_number((first_alignment_counts.get(None, 0) / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+        },
+    }
+
+    best_alignment_candidates = [
+        summary for summary in delay_alignment.values()
+        if int(summary.get("first_alignment_count") or 0) > 0
+    ]
+    best_alignment_delay = None
+    if best_alignment_candidates:
+        best_alignment_delay = max(
+            best_alignment_candidates,
+            key=lambda item: (
+                int(item.get("first_alignment_count") or 0),
+                item.get("first_alignment_rate_pct") if item.get("first_alignment_rate_pct") is not None else float("-inf"),
+                -int(item.get("delay_days") or 0),
+            ),
+        )
+
+    best_delayed_entry_candidates = [
+        summary for summary in delay_alignment.values()
+        if summary.get("first_alignment_avg_return_pct") is not None
+    ]
+    best_delayed_entry_timing = None
+    if best_delayed_entry_candidates:
+        best_delayed_entry_timing = max(
+            best_delayed_entry_candidates,
+            key=lambda item: (
+                item.get("first_alignment_avg_return_pct") if item.get("first_alignment_avg_return_pct") is not None else float("-inf"),
+                int(item.get("first_alignment_count") or 0),
+                -int(item.get("delay_days") or 0),
+            ),
+        )
+
+    baseline_avg_return = _mean(event_returns)
+    if best_delayed_entry_timing is not None:
+        best_delayed_entry_timing = {
+            **best_delayed_entry_timing,
+            "beats_kd_event_baseline": (
+                baseline_avg_return is not None
+                and best_delayed_entry_timing.get("first_alignment_avg_return_pct") is not None
+                and best_delayed_entry_timing["first_alignment_avg_return_pct"] > baseline_avg_return
+            ),
+        }
+
+    recommendation_summary = "資料不足，無法判定最佳延遲進場時間。"
+    recommended_delay_days = None
+    beats_baseline = False
+    if best_delayed_entry_timing is not None:
+        beats_baseline = bool(best_delayed_entry_timing.get("beats_kd_event_baseline"))
+        if beats_baseline:
+            recommended_delay_days = int(best_delayed_entry_timing.get("delay_days") or 0)
+            recommendation_summary = (
+                f"KD 後 {recommended_delay_days} 天的首次 MA20_v2 對齊，"
+                f"平均報酬 {best_delayed_entry_timing['first_alignment_avg_return_pct']}%，"
+                f"高於 KD 當天樣本的 {baseline_avg_return}%，可視為較佳延遲進場時間。"
+            )
+        else:
+            recommendation_summary = (
+                f"雖然 KD 後 {best_delayed_entry_timing['delay_days']} 天的首次 MA20_v2 對齊"
+                f"平均報酬最高（{best_delayed_entry_timing['first_alignment_avg_return_pct']}%），"
+                f"但仍未明顯高於 KD 當天樣本的 {baseline_avg_return}%，目前看不到更好的延遲進場時間。"
+            )
+
+    alignment_summary = "資料不足，無法判定 KD 與 MA20_v2 的時序對齊點。"
+    if best_alignment_delay is not None:
+        alignment_summary = (
+            f"KD 後 {best_alignment_delay['delay_days']} 天最容易首次進入 MA20_v2，"
+            f"共有 {best_alignment_delay['first_alignment_count']} 個樣本，"
+            f"占 KD 樣本的 {best_alignment_delay['first_alignment_rate_pct']}%。"
+        )
+
+    return {
+        "report_version": TIMING_ALIGNMENT_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": "next_available_report",
+        "evaluated_days": evaluated_days,
+        "kd_event_sample_count": kd_event_sample_count,
+        "lookahead_days": list(TIMING_ALIGNMENT_LOOKAHEAD_DAYS),
+        "trigger_condition": {
+            "condition": "kd_low_turn_up",
+            "label": CONDITION_DEFINITIONS["kd_low_turn_up"]["label"],
+            "description": CONDITION_DEFINITIONS["kd_low_turn_up"]["description"],
+        },
+        "alignment_condition": {
+            "condition": "ma20_v2",
+            "label": STEADY_V2_BLOCKER_CONDITION_DEFINITIONS["ma20_v2"]["label"],
+            "description": STEADY_V2_BLOCKER_CONDITION_DEFINITIONS["ma20_v2"]["description"],
+        },
+        "event_day_baseline": {
+            "sample_count": kd_event_sample_count,
+            "avg_return_pct": baseline_avg_return,
+            "win_rate_pct": _win_rate(event_returns),
+            "avg_close": _mean(event_closes),
+            "avg_ma20_gap_pct": _mean(event_gaps),
+            "already_in_ma20_v2_count": already_in_ma20_v2_count,
+            "already_in_ma20_v2_rate_pct": _round_number((already_in_ma20_v2_count / kd_event_sample_count) * 100) if kd_event_sample_count else None,
+        },
+        "delay_alignment": delay_alignment,
+        "first_alignment_distribution": first_alignment_distribution,
+        "best_alignment_delay": best_alignment_delay,
+        "best_delayed_entry_timing": best_delayed_entry_timing,
+        "recommendation": {
+            "recommended_delay_days": recommended_delay_days,
+            "beats_kd_event_baseline": beats_baseline,
+            "baseline_kd_avg_return_pct": baseline_avg_return,
+            "summary": recommendation_summary,
+        },
+        "timing_alignment_summary": alignment_summary,
+        "event_samples": event_samples,
+    }
+
+
 def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not ranked_items:
         return []
@@ -2650,6 +3005,10 @@ def save_steady_v2_blockers_report(report: Dict[str, Any], base_dir: Optional[Pa
     return _save_json(_steady_v2_blockers_path(base_dir), report)
 
 
+def save_timing_alignment_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_timing_alignment_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -2744,6 +3103,17 @@ def generate_steady_v2_blockers_from_reports(base_dir: Optional[Path] = None, ma
     return save_steady_v2_blockers_report(report, base_dir=base_dir)
 
 
+def generate_timing_alignment_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    report = generate_timing_alignment_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    return save_timing_alignment_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -2807,6 +3177,7 @@ def backfill_priority_validation_reports(
     strategy_analysis_path = generate_strategy_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     signal_density_path = generate_signal_density_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v2_blockers_path = generate_steady_v2_blockers_from_reports(base_dir=base_dir, market_prices=market_prices)
+    timing_alignment_path = generate_timing_alignment_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -2822,6 +3193,7 @@ def backfill_priority_validation_reports(
         "strategy_analysis_path": str(strategy_analysis_path),
         "signal_density_path": str(signal_density_path),
         "steady_v2_blockers_path": str(steady_v2_blockers_path),
+        "timing_alignment_path": str(timing_alignment_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

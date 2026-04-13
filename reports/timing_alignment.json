@@ -1,0 +1,1050 @@
+{
+  "report_version": "v21-timing-alignment",
+  "generated_at": "2026-04-13T18:10:06.062127+08:00",
+  "evaluation_horizon": "next_available_report",
+  "evaluated_days": 20,
+  "kd_event_sample_count": 23,
+  "lookahead_days": [
+    1,
+    2,
+    3
+  ],
+  "trigger_condition": {
+    "condition": "kd_low_turn_up",
+    "label": "KD 條件",
+    "description": "KD 低檔翻揚"
+  },
+  "alignment_condition": {
+    "condition": "ma20_v2",
+    "label": "MA20_v2 條件",
+    "description": "接近 MA20 區間 / 最近 3 日內跌破"
+  },
+  "event_day_baseline": {
+    "sample_count": 23,
+    "avg_return_pct": 0.6632,
+    "win_rate_pct": 65.2174,
+    "avg_close": 360.8261,
+    "avg_ma20_gap_pct": -0.0478,
+    "already_in_ma20_v2_count": 4,
+    "already_in_ma20_v2_rate_pct": 17.3913
+  },
+  "delay_alignment": {
+    "day_1": {
+      "delay_days": 1,
+      "available_sample_count": 23,
+      "aligned_count": 6,
+      "aligned_rate_pct": 26.087,
+      "first_alignment_count": 3,
+      "first_alignment_rate_pct": 13.0435,
+      "avg_ma20_gap_pct_when_aligned": -0.0075,
+      "first_alignment_avg_return_pct": -0.6001,
+      "first_alignment_win_rate_pct": 0.0,
+      "first_alignment_evaluated_count": 3
+    },
+    "day_2": {
+      "delay_days": 2,
+      "available_sample_count": 23,
+      "aligned_count": 4,
+      "aligned_rate_pct": 17.3913,
+      "first_alignment_count": 1,
+      "first_alignment_rate_pct": 4.3478,
+      "avg_ma20_gap_pct_when_aligned": -0.006,
+      "first_alignment_avg_return_pct": -0.4637,
+      "first_alignment_win_rate_pct": 0.0,
+      "first_alignment_evaluated_count": 1
+    },
+    "day_3": {
+      "delay_days": 3,
+      "available_sample_count": 23,
+      "aligned_count": 3,
+      "aligned_rate_pct": 13.0435,
+      "first_alignment_count": 0,
+      "first_alignment_rate_pct": 0.0,
+      "avg_ma20_gap_pct_when_aligned": 0.0028,
+      "first_alignment_avg_return_pct": null,
+      "first_alignment_win_rate_pct": null,
+      "first_alignment_evaluated_count": 0
+    }
+  },
+  "first_alignment_distribution": {
+    "day_0": {
+      "delay_days": 0,
+      "sample_count": 4,
+      "sample_rate_pct": 17.3913
+    },
+    "day_1": {
+      "delay_days": 1,
+      "sample_count": 3,
+      "sample_rate_pct": 13.0435
+    },
+    "day_2": {
+      "delay_days": 2,
+      "sample_count": 1,
+      "sample_rate_pct": 4.3478
+    },
+    "day_3": {
+      "delay_days": 3,
+      "sample_count": 0,
+      "sample_rate_pct": 0.0
+    },
+    "no_alignment_within_3d": {
+      "delay_days": null,
+      "sample_count": 15,
+      "sample_rate_pct": 65.2174
+    }
+  },
+  "best_alignment_delay": {
+    "delay_days": 1,
+    "available_sample_count": 23,
+    "aligned_count": 6,
+    "aligned_rate_pct": 26.087,
+    "first_alignment_count": 3,
+    "first_alignment_rate_pct": 13.0435,
+    "avg_ma20_gap_pct_when_aligned": -0.0075,
+    "first_alignment_avg_return_pct": -0.6001,
+    "first_alignment_win_rate_pct": 0.0,
+    "first_alignment_evaluated_count": 3
+  },
+  "best_delayed_entry_timing": {
+    "delay_days": 2,
+    "available_sample_count": 23,
+    "aligned_count": 4,
+    "aligned_rate_pct": 17.3913,
+    "first_alignment_count": 1,
+    "first_alignment_rate_pct": 4.3478,
+    "avg_ma20_gap_pct_when_aligned": -0.006,
+    "first_alignment_avg_return_pct": -0.4637,
+    "first_alignment_win_rate_pct": 0.0,
+    "first_alignment_evaluated_count": 1,
+    "beats_kd_event_baseline": false
+  },
+  "recommendation": {
+    "recommended_delay_days": null,
+    "beats_kd_event_baseline": false,
+    "baseline_kd_avg_return_pct": 0.6632,
+    "summary": "雖然 KD 後 2 天的首次 MA20_v2 對齊平均報酬最高（-0.4637%），但仍未明顯高於 KD 當天樣本的 0.6632%，目前看不到更好的延遲進場時間。"
+  },
+  "timing_alignment_summary": "KD 後 1 天最容易首次進入 MA20_v2，共有 3 個樣本，占 KD 樣本的 13.0435%。",
+  "event_samples": [
+    {
+      "symbol": "2301",
+      "date": "2026-03-12",
+      "event_day": {
+        "close": 159.5,
+        "ma20_gap_pct": -0.05604545185535893,
+        "return_pct": 4.7022,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": 1,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-13",
+          "close": 167.0,
+          "ma20_gap_pct": -0.010663507109004806,
+          "in_ma20_v2": true,
+          "first_alignment": true,
+          "entry_return_pct": -1.1976
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-16",
+          "close": 165.0,
+          "ma20_gap_pct": -0.02007364295046915,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-17",
+          "close": 168.0,
+          "ma20_gap_pct": -0.002967359050445104,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": 1.1905
+        }
+      }
+    },
+    {
+      "symbol": "2317",
+      "date": "2026-03-12",
+      "event_day": {
+        "close": 214.5,
+        "ma20_gap_pct": -0.039838854073410944,
+        "return_pct": 0.0,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-13",
+          "close": 214.5,
+          "ma20_gap_pct": -0.03940886699507394,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-16",
+          "close": 216.5,
+          "ma20_gap_pct": -0.029930997401200855,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-17",
+          "close": 212.0,
+          "ma20_gap_pct": -0.04932735426008968,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2327",
+      "date": "2026-03-13",
+      "event_day": {
+        "close": 258.0,
+        "ma20_gap_pct": -0.03713379361821231,
+        "return_pct": 0.7752,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-16",
+          "close": 260.0,
+          "ma20_gap_pct": -0.028400597907324448,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-17",
+          "close": 286.0,
+          "ma20_gap_pct": 0.06319702602230483,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-18",
+          "close": 280.5,
+          "ma20_gap_pct": 0.03658536585365845,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2317",
+      "date": "2026-03-13",
+      "event_day": {
+        "close": 214.5,
+        "ma20_gap_pct": -0.03940886699507394,
+        "return_pct": 0.9324,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-16",
+          "close": 216.5,
+          "ma20_gap_pct": -0.029930997401200855,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-17",
+          "close": 212.0,
+          "ma20_gap_pct": -0.04932735426008968,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-18",
+          "close": 210.0,
+          "ma20_gap_pct": -0.05723905723905724,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2885",
+      "date": "2026-03-16",
+      "event_day": {
+        "close": 44.6,
+        "ma20_gap_pct": -0.013274336283185872,
+        "return_pct": 0.1121,
+        "in_ma20_v2": true
+      },
+      "first_alignment_delay_days": 0,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-17",
+          "close": 44.65,
+          "ma20_gap_pct": -0.014348785871964649,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": 0.0
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-18",
+          "close": 44.65,
+          "ma20_gap_pct": -0.016519823788546256,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": -0.8959
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-19",
+          "close": 44.25,
+          "ma20_gap_pct": -0.02554503413345071,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2606",
+      "date": "2026-03-16",
+      "event_day": {
+        "close": 60.0,
+        "ma20_gap_pct": -0.04852521408182687,
+        "return_pct": 2.6667,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-17",
+          "close": 61.6,
+          "ma20_gap_pct": -0.023152553124008893,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-18",
+          "close": 61.0,
+          "ma20_gap_pct": -0.03312727849104459,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-19",
+          "close": 60.5,
+          "ma20_gap_pct": -0.040444091990483697,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2884",
+      "date": "2026-03-20",
+      "event_day": {
+        "close": 31.8,
+        "ma20_gap_pct": -0.053007742703990404,
+        "return_pct": -2.044,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-23",
+          "close": 31.15,
+          "ma20_gap_pct": -0.06820221358061625,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-24",
+          "close": 31.55,
+          "ma20_gap_pct": -0.051698226630598205,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-25",
+          "close": 32.1,
+          "ma20_gap_pct": -0.031089646845759163,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2884",
+      "date": "2026-03-24",
+      "event_day": {
+        "close": 31.55,
+        "ma20_gap_pct": -0.051698226630598205,
+        "return_pct": 1.7433,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": 2,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-25",
+          "close": 32.1,
+          "ma20_gap_pct": -0.031089646845759163,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-26",
+          "close": 32.35,
+          "ma20_gap_pct": -0.019993941229930222,
+          "in_ma20_v2": true,
+          "first_alignment": true,
+          "entry_return_pct": -0.4637
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-27",
+          "close": 32.2,
+          "ma20_gap_pct": -0.020085209981740616,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "5880",
+      "date": "2026-03-24",
+      "event_day": {
+        "close": 22.9,
+        "ma20_gap_pct": -0.01801029159519733,
+        "return_pct": 1.9651,
+        "in_ma20_v2": true
+      },
+      "first_alignment_delay_days": 0,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-25",
+          "close": 23.35,
+          "ma20_gap_pct": 0.002576212966938698,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": 0.6424
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-26",
+          "close": 23.5,
+          "ma20_gap_pct": 0.009883970777825544,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": -0.4255
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-27",
+          "close": 23.4,
+          "ma20_gap_pct": 0.0068846815834767705,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": -0.8547
+        }
+      }
+    },
+    {
+      "symbol": "2884",
+      "date": "2026-03-25",
+      "event_day": {
+        "close": 32.1,
+        "ma20_gap_pct": -0.031089646845759163,
+        "return_pct": 0.7788,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": 1,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-26",
+          "close": 32.35,
+          "ma20_gap_pct": -0.019993941229930222,
+          "in_ma20_v2": true,
+          "first_alignment": true,
+          "entry_return_pct": -0.4637
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-27",
+          "close": 32.2,
+          "ma20_gap_pct": -0.020085209981740616,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-03-30",
+          "close": 32.0,
+          "ma20_gap_pct": -0.02200488997555009,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2454",
+      "date": "2026-03-27",
+      "event_day": {
+        "close": 1585.0,
+        "ma20_gap_pct": -0.07323490717731326,
+        "return_pct": -4.7319,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-03-30",
+          "close": 1510.0,
+          "ma20_gap_pct": -0.10690521957711074,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-03-31",
+          "close": 1490.0,
+          "ma20_gap_pct": -0.11018214392355927,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-01",
+          "close": 1465.0,
+          "ma20_gap_pct": -0.11839927786971566,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2882",
+      "date": "2026-03-31",
+      "event_day": {
+        "close": 70.3,
+        "ma20_gap_pct": -0.020618556701030983,
+        "return_pct": 2.276,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": 1,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-01",
+          "close": 71.9,
+          "ma20_gap_pct": 0.002649560730721126,
+          "in_ma20_v2": true,
+          "first_alignment": true,
+          "entry_return_pct": -0.1391
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-02",
+          "close": 71.8,
+          "ma20_gap_pct": 0.0025132644512704913,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": 0.1393
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-07",
+          "close": 71.9,
+          "ma20_gap_pct": 0.004610870476456791,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": 2.6426
+        }
+      }
+    },
+    {
+      "symbol": "2408",
+      "date": "2026-04-01",
+      "event_day": {
+        "close": 211.0,
+        "ma20_gap_pct": -0.10346292755470574,
+        "return_pct": -4.9763,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-02",
+          "close": 200.5,
+          "ma20_gap_pct": -0.13763440860215054,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-07",
+          "close": 206.0,
+          "ma20_gap_pct": -0.10880380705169805,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 223.0,
+          "ma20_gap_pct": -0.03796376186367563,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2363",
+      "date": "2026-04-01",
+      "event_day": {
+        "close": 47.65,
+        "ma20_gap_pct": -0.042403536977491954,
+        "return_pct": -2.8332,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-02",
+          "close": 46.3,
+          "ma20_gap_pct": -0.06559031281533804,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-07",
+          "close": 47.35,
+          "ma20_gap_pct": -0.04130390767361812,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 48.45,
+          "ma20_gap_pct": -0.020420541852001577,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2883",
+      "date": "2026-04-01",
+      "event_day": {
+        "close": 19.8,
+        "ma20_gap_pct": -0.010989010989010933,
+        "return_pct": 0.5051,
+        "in_ma20_v2": true
+      },
+      "first_alignment_delay_days": 0,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-02",
+          "close": 19.9,
+          "ma20_gap_pct": -0.005000000000000071,
+          "in_ma20_v2": true,
+          "first_alignment": false,
+          "entry_return_pct": 3.2663
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-07",
+          "close": 20.55,
+          "ma20_gap_pct": 0.027500000000000035,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 21.35,
+          "ma20_gap_pct": 0.06271777003484329,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2454",
+      "date": "2026-04-02",
+      "event_day": {
+        "close": 1465.0,
+        "ma20_gap_pct": -0.11009870918754745,
+        "return_pct": 0.3413,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-07",
+          "close": 1470.0,
+          "ma20_gap_pct": -0.09898866074164879,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 1580.0,
+          "ma20_gap_pct": -0.029036718389921647,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 1575.0,
+          "ma20_gap_pct": -0.02822767237390097,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2327",
+      "date": "2026-04-07",
+      "event_day": {
+        "close": 256.0,
+        "ma20_gap_pct": -0.014247208317289137,
+        "return_pct": 6.0547,
+        "in_ma20_v2": true
+      },
+      "first_alignment_delay_days": 0,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 271.5,
+          "ma20_gap_pct": 0.04082806210465776,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 281.5,
+          "ma20_gap_pct": 0.07442748091603053,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 281.5,
+          "ma20_gap_pct": 0.07442748091603053,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2363",
+      "date": "2026-04-07",
+      "event_day": {
+        "close": 47.35,
+        "ma20_gap_pct": -0.04130390767361812,
+        "return_pct": 2.3231,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 48.45,
+          "ma20_gap_pct": -0.020420541852001577,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 47.15,
+          "ma20_gap_pct": -0.04419217514696939,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 47.15,
+          "ma20_gap_pct": -0.04419217514696939,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2454",
+      "date": "2026-04-07",
+      "event_day": {
+        "close": 1470.0,
+        "ma20_gap_pct": -0.09898866074164879,
+        "return_pct": 7.483,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 1580.0,
+          "ma20_gap_pct": -0.029036718389921647,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 1575.0,
+          "ma20_gap_pct": -0.02822767237390097,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 1575.0,
+          "ma20_gap_pct": -0.02822767237390097,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2408",
+      "date": "2026-04-07",
+      "event_day": {
+        "close": 206.0,
+        "ma20_gap_pct": -0.10880380705169805,
+        "return_pct": 8.2524,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-08",
+          "close": 223.0,
+          "ma20_gap_pct": -0.03796376186367563,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 205.0,
+          "ma20_gap_pct": -0.11062906724511931,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 205.0,
+          "ma20_gap_pct": -0.11062906724511931,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2454",
+      "date": "2026-04-08",
+      "event_day": {
+        "close": 1580.0,
+        "ma20_gap_pct": -0.029036718389921647,
+        "return_pct": -0.3165,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 1575.0,
+          "ma20_gap_pct": -0.02822767237390097,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 1575.0,
+          "ma20_gap_pct": -0.02822767237390097,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-11",
+          "close": 1575.0,
+          "ma20_gap_pct": -0.022498060512024826,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2408",
+      "date": "2026-04-08",
+      "event_day": {
+        "close": 223.0,
+        "ma20_gap_pct": -0.03796376186367563,
+        "return_pct": -8.0717,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 205.0,
+          "ma20_gap_pct": -0.11062906724511931,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 205.0,
+          "ma20_gap_pct": -0.11062906724511931,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-11",
+          "close": 215.0,
+          "ma20_gap_pct": -0.05928680813826301,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2363",
+      "date": "2026-04-08",
+      "event_day": {
+        "close": 48.45,
+        "ma20_gap_pct": -0.020420541852001577,
+        "return_pct": -2.6832,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-04-09",
+          "close": 47.15,
+          "ma20_gap_pct": -0.04419217514696939,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-04-10",
+          "close": 47.15,
+          "ma20_gap_pct": -0.04419217514696939,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-04-11",
+          "close": 47.2,
+          "ma20_gap_pct": -0.03908794788273605,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    }
+  ]
+}

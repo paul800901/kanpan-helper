@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -453,6 +453,18 @@ class TestPriorityValidation(unittest.TestCase):
             ],
         }
 
+    def make_timing_followup_universe_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": [
+                self.make_universe_stock("BBB", "Beta", 83, 101.0, 98.5, 99.0, 33.0, 1.0, "連2買", 1),
+                self.make_universe_stock("CCC", "Gamma", 74, 100.0, 100.8, 100.0, 32.0, 1.0, "連1買", 2),
+                self.make_universe_stock("DDD", "Delta", 72, 101.0, 99.0, 100.0, 24.0, 1.0, "資料不足", 3),
+                self.make_universe_stock("AAA", "Alpha", 65, 100.1, 100.0, 100.0, 36.0, 1.0, "資料不足", 4),
+            ],
+        }
+
     def test_priority_snapshot_mirrors_frontend_sorting(self):
         context_report = self.make_context_report("2026-04-10")
         universe_report = self.make_universe_report("2026-04-10")
@@ -506,10 +518,12 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "strategy_analysis.json").exists())
             self.assertTrue((reports_dir / "signal_density.json").exists())
             self.assertTrue((reports_dir / "steady_v2_blockers.json").exists())
+            self.assertTrue((reports_dir / "timing_alignment.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
             self.assertTrue(result["steady_v2_blockers_path"].endswith("steady_v2_blockers.json"))
+            self.assertTrue(result["timing_alignment_path"].endswith("timing_alignment.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -781,6 +795,46 @@ class TestPriorityValidation(unittest.TestCase):
             blockers["pairwise_intersections"]["kd_low_turn_up__low_position"]["pass_count"],
             blockers["pairwise_intersections"]["ma20_v2__kd_low_turn_up"]["pass_count"],
         )
+
+    def test_timing_alignment_report_finds_best_delay(self):
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=self.make_combo_current_universe_report("2026-04-10"),
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_combo_current_universe_report("2026-04-10"),
+            next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        timing = generate_timing_alignment_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+                "2026-04-11": self.make_combo_next_universe_report("2026-04-11"),
+                "2026-04-12": self.make_timing_followup_universe_report("2026-04-12"),
+            },
+        )
+
+        self.assertEqual(timing["report_version"], "v21-timing-alignment")
+        self.assertEqual(timing["kd_event_sample_count"], 1)
+        self.assertEqual(timing["delay_alignment"]["day_1"]["aligned_count"], 1)
+        self.assertEqual(timing["delay_alignment"]["day_1"]["first_alignment_count"], 1)
+        self.assertEqual(timing["best_alignment_delay"]["delay_days"], 1)
+        self.assertEqual(timing["best_delayed_entry_timing"]["delay_days"], 1)
+        self.assertEqual(timing["recommendation"]["recommended_delay_days"], 1)
+        self.assertTrue(timing["recommendation"]["beats_kd_event_baseline"])
+        self.assertEqual(timing["event_samples"][0]["first_alignment_delay_days"], 1)
+        self.assertTrue(timing["event_samples"][0]["lookahead"]["day_1"]["in_ma20_v2"])
 
 if __name__ == "__main__":
     # 執行單元測試
