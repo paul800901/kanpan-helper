@@ -188,8 +188,8 @@ def run_pipeline(
     print(f"[OK] Universe 報告已生成: {universe_path}")
     print(f"   包含 {universe_report['total_stocks']} 檔股票")
 
-    # Step 7: 產生 context / priority / factor 驗證層（v9 + v27）
-    print("\n[Step 7] 產生 Context、Priority 與 steady v5 alpha 修正報告")
+    # Step 7: 產生 context / priority / factor 驗證層（v9 + v28）
+    print("\n[Step 7] 產生 Context、Priority 與 steady v5 跨時間驗證報告")
     print("-" * 40)
 
     validation_result = backfill_priority_validation_reports(target_date=report_date)
@@ -205,6 +205,7 @@ def run_pipeline(
     steady_v2_signature_path = validation_result.get("steady_v2_signature_path")
     steady_v4_tracking_path = validation_result.get("steady_v4_tracking_path")
     steady_v4_alpha_breakdown_path = validation_result.get("steady_v4_alpha_breakdown_path")
+    steady_v5_long_term_validation_path = validation_result.get("steady_v5_long_term_validation_path")
 
     if context_path:
         print(f"[OK] Context 報告已就緒: {context_path}")
@@ -230,12 +231,14 @@ def run_pipeline(
         print(f"[OK] steady_v4 實戰追蹤已就緒: {steady_v4_tracking_path}")
     if steady_v4_alpha_breakdown_path:
         print(f"[OK] steady_v4 alpha 拆解已就緒: {steady_v4_alpha_breakdown_path}")
+    if steady_v5_long_term_validation_path:
+        print(f"[OK] steady_v5 跨時間驗證已就緒: {steady_v5_long_term_validation_path}")
     if validation_result.get("evaluated_days") is not None:
         print(f"[OK] 已可評估樣本天數: {validation_result['evaluated_days']}")
     if validation_result.get("history_window"):
         generated_days = len(validation_result["history_window"].get("generated") or [])
         target_days = len(validation_result["history_window"].get("target_dates") or [])
-        print(f"[OK] v27 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
+        print(f"[OK] v28 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
 
     if validation_result.get("skipped"):
         print(f"[INFO] 有 {len(validation_result['skipped'])} 個歷史日期因缺資料而略過")

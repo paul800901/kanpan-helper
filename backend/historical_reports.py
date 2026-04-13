@@ -45,7 +45,8 @@ def _complete_base_reports_exist(reports_dir: Path, date_str: str) -> bool:
 def recent_trading_dates(min_dates: int, end_date: Optional[str] = None, api: Optional[FinMindAPI] = None) -> List[str]:
     client = api or FinMindAPI()
     target_end = end_date or get_taiwan_now().strftime("%Y-%m-%d")
-    start_date = (_parse_date(target_end) - timedelta(days=CALENDAR_BUFFER_DAYS)).strftime("%Y-%m-%d")
+    calendar_lookback_days = max(CALENDAR_BUFFER_DAYS, int(min_dates * 2.5))
+    start_date = (_parse_date(target_end) - timedelta(days=calendar_lookback_days)).strftime("%Y-%m-%d")
     market_rows = client.get_market_index_prices(start_date, target_end, data_id=MARKET_INDEX_ID)
     dates = [str(row.get("date") or "").strip() for row in market_rows if row.get("date")]
     unique_dates = sorted({value for value in dates if value})

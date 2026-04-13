@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, generate_steady_v5_long_term_validation_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -522,6 +522,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "steady_v2_signature.json").exists())
             self.assertTrue((reports_dir / "steady_v4_tracking.json").exists())
             self.assertTrue((reports_dir / "steady_v4_alpha_breakdown.json").exists())
+            self.assertTrue((reports_dir / "steady_v5_long_term_validation.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
@@ -530,6 +531,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue(result["steady_v2_signature_path"].endswith("steady_v2_signature.json"))
             self.assertTrue(result["steady_v4_tracking_path"].endswith("steady_v4_tracking.json"))
             self.assertTrue(result["steady_v4_alpha_breakdown_path"].endswith("steady_v4_alpha_breakdown.json"))
+            self.assertTrue(result["steady_v5_long_term_validation_path"].endswith("steady_v5_long_term_validation.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -840,6 +842,94 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertTrue(steady_comparison["v5_alpha_positive"])
         self.assertTrue(steady_comparison["meets_v27_goal"])
         self.assertTrue(strategy_analysis["v27_summary"]["steady_alpha_repair"]["meets_v27_goal"])
+
+    def test_steady_v5_long_term_validation_report_builds_windows(self):
+        previous_universe = self.make_combo_previous_universe_report("2026-04-09")
+        current_universe = self.make_combo_current_universe_report("2026-04-10")
+        next_universe = self.make_combo_next_universe_report("2026-04-11")
+
+        for stock in previous_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 100.0
+                stock["indicators"]["k"] = 12.0
+            if stock["symbol"] == "CCC":
+                stock["indicators"]["close"] = 101.0
+                stock["indicators"]["k"] = 20.0
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 102.5
+                stock["indicators"]["k"] = 18.0
+            if stock["symbol"] == "AAA":
+                stock["indicators"]["close"] = 100.8
+                stock["indicators"]["k"] = 22.0
+
+        for stock in current_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 98.5
+                stock["indicators"]["k"] = 25.0
+                stock["indicators"]["volume_ratio"] = 1.3
+            if stock["symbol"] == "CCC":
+                stock["indicators"]["close"] = 99.8
+                stock["indicators"]["k"] = 26.0
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 99.5
+                stock["indicators"]["k"] = 24.0
+                stock["indicators"]["volume_ratio"] = 0.7
+            if stock["symbol"] == "AAA":
+                stock["indicators"]["close"] = 100.2
+                stock["indicators"]["k"] = 27.0
+
+        for stock in next_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 100.0
+            if stock["symbol"] == "CCC":
+                stock["indicators"]["close"] = 100.8
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 98.0
+            if stock["symbol"] == "AAA":
+                stock["indicators"]["close"] = 101.2
+
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            previous_universe,
+            next_universe_report=current_universe,
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            current_universe,
+            next_universe_report=next_universe,
+            next_date="2026-04-11",
+        )
+
+        validation = generate_steady_v5_long_term_validation_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": previous_universe,
+                "2026-04-10": current_universe,
+            },
+        )
+
+        self.assertEqual(validation["report_version"], "v28-steady-v5-long-term-validation")
+        self.assertEqual(validation["validation_target"]["strategy"], "steady_v5")
+        self.assertEqual(validation["validation_target"]["base_strategy"], "steady_v4")
+        self.assertEqual(validation["assessment_rules"]["windows"], [60, 120])
+        self.assertEqual(validation["strategy_baseline_snapshot"]["strategy"], "steady_v5")
+        self.assertEqual(validation["evaluated_days"], 2)
+        self.assertEqual(len(validation["daily_validation"]), 2)
+        self.assertIn("60d", validation["validation_windows"])
+        self.assertIn("120d", validation["validation_windows"])
+        self.assertFalse(validation["validation_windows"]["60d"]["is_ready"])
+        self.assertFalse(validation["validation_windows"]["120d"]["is_ready"])
+        self.assertGreater(validation["validation_windows"]["60d"]["avg_alpha_pct"], 0)
+        self.assertTrue(validation["validation_windows"]["60d"]["alpha_positive"])
+        self.assertTrue(validation["validation_windows"]["60d"]["has_not_broken"])
+        self.assertIsNone(validation["latest_assessment"]["alpha_confirmed"])
+        self.assertIn("60 天視窗尚未完成", validation["summary"])
 
 
     def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):
