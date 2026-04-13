@@ -1,0 +1,206 @@
+{
+  "report_version": "v16-strategy-analysis",
+  "generated_at": "2026-04-13T15:34:35.959466+08:00",
+  "evaluation_horizon": "next_available_report",
+  "evaluated_days": 20,
+  "candidate_samples": 359,
+  "strategy_names": [
+    "sniper",
+    "steady"
+  ],
+  "low_position_definition": {
+    "metric": "(close - ma20) / ma20",
+    "positive_group": "lower_third",
+    "lower_third_cutoff": -0.020468
+  },
+  "strategies": {
+    "sniper": {
+      "strategy": "sniper",
+      "label": "狙擊型",
+      "style_focus": "高報酬",
+      "description": "剛跌破 MA20 + 低位因子",
+      "selection_hint": "偏攻擊，樣本較少，但成立時平均報酬較高。",
+      "combination_source": "just_break_ma20_plus_low_position_ma20",
+      "factor_names": [
+        "just_break_ma20",
+        "low_position_ma20"
+      ],
+      "sample_count": 3,
+      "avg_return_pct": 3.194,
+      "win_rate_pct": 33.3333,
+      "avg_return_edge_vs_best_single_factor": 2.0581,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "just_break_ma20",
+        "label": "剛跌破 MA20",
+        "positive_group_label": "剛跌破組",
+        "sample_count": 14,
+        "avg_return_pct": 1.1359,
+        "win_rate_pct": 50.0
+      },
+      "verdict": "優於單因子"
+    },
+    "steady": {
+      "strategy": "steady",
+      "label": "穩定型",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 低位因子",
+      "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+      "combination_source": "low_k_turn_up_plus_low_position_ma20",
+      "factor_names": [
+        "low_k_turn_up",
+        "low_position_ma20"
+      ],
+      "sample_count": 18,
+      "avg_return_pct": 0.5167,
+      "win_rate_pct": 61.1111,
+      "avg_return_edge_vs_best_single_factor": -0.1465,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
+    }
+  },
+  "ranking_by_avg_return": [
+    {
+      "strategy": "sniper",
+      "label": "狙擊型",
+      "style_focus": "高報酬",
+      "description": "剛跌破 MA20 + 低位因子",
+      "selection_hint": "偏攻擊，樣本較少，但成立時平均報酬較高。",
+      "sample_count": 3,
+      "avg_return_pct": 3.194,
+      "win_rate_pct": 33.3333,
+      "avg_return_edge_vs_best_single_factor": 2.0581,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "just_break_ma20",
+        "label": "剛跌破 MA20",
+        "positive_group_label": "剛跌破組",
+        "sample_count": 14,
+        "avg_return_pct": 1.1359,
+        "win_rate_pct": 50.0
+      },
+      "verdict": "優於單因子"
+    },
+    {
+      "strategy": "steady",
+      "label": "穩定型",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 低位因子",
+      "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+      "sample_count": 18,
+      "avg_return_pct": 0.5167,
+      "win_rate_pct": 61.1111,
+      "avg_return_edge_vs_best_single_factor": -0.1465,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
+    }
+  ],
+  "ranking_by_win_rate": [
+    {
+      "strategy": "steady",
+      "label": "穩定型",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 低位因子",
+      "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+      "sample_count": 18,
+      "avg_return_pct": 0.5167,
+      "win_rate_pct": 61.1111,
+      "avg_return_edge_vs_best_single_factor": -0.1465,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
+    },
+    {
+      "strategy": "sniper",
+      "label": "狙擊型",
+      "style_focus": "高報酬",
+      "description": "剛跌破 MA20 + 低位因子",
+      "selection_hint": "偏攻擊，樣本較少，但成立時平均報酬較高。",
+      "sample_count": 3,
+      "avg_return_pct": 3.194,
+      "win_rate_pct": 33.3333,
+      "avg_return_edge_vs_best_single_factor": 2.0581,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "just_break_ma20",
+        "label": "剛跌破 MA20",
+        "positive_group_label": "剛跌破組",
+        "sample_count": 14,
+        "avg_return_pct": 1.1359,
+        "win_rate_pct": 50.0
+      },
+      "verdict": "優於單因子"
+    }
+  ],
+  "style_choice": {
+    "high_return": {
+      "strategy": "sniper",
+      "label": "狙擊型",
+      "style_focus": "高報酬",
+      "description": "剛跌破 MA20 + 低位因子",
+      "selection_hint": "偏攻擊，樣本較少，但成立時平均報酬較高。",
+      "sample_count": 3,
+      "avg_return_pct": 3.194,
+      "win_rate_pct": 33.3333,
+      "avg_return_edge_vs_best_single_factor": 2.0581,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "just_break_ma20",
+        "label": "剛跌破 MA20",
+        "positive_group_label": "剛跌破組",
+        "sample_count": 14,
+        "avg_return_pct": 1.1359,
+        "win_rate_pct": 50.0
+      },
+      "verdict": "優於單因子"
+    },
+    "steady": {
+      "strategy": "steady",
+      "label": "穩定型",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 低位因子",
+      "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+      "sample_count": 18,
+      "avg_return_pct": 0.5167,
+      "win_rate_pct": 61.1111,
+      "avg_return_edge_vs_best_single_factor": -0.1465,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
+    }
+  },
+  "strategy_difference": {
+    "sniper_minus_steady_avg_return_pct": 2.6773,
+    "steady_minus_sniper_win_rate_pct": 27.7778
+  }
+}

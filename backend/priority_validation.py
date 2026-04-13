@@ -1,7 +1,8 @@
-"""v15 排序驗證層：每日 priority 快照、單因子與組合分析。"""
+"""v16 排序驗證層：每日 priority 快照、單因子、組合與策略分析。"""
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import re
 from functools import cmp_to_key
@@ -18,9 +19,46 @@ PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
 FACTOR_ANALYSIS_REPORT_VERSION = "v14-factor-analysis"
 FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
+STRATEGY_ANALYSIS_REPORT_VERSION = "v16-strategy-analysis"
+SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
+
+CONDITION_DEFINITIONS = {
+    "ma20_break": {
+        "label": "MA20 條件",
+        "description": "剛跌破 MA20",
+    },
+    "kd_low_turn_up": {
+        "label": "KD 條件",
+        "description": "KD 低檔翻揚",
+    },
+    "low_position": {
+        "label": "低位條件",
+        "description": "低位因子",
+    },
+}
+CONDITION_ORDER = {name: index for index, name in enumerate(CONDITION_DEFINITIONS.keys())}
+
+STRATEGY_DEFINITIONS = {
+    "sniper": {
+        "label": "狙擊型",
+        "style_focus": "高報酬",
+        "description": "剛跌破 MA20 + 低位因子",
+        "selection_hint": "偏攻擊，樣本較少，但成立時平均報酬較高。",
+        "combination_source": "just_break_ma20_plus_low_position_ma20",
+        "condition_names": ["ma20_break", "low_position"],
+    },
+    "steady": {
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "combination_source": "low_k_turn_up_plus_low_position_ma20",
+        "condition_names": ["kd_low_turn_up", "low_position"],
+    },
+}
 
 FINAL_ADVICE_PRIORITY = {
     "暫不考慮": 1,
@@ -131,6 +169,14 @@ def _factor_analysis_path(base_dir: Optional[Path] = None) -> Path:
 
 def _factor_combination_analysis_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "factor_combination_analysis.json"
+
+
+def _strategy_analysis_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "strategy_analysis.json"
+
+
+def _signal_density_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "signal_density.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -1099,6 +1145,301 @@ def _summarize_factor_combination(item: Optional[Dict[str, Any]]) -> Optional[Di
     }
 
 
+def _build_strategy_summary(
+    strategy_name: str,
+    definition: Dict[str, str],
+    source_summary: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    summary = source_summary or {}
+    return {
+        "strategy": strategy_name,
+        "label": definition["label"],
+        "style_focus": definition["style_focus"],
+        "description": definition["description"],
+        "selection_hint": definition["selection_hint"],
+        "combination_source": definition["combination_source"],
+        "factor_names": list(summary.get("factor_names") or []),
+        "sample_count": int(summary.get("sample_count") or 0),
+        "avg_return_pct": summary.get("avg_return_pct"),
+        "win_rate_pct": summary.get("win_rate_pct"),
+        "avg_return_edge_vs_best_single_factor": summary.get("avg_return_edge_vs_best_single_factor"),
+        "beats_constituent_single_factors": summary.get("beats_constituent_single_factors"),
+        "best_single_factor": summary.get("best_single_factor"),
+        "verdict": summary.get("verdict") or "資料不足",
+    }
+
+
+def _summarize_strategy(item: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not item:
+        return None
+    return {
+        "strategy": item["strategy"],
+        "label": item["label"],
+        "style_focus": item["style_focus"],
+        "description": item["description"],
+        "selection_hint": item["selection_hint"],
+        "sample_count": item["sample_count"],
+        "avg_return_pct": item["avg_return_pct"],
+        "win_rate_pct": item["win_rate_pct"],
+        "avg_return_edge_vs_best_single_factor": item["avg_return_edge_vs_best_single_factor"],
+        "beats_constituent_single_factors": item["beats_constituent_single_factors"],
+        "best_single_factor": item["best_single_factor"],
+        "verdict": item["verdict"],
+    }
+
+
+def _iso_week_key(date_str: str) -> str:
+    iso = datetime.strptime(date_str, "%Y-%m-%d").isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"
+
+
+def _build_signal_sample_days(
+    priority_reports: List[Dict[str, Any]],
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> List[Dict[str, Any]]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    sample_days: List[Dict[str, Any]] = []
+
+    for index, report in enumerate(ordered_reports):
+        previous_date = str(ordered_reports[index - 1].get("date") or "") if index > 0 else None
+        current_date = str(report.get("date") or "")
+        current_universe = ((universe_reports_by_date or {}).get(current_date) or {}).get("stocks") or []
+        previous_universe = ((universe_reports_by_date or {}).get(previous_date or "") or {}).get("stocks") or []
+        current_universe_lookup = {str(stock.get("symbol") or ""): stock for stock in current_universe}
+        previous_universe_lookup = {str(stock.get("symbol") or ""): stock for stock in previous_universe}
+
+        samples: List[Dict[str, Any]] = []
+        for candidate in report.get("candidates") or []:
+            symbol = str(candidate.get("symbol") or "")
+            samples.append({
+                "date": current_date,
+                "previous_date": previous_date,
+                "candidate": candidate,
+                "current_universe_stock": current_universe_lookup.get(symbol),
+                "previous_universe_stock": previous_universe_lookup.get(symbol),
+            })
+
+        sample_days.append({
+            "date": current_date,
+            "previous_date": previous_date,
+            "candidate_count": len(samples),
+            "previous_universe_available": bool(previous_universe_lookup),
+            "samples": samples,
+        })
+
+    return sample_days
+
+
+def _build_signal_condition_flags(sample: Dict[str, Any], lower_third_cutoff: Optional[float]) -> Dict[str, bool]:
+    return {
+        "ma20_break": _is_just_break_ma20(sample),
+        "kd_low_turn_up": _is_low_k_turn_up(sample),
+        "low_position": _is_low_position_sample(sample, lower_third_cutoff),
+    }
+
+
+def _build_signal_condition_summary(condition_name: str, pass_count: int, candidate_count: int) -> Dict[str, Any]:
+    definition = CONDITION_DEFINITIONS.get(condition_name) or {}
+    fail_count = max(candidate_count - int(pass_count), 0)
+    pass_rate = _round_number((pass_count / candidate_count) * 100) if candidate_count else None
+    return {
+        "condition": condition_name,
+        "label": definition.get("label") or condition_name,
+        "description": definition.get("description") or condition_name,
+        "candidate_count": candidate_count,
+        "pass_count": int(pass_count),
+        "fail_count": fail_count,
+        "pass_rate_pct": pass_rate,
+    }
+
+
+def _rank_signal_condition_summaries(items: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return sorted(
+        list(items),
+        key=lambda item: (
+            item.get("pass_rate_pct") if item.get("pass_rate_pct") is not None else float("inf"),
+            item.get("pass_count") if item.get("pass_count") is not None else float("inf"),
+            CONDITION_ORDER.get(str(item.get("condition") or ""), 999),
+        ),
+    )
+
+
+def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not ranked_items:
+        return []
+    first = ranked_items[0]
+    pass_rate = first.get("pass_rate_pct")
+    pass_count = first.get("pass_count")
+    if pass_rate is None:
+        return []
+    return [
+        item for item in ranked_items
+        if item.get("pass_rate_pct") == pass_rate and item.get("pass_count") == pass_count
+    ]
+
+
+def _build_strategy_blocker_summary(
+    strategy_name: str,
+    definition: Dict[str, Any],
+    strategy_hit_count: int,
+    condition_summaries: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    required_conditions = [
+        condition_summaries[name]
+        for name in definition.get("condition_names") or []
+        if name in condition_summaries
+    ]
+    ranked_conditions = _rank_signal_condition_summaries(required_conditions)
+    strictest_conditions = _co_strictest_conditions(ranked_conditions)
+    strictest_condition = strictest_conditions[0] if strictest_conditions else (ranked_conditions[0] if ranked_conditions else None)
+    condition_pass_counts = {
+        item["condition"]: item["pass_count"]
+        for item in required_conditions
+    }
+
+    if strategy_hit_count > 0:
+        summary = f"{definition['label']}當天命中 {strategy_hit_count} 檔。"
+    else:
+        condition_text = "、".join(
+            f"{item['label']}通過 {item['pass_count']} 檔"
+            for item in required_conditions
+        )
+        summary = f"{definition['label']}當天 0 檔，{condition_text}。" if condition_text else f"{definition['label']}當天 0 檔。"
+
+    return {
+        "strategy": strategy_name,
+        "label": definition["label"],
+        "description": definition["description"],
+        "hit_count": strategy_hit_count,
+        "required_conditions": list(definition.get("condition_names") or []),
+        "condition_pass_counts": condition_pass_counts,
+        "strictest_condition": strictest_condition,
+        "strictest_conditions": strictest_conditions,
+        "summary": summary,
+    }
+
+
+def _build_daily_signal_summary(
+    candidate_count: int,
+    strategy_hits: Dict[str, int],
+    condition_summaries: Dict[str, Dict[str, Any]],
+    strictest_conditions: List[Dict[str, Any]],
+) -> str:
+    condition_text = "、".join(
+        f"{summary['label']} {summary['pass_count']} 檔"
+        for summary in condition_summaries.values()
+    )
+    strictest_text = ""
+    if strictest_conditions:
+        strictest_labels = "、".join(item["label"] for item in strictest_conditions)
+        strictest_text = f" 最嚴條件為 {strictest_labels}。"
+
+    if sum(strategy_hits.values()) == 0:
+        return f"今天 {candidate_count} 檔候選中，{condition_text}，因此兩條策略都沒有命中。{strictest_text}".strip()
+
+    return (
+        f"今天 {candidate_count} 檔候選中，{condition_text}；"
+        f"狙擊型 {strategy_hits.get('sniper', 0)} 檔、穩定型 {strategy_hits.get('steady', 0)} 檔。{strictest_text}"
+    ).strip()
+
+
+def _build_signal_day_summary(
+    day: Dict[str, Any],
+    lower_third_cutoff: Optional[float],
+) -> Dict[str, Any]:
+    samples = list(day.get("samples") or [])
+    candidate_count = int(day.get("candidate_count") or len(samples))
+    condition_pass_counts = {name: 0 for name in CONDITION_DEFINITIONS.keys()}
+    strategy_hits = {name: 0 for name in STRATEGY_DEFINITIONS.keys()}
+    any_strategy_hit_count = 0
+
+    for sample in samples:
+        condition_flags = _build_signal_condition_flags(sample, lower_third_cutoff)
+        for condition_name, is_hit in condition_flags.items():
+            if is_hit:
+                condition_pass_counts[condition_name] += 1
+
+        matched_any_strategy = False
+        for strategy_name, definition in STRATEGY_DEFINITIONS.items():
+            if all(condition_flags.get(condition_name) for condition_name in definition.get("condition_names") or []):
+                strategy_hits[strategy_name] += 1
+                matched_any_strategy = True
+
+        if matched_any_strategy:
+            any_strategy_hit_count += 1
+
+    condition_summaries = {
+        condition_name: _build_signal_condition_summary(condition_name, pass_count, candidate_count)
+        for condition_name, pass_count in condition_pass_counts.items()
+    }
+    ranked_conditions = _rank_signal_condition_summaries(condition_summaries.values())
+    strictest_conditions = _co_strictest_conditions(ranked_conditions)
+    strictest_condition = strictest_conditions[0] if strictest_conditions else (ranked_conditions[0] if ranked_conditions else None)
+    strategy_blockers = {
+        strategy_name: _build_strategy_blocker_summary(
+            strategy_name,
+            definition,
+            strategy_hits[strategy_name],
+            condition_summaries,
+        )
+        for strategy_name, definition in STRATEGY_DEFINITIONS.items()
+    }
+
+    return {
+        "date": day.get("date"),
+        "previous_date": day.get("previous_date"),
+        "previous_universe_available": bool(day.get("previous_universe_available")),
+        "candidate_count": candidate_count,
+        "strategy_hits": strategy_hits,
+        "any_strategy_hit_count": any_strategy_hit_count,
+        "conditions": condition_summaries,
+        "ranking_by_strictness": ranked_conditions,
+        "strictest_condition": strictest_condition,
+        "strictest_conditions": strictest_conditions,
+        "strategy_blockers": strategy_blockers,
+        "zero_hit_diagnosis": {
+            "is_zero_hit_day": any_strategy_hit_count == 0,
+            "summary": _build_daily_signal_summary(candidate_count, strategy_hits, condition_summaries, strictest_conditions),
+        },
+    }
+
+
+def _build_weekly_signal_summary(daily_hit_counts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    weekly_map: Dict[str, Dict[str, Any]] = {}
+
+    for day in daily_hit_counts:
+        date_str = str(day.get("date") or "")
+        if not date_str:
+            continue
+        week_key = _iso_week_key(date_str)
+        entry = weekly_map.setdefault(week_key, {
+            "week": week_key,
+            "start_date": date_str,
+            "end_date": date_str,
+            "day_count": 0,
+            "candidate_count": 0,
+            "strategy_hits": {name: 0 for name in STRATEGY_DEFINITIONS.keys()},
+            "any_strategy_hit_count": 0,
+            "days_with_any_strategy_hit": 0,
+            "days_with_strategy_hits": {name: 0 for name in STRATEGY_DEFINITIONS.keys()},
+        })
+        entry["start_date"] = min(entry["start_date"], date_str)
+        entry["end_date"] = max(entry["end_date"], date_str)
+        entry["day_count"] += 1
+        entry["candidate_count"] += int(day.get("candidate_count") or 0)
+        entry["any_strategy_hit_count"] += int(day.get("any_strategy_hit_count") or 0)
+        if int(day.get("any_strategy_hit_count") or 0) > 0:
+            entry["days_with_any_strategy_hit"] += 1
+
+        for strategy_name in STRATEGY_DEFINITIONS.keys():
+            hit_count = int((day.get("strategy_hits") or {}).get(strategy_name) or 0)
+            entry["strategy_hits"][strategy_name] += hit_count
+            if hit_count > 0:
+                entry["days_with_strategy_hits"][strategy_name] += 1
+
+    return [weekly_map[key] for key in sorted(weekly_map.keys())]
+
+
 def _build_hit_count_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
     grouped: Dict[int, List[float]] = {}
     for sample in samples:
@@ -1381,6 +1722,139 @@ def generate_factor_combination_analysis_report(
     }
 
 
+def generate_strategy_analysis_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    factor_combination_report = generate_factor_combination_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    combinations = factor_combination_report.get("combinations") or {}
+
+    strategies = {
+        strategy_name: _build_strategy_summary(
+            strategy_name,
+            definition,
+            combinations.get(definition["combination_source"]),
+        )
+        for strategy_name, definition in STRATEGY_DEFINITIONS.items()
+    }
+
+    ranked_by_avg_return = sorted(
+        strategies.values(),
+        key=lambda item: ((item.get("avg_return_pct") if item.get("avg_return_pct") is not None else float("-inf")), item.get("sample_count") or 0),
+        reverse=True,
+    )
+    ranked_by_win_rate = sorted(
+        strategies.values(),
+        key=lambda item: ((item.get("win_rate_pct") if item.get("win_rate_pct") is not None else float("-inf")), item.get("sample_count") or 0),
+        reverse=True,
+    )
+
+    high_return_strategy = next((item for item in ranked_by_avg_return if item.get("avg_return_pct") is not None), None)
+    sniper_strategy = strategies.get("sniper")
+    steady_profile = strategies.get("steady")
+
+    return {
+        "report_version": STRATEGY_ANALYSIS_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": factor_combination_report.get("evaluation_horizon"),
+        "evaluated_days": factor_combination_report.get("evaluated_days"),
+        "candidate_samples": factor_combination_report.get("candidate_samples"),
+        "strategy_names": list(STRATEGY_DEFINITIONS.keys()),
+        "low_position_definition": factor_combination_report.get("low_position_definition"),
+        "strategies": strategies,
+        "ranking_by_avg_return": [
+            _summarize_strategy(item)
+            for item in ranked_by_avg_return
+        ],
+        "ranking_by_win_rate": [
+            _summarize_strategy(item)
+            for item in ranked_by_win_rate
+        ],
+        "style_choice": {
+            "high_return": _summarize_strategy(sniper_strategy or high_return_strategy),
+            "steady": _summarize_strategy(steady_profile),
+        },
+        "strategy_difference": {
+            "sniper_minus_steady_avg_return_pct": _safe_diff(
+                (sniper_strategy or {}).get("avg_return_pct"),
+                (steady_profile or {}).get("avg_return_pct"),
+            ),
+            "steady_minus_sniper_win_rate_pct": _safe_diff(
+                (steady_profile or {}).get("win_rate_pct"),
+                (sniper_strategy or {}).get("win_rate_pct"),
+            ),
+        },
+    }
+
+
+def generate_signal_density_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    strategy_analysis_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    strategy_report = strategy_analysis_report or generate_strategy_analysis_report(
+        ordered_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    low_position_definition = strategy_report.get("low_position_definition") or {}
+    lower_third_cutoff = _as_float(low_position_definition.get("lower_third_cutoff"))
+
+    signal_days = _build_signal_sample_days(ordered_reports, universe_reports_by_date=universe_reports_by_date)
+    daily_hit_counts = [
+        _build_signal_day_summary(day, lower_third_cutoff)
+        for day in signal_days
+    ]
+    weekly_hit_counts = _build_weekly_signal_summary(daily_hit_counts)
+
+    total_candidate_samples = sum(int(day.get("candidate_count") or 0) for day in daily_hit_counts)
+    overall_condition_summaries = {
+        condition_name: _build_signal_condition_summary(
+            condition_name,
+            sum(int(((day.get("conditions") or {}).get(condition_name) or {}).get("pass_count") or 0) for day in daily_hit_counts),
+            total_candidate_samples,
+        )
+        for condition_name in CONDITION_DEFINITIONS.keys()
+    }
+    overall_ranking = _rank_signal_condition_summaries(overall_condition_summaries.values())
+    overall_strictest_conditions = _co_strictest_conditions(overall_ranking)
+    overall_strictest_condition = overall_strictest_conditions[0] if overall_strictest_conditions else (overall_ranking[0] if overall_ranking else None)
+
+    latest_day_summary = daily_hit_counts[-1] if daily_hit_counts else None
+    current_week_summary = None
+    if latest_day_summary and latest_day_summary.get("date"):
+        latest_week = _iso_week_key(str(latest_day_summary.get("date")))
+        current_week_summary = next((item for item in weekly_hit_counts if item.get("week") == latest_week), None)
+
+    return {
+        "report_version": SIGNAL_DENSITY_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "latest_date": ordered_reports[-1].get("date") if ordered_reports else None,
+        "strategy_names": list(STRATEGY_DEFINITIONS.keys()),
+        "condition_names": list(CONDITION_DEFINITIONS.keys()),
+        "condition_definitions": CONDITION_DEFINITIONS,
+        "low_position_definition": low_position_definition,
+        "daily_hit_counts": daily_hit_counts,
+        "weekly_hit_counts": weekly_hit_counts,
+        "overall_condition_density": {
+            "candidate_samples": total_candidate_samples,
+            "conditions": overall_condition_summaries,
+            "ranking_by_strictness": overall_ranking,
+            "strictest_condition": overall_strictest_condition,
+            "strictest_conditions": overall_strictest_conditions,
+        },
+        "latest_day_summary": latest_day_summary,
+        "current_week_summary": current_week_summary,
+    }
+
+
 def generate_priority_history_report(
     priority_reports: List[Dict[str, Any]],
     market_prices: Optional[Any] = None,
@@ -1555,6 +2029,14 @@ def save_factor_combination_analysis_report(report: Dict[str, Any], base_dir: Op
     return _save_json(_factor_combination_analysis_path(base_dir), report)
 
 
+def save_strategy_analysis_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_strategy_analysis_path(base_dir), report)
+
+
+def save_signal_density_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_signal_density_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -1604,6 +2086,32 @@ def generate_factor_combination_analysis_from_reports(base_dir: Optional[Path] =
         universe_reports_by_date=load_universe_reports_by_date(base_dir=base_dir),
     )
     return save_factor_combination_analysis_report(report, base_dir=base_dir)
+
+
+def generate_strategy_analysis_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    report = generate_strategy_analysis_report(
+        load_priority_reports(base_dir=base_dir),
+        market_prices=market_prices,
+        universe_reports_by_date=load_universe_reports_by_date(base_dir=base_dir),
+    )
+    return save_strategy_analysis_report(report, base_dir=base_dir)
+
+
+def generate_signal_density_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    strategy_report = generate_strategy_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    report = generate_signal_density_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+    )
+    return save_signal_density_report(report, base_dir=base_dir)
 
 
 def backfill_priority_validation_reports(
@@ -1666,6 +2174,8 @@ def backfill_priority_validation_reports(
     history_path = generate_priority_history_from_reports(base_dir=base_dir, market_prices=market_prices)
     factor_analysis_path = generate_factor_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     factor_combination_analysis_path = generate_factor_combination_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
+    strategy_analysis_path = generate_strategy_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
+    signal_density_path = generate_signal_density_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -1678,6 +2188,8 @@ def backfill_priority_validation_reports(
         "history_path": str(history_path),
         "factor_analysis_path": str(factor_analysis_path),
         "factor_combination_analysis_path": str(factor_combination_analysis_path),
+        "strategy_analysis_path": str(strategy_analysis_path),
+        "signal_density_path": str(signal_density_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

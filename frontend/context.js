@@ -29,6 +29,7 @@ const REQUIRED_CANDIDATE_FIELDS = ['symbol', 'from_theme', 'trace_event', 'reaso
 let indexData = null;
 let currentDate = null;
 let requestVersion = String(Date.now());
+let currentStrategyChoice = null;
 
 function buildFreshUrl(url, version = requestVersion) {
     const target = new URL(url, window.location.href);
@@ -229,13 +230,51 @@ function buildTechnicalMap(fullReport) {
 
     return new Map(fullReport.stocks.map(stock => {
         const summary = getDecisionSummary(stock);
+        const indicators = stock?.indicators || {};
         return [stock.symbol, {
             symbol: stock.symbol,
             name: stock.name || stock.symbol,
             summary,
-            zoneFlags: getZoneFlags(stock, summary)
+            zoneFlags: getZoneFlags(stock, summary),
+            indicators: {
+                close: toNum(indicators.close),
+                ma5: toNum(indicators.ma5),
+                ma20: toNum(indicators.ma20),
+                k: toNum(indicators.k),
+                volumeRatio: toNum(indicators.volume_ratio)
+            },
+            raw: stock
         }];
     }));
+}
+
+function formatPercentValue(value) {
+    if (value == null) return '--';
+    return `${Number(value).toLocaleString('zh-TW', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    })}%`;
+}
+
+function formatGapThreshold(value) {
+    if (value == null) return '--';
+    return `${(Number(value) * 100).toLocaleString('zh-TW', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}%`;
+}
+
+function validateStrategyAnalysisReport(report) {
+    if (!report || typeof report !== 'object') return false;
+    if (report.report_version !== 'v16-strategy-analysis') return false;
+    if (!report.strategies || typeof report.strategies !== 'object') return false;
+    return Boolean(report.strategies.sniper && report.strategies.steady);
+}
+
+function validateSignalDensityReport(report) {
+    if (!report || typeof report !== 'object') return false;
+    if (report.report_version !== 'v17-signal-density-analysis') return false;
+    return Array.isArray(report.daily_hit_counts);
 }
 
 function showLoading(text = '載入情境卡中...') {
@@ -449,6 +488,331 @@ function formatPriorityRank(rank) {
     return String(rank).padStart(2, '0');
 }
 
+function getSortedUniverseDates() {
+    if (!Array.isArray(indexData?.reports)) {
+        return [];
+    }
+
+    return indexData.reports
+        .filter(report => report?.has_universe === true && typeof report.date === 'string')
+        .map(report => report.date)
+        .sort();
+}
+
+function getPreviousUniverseDate(date) {
+    const dates = getSortedUniverseDates();
+    const index = dates.indexOf(date);
+    if (index <= 0) {
+        return null;
+    }
+    return dates[index - 1];
+}
+
+function isStrategyLowPosition(technical, lowerThirdCutoff) {
+    const close = toNum(technical?.indicators?.close);
+    const ma20 = toNum(technical?.indicators?.ma20);
+    const gap = getMa20Diff(close, ma20);
+    return gap != null && lowerThirdCutoff != null && gap <= lowerThirdCutoff;
+}
+
+function isStrategyJustBreakMa20(currentTechnical, previousTechnical) {
+    const previousClose = toNum(previousTechnical?.indicators?.close);
+    const previousMa20 = toNum(previousTechnical?.indicators?.ma20);
+    const currentClose = toNum(currentTechnical?.indicators?.close);
+    const currentMa20 = toNum(currentTechnical?.indicators?.ma20);
+
+    return previousClose != null
+        && previousMa20 != null
+        && previousMa20 !== 0
+        && currentClose != null
+        && currentMa20 != null
+        && currentMa20 !== 0
+        && previousClose >= previousMa20
+        && currentClose < currentMa20;
+}
+
+function isStrategyLowKTurnUp(currentTechnical, previousTechnical) {
+    const previousK = toNum(previousTechnical?.indicators?.k);
+    const currentK = toNum(currentTechnical?.indicators?.k);
+    return previousK != null
+        && currentK != null
+        && currentK < 30
+        && currentK > previousK;
+}
+
+function buildStrategyMatchMap(overview, report) {
+    const matches = {
+        sniper: [],
+        steady: []
+    };
+    const strategyAnalysis = report?.strategy_analysis;
+    const technicalMap = report?.technical_map instanceof Map ? report.technical_map : new Map();
+    const previousTechnicalMap = report?.previous_technical_map instanceof Map ? report.previous_technical_map : new Map();
+    const lowerThirdCutoff = toNum(strategyAnalysis?.low_position_definition?.lower_third_cutoff);
+
+    if (!strategyAnalysis || lowerThirdCutoff == null || !overview?.sortedItems?.length) {
+        return matches;
+    }
+
+    overview.sortedItems.forEach(item => {
+        const currentTechnical = technicalMap.get(item.symbol);
+        const previousTechnical = previousTechnicalMap.get(item.symbol);
+        if (!currentTechnical) {
+            return;
+        }
+
+        const isLowPosition = isStrategyLowPosition(currentTechnical, lowerThirdCutoff);
+        if (!isLowPosition) {
+            return;
+        }
+
+        const baseMatch = {
+            ...item,
+            name: currentTechnical.name || item.symbol,
+            explanation: buildPriorityExplanation(item, currentTechnical)
+        };
+
+        if (isStrategyJustBreakMa20(currentTechnical, previousTechnical)) {
+            matches.sniper.push({
+                ...baseMatch,
+                reasons: ['剛跌破 MA20', '低位因子']
+            });
+        }
+
+        if (isStrategyLowKTurnUp(currentTechnical, previousTechnical)) {
+            matches.steady.push({
+                ...baseMatch,
+                reasons: ['KD 低檔翻揚', '低位因子']
+            });
+        }
+    });
+
+    return matches;
+}
+
+function getStrategyRoleLabels(strategyAnalysis) {
+    return {
+        highReturn: strategyAnalysis?.style_choice?.high_return?.strategy || null,
+        steady: strategyAnalysis?.style_choice?.steady?.strategy || null
+    };
+}
+
+function renderStrategyMatchList(matches) {
+    if (!matches.length) {
+        return '<div class="strategy-empty">目前候選清單中，暫時沒有符合這條策略的標的。</div>';
+    }
+
+    return `<div class="strategy-match-list">${matches.map(match => `
+        <div class="strategy-match-item">
+            <div class="strategy-match-top">
+                <div class="strategy-match-symbol-line">
+                    <span class="strategy-match-rank">#${formatPriorityRank(match.priorityRank)}</span>
+                    <span class="strategy-match-symbol">${esc(match.symbol)}</span>
+                    <span class="strategy-match-name">${esc(match.name)}</span>
+                </div>
+                <span class="strategy-match-count">${match.events.length} 個情境</span>
+            </div>
+            <div class="strategy-match-note">策略命中：${esc(match.reasons.join(' + '))}</div>
+            <div class="strategy-match-meta">既有排序依據：${esc(match.explanation)}</div>
+        </div>
+    `).join('')}</div>`;
+}
+
+function getSignalDaySummary(signalDensity) {
+    if (!signalDensity || !Array.isArray(signalDensity.daily_hit_counts)) {
+        return null;
+    }
+
+    return signalDensity.daily_hit_counts.find(item => item?.date === currentDate) || null;
+}
+
+function getSignalWeekSummary(signalDensity) {
+    if (!signalDensity || !Array.isArray(signalDensity.weekly_hit_counts) || !currentDate) {
+        return null;
+    }
+
+    return signalDensity.weekly_hit_counts.find(item => (
+        typeof item?.start_date === 'string'
+        && typeof item?.end_date === 'string'
+        && currentDate >= item.start_date
+        && currentDate <= item.end_date
+    )) || null;
+}
+
+function renderSignalDensityDiagnostic(strategyName, report) {
+    const signalDensity = report?.signal_density;
+    const daySummary = getSignalDaySummary(signalDensity);
+    if (!daySummary) {
+        return '';
+    }
+
+    const weekSummary = getSignalWeekSummary(signalDensity);
+    const strategyHitsToday = Number(daySummary?.strategy_hits?.[strategyName] || 0);
+    const strategyHitsThisWeek = Number(weekSummary?.strategy_hits?.[strategyName] || 0);
+    const blocker = daySummary?.strategy_blockers?.[strategyName] || null;
+    const todayStrictest = daySummary?.strictest_condition || null;
+    const overallStrictest = signalDensity?.overall_condition_density?.strictest_condition || null;
+    const totalCandidates = Number(daySummary?.candidate_count || 0);
+
+    const todayStrictestText = todayStrictest
+        ? `${todayStrictest.label} ${todayStrictest.pass_count}/${totalCandidates}`
+        : '--';
+    const strategyBlockerText = blocker?.strictest_condition
+        ? `${blocker.strictest_condition.label} ${blocker.strictest_condition.pass_count}/${totalCandidates}`
+        : '--';
+    const overallStrictestText = overallStrictest
+        ? `${overallStrictest.label} ${formatPercentValue(overallStrictest.pass_rate_pct)}`
+        : '--';
+
+    return `
+        <div class="strategy-density-shell">
+            <div class="strategy-density-title">v17 訊號密度診斷</div>
+            <div class="strategy-density-grid">
+                <div class="strategy-density-item">
+                    <div class="strategy-density-label">今日命中</div>
+                    <div class="strategy-density-value">${esc(String(strategyHitsToday))}</div>
+                </div>
+                <div class="strategy-density-item">
+                    <div class="strategy-density-label">本週命中</div>
+                    <div class="strategy-density-value">${esc(String(strategyHitsThisWeek))}</div>
+                </div>
+                <div class="strategy-density-item">
+                    <div class="strategy-density-label">今日最嚴</div>
+                    <div class="strategy-density-value strategy-density-value-sm">${esc(todayStrictestText)}</div>
+                </div>
+                <div class="strategy-density-item">
+                    <div class="strategy-density-label">本策略卡點</div>
+                    <div class="strategy-density-value strategy-density-value-sm">${esc(strategyBlockerText)}</div>
+                </div>
+            </div>
+            <div class="strategy-density-note">${esc(daySummary?.zero_hit_diagnosis?.summary || '')}</div>
+            <div class="strategy-density-note">${esc(blocker?.summary || '')}</div>
+            <div class="strategy-density-foot">歷史最嚴條件：${esc(overallStrictestText)}</div>
+        </div>
+    `;
+}
+
+function renderStrategyFocusPanel(strategyName, strategy, matches, report) {
+    const previousUniverseDate = report?.previous_universe_date;
+    const lowerThirdCutoff = toNum(report?.strategy_analysis?.low_position_definition?.lower_third_cutoff);
+    const previousNote = previousUniverseDate
+        ? `當前歸屬判定會參考 ${previousUniverseDate} 與 ${currentDate} 兩天的技術資料。`
+        : '目前缺少前一個交易日 universe，當前歸屬僅能顯示歷史統計差異。';
+
+    return `
+        <div class="strategy-focus-head">
+            <div>
+                <div class="strategy-focus-title">已選風格：${esc(strategy.label)}</div>
+                <div class="strategy-focus-meta">${esc(strategy.selection_hint)}</div>
+            </div>
+            <div class="strategy-focus-side">低位門檻 ${esc(formatGapThreshold(lowerThirdCutoff))}</div>
+        </div>
+        <div class="strategy-focus-caption">${esc(previousNote)}</div>
+        ${renderStrategyMatchList(matches)}
+        ${renderSignalDensityDiagnostic(strategyName, report)}
+    `;
+}
+
+function renderStrategySection(overview, report) {
+    const strategyAnalysis = report?.strategy_analysis;
+    if (!strategyAnalysis || !strategyAnalysis.strategies) {
+        return '';
+    }
+
+    const strategies = strategyAnalysis.strategies;
+    const strategyNames = Array.isArray(strategyAnalysis.strategy_names)
+        ? strategyAnalysis.strategy_names.filter(name => strategies[name])
+        : Object.keys(strategies);
+    if (!strategyNames.length) {
+        return '';
+    }
+
+    const matchMap = buildStrategyMatchMap(overview, report);
+    const roleLabels = getStrategyRoleLabels(strategyAnalysis);
+    const selectedKey = strategies[currentStrategyChoice]
+        ? currentStrategyChoice
+        : roleLabels.highReturn || strategyNames[0];
+    currentStrategyChoice = selectedKey;
+
+    const cardsHTML = strategyNames.map(strategyName => {
+        const strategy = strategies[strategyName];
+        const isSelected = strategyName === selectedKey;
+        const currentMatchCount = (matchMap[strategyName] || []).length;
+        const badges = [];
+        if (roleLabels.highReturn === strategyName) {
+            badges.push('<span class="strategy-role-chip strategy-role-return">高報酬代表</span>');
+        }
+        if (roleLabels.steady === strategyName) {
+            badges.push('<span class="strategy-role-chip strategy-role-steady">穩定代表</span>');
+        }
+
+        return `
+            <button type="button" class="strategy-card${isSelected ? ' active' : ''}" data-strategy-choice="${esc(strategyName)}">
+                <div class="strategy-card-top">
+                    <div>
+                        <div class="strategy-title-line">
+                            <span class="strategy-title">${esc(strategy.label)}</span>
+                            <span class="strategy-style-chip">${esc(strategy.style_focus)}</span>
+                        </div>
+                        <div class="strategy-card-desc">${esc(strategy.description)}</div>
+                    </div>
+                    <div class="strategy-role-row">${badges.join('')}</div>
+                </div>
+                <div class="strategy-metric-grid">
+                    <div class="strategy-metric">
+                        <div class="strategy-metric-label">平均報酬</div>
+                        <div class="strategy-metric-value">${esc(formatPercentValue(strategy.avg_return_pct))}</div>
+                    </div>
+                    <div class="strategy-metric">
+                        <div class="strategy-metric-label">勝率</div>
+                        <div class="strategy-metric-value">${esc(formatPercentValue(strategy.win_rate_pct))}</div>
+                    </div>
+                    <div class="strategy-metric">
+                        <div class="strategy-metric-label">樣本數</div>
+                        <div class="strategy-metric-value">${esc(String(strategy.sample_count ?? 0))}</div>
+                    </div>
+                </div>
+                <div class="strategy-card-note">${esc(strategy.selection_hint)}</div>
+                <div class="strategy-card-current">目前候選符合 ${esc(String(currentMatchCount))} 檔</div>
+            </button>`;
+    }).join('');
+
+    return `
+        <section class="strategy-section" id="strategySection">
+            <div class="strategy-section-head">
+                <div class="strategy-section-title">策略視角</div>
+                <div class="strategy-section-meta">這裡只把候選拆成「高報酬」與「穩定」兩種風格供你選擇；下方 v10.5 優先清單排序完全不變。</div>
+            </div>
+            <div class="strategy-card-grid">${cardsHTML}</div>
+            <div class="strategy-focus-shell" id="strategyFocusShell">${renderStrategyFocusPanel(selectedKey, strategies[selectedKey], matchMap[selectedKey] || [], report)}</div>
+        </section>`;
+}
+
+function bindStrategySelector(overview, report) {
+    const section = document.getElementById('strategySection');
+    const focusShell = document.getElementById('strategyFocusShell');
+    if (!section || !focusShell || !report?.strategy_analysis?.strategies) {
+        return;
+    }
+
+    const matchMap = buildStrategyMatchMap(overview, report);
+    const strategies = report.strategy_analysis.strategies;
+
+    section.querySelectorAll('[data-strategy-choice]').forEach(button => {
+        button.addEventListener('click', () => {
+            const strategyName = button.getAttribute('data-strategy-choice');
+            if (!strategies[strategyName]) {
+                return;
+            }
+            currentStrategyChoice = strategyName;
+            section.querySelectorAll('[data-strategy-choice]').forEach(item => {
+                item.classList.toggle('active', item === button);
+            });
+            focusShell.innerHTML = renderStrategyFocusPanel(strategyName, strategies[strategyName], matchMap[strategyName] || [], report);
+        });
+    });
+}
+
 function renderTechnicalChips(technical) {
     if (!technical) {
         return '<div class="overview-tech-list"><span class="overview-status-chip tech-missing">主報表缺技術資料</span></div>';
@@ -635,9 +999,10 @@ function renderCandidateOverview(report) {
     }
 
     meta.textContent = `跨卡去重後共 ${overview.totalUnique} 檔；優先層只用「情境數 > 技術面 > 試單區」排序，不改原始候選資料與 summary。`;
-    body.innerHTML = `${renderPriorityList(overview, report)}<div class="overview-group-shell"><div class="overview-group-shell-title">依題材分組</div>${overview.groups
+    body.innerHTML = `${renderStrategySection(overview, report)}${renderPriorityList(overview, report)}<div class="overview-group-shell"><div class="overview-group-shell-title">依題材分組</div>${overview.groups
         .map(group => renderOverviewGroup(group, report, overview.eventMap))
         .join('')}</div>`;
+    bindStrategySelector(overview, report);
     section.style.display = 'block';
 }
 
@@ -756,10 +1121,14 @@ async function loadIndex() {
 async function loadContextCards(date) {
     showLoading(`載入 ${date} 情境卡中...`);
     try {
-        const [contextResult, universeResult, fullResult] = await Promise.allSettled([
+        const previousUniverseDate = getPreviousUniverseDate(date);
+        const [contextResult, universeResult, fullResult, strategyResult, signalDensityResult, previousUniverseResult] = await Promise.allSettled([
             fetchJSON(`${BASE}/${date}-context.json`),
             fetchJSON(`${BASE}/${date}-universe.json`),
-            fetchJSON(`${BASE}/${date}.json`)
+            fetchJSON(`${BASE}/${date}.json`),
+            fetchJSON(`${BASE}/strategy_analysis.json`),
+            fetchJSON(`${BASE}/signal_density.json`),
+            previousUniverseDate ? fetchJSON(`${BASE}/${previousUniverseDate}-universe.json`) : Promise.resolve(null)
         ]);
 
         if (contextResult.status !== 'fulfilled') {
@@ -784,7 +1153,17 @@ async function loadContextCards(date) {
                 ? buildTechnicalMap(universeResult.value)
                 : fullResult.status === 'fulfilled'
                     ? buildTechnicalMap(fullResult.value)
-                    : new Map()
+                    : new Map(),
+            previous_technical_map: previousUniverseResult.status === 'fulfilled' && previousUniverseResult.value
+                ? buildTechnicalMap(previousUniverseResult.value)
+                : new Map(),
+            previous_universe_date: previousUniverseDate,
+            strategy_analysis: strategyResult.status === 'fulfilled' && validateStrategyAnalysisReport(strategyResult.value)
+                ? strategyResult.value
+                : null,
+            signal_density: signalDensityResult.status === 'fulfilled' && validateSignalDensityReport(signalDensityResult.value)
+                ? signalDensityResult.value
+                : null
         });
     } catch (error) {
         const fallback = createFallbackCard(`找不到 ${date}-context.json 或載入失敗。`);
@@ -792,7 +1171,11 @@ async function loadContextCards(date) {
             cards: [fallback],
             trace_catalog: { theme_taxonomy: {} },
             stock_mapping_catalog: { themes_to_stocks: {} },
-            technical_map: new Map()
+            technical_map: new Map(),
+            previous_technical_map: new Map(),
+            previous_universe_date: null,
+            strategy_analysis: null,
+            signal_density: null
         });
     }
 }

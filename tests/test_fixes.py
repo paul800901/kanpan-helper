@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -503,7 +503,11 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / f"{date_b}-priority.json").exists())
             self.assertTrue((reports_dir / "priority-history.json").exists())
             self.assertTrue((reports_dir / "factor_combination_analysis.json").exists())
+            self.assertTrue((reports_dir / "strategy_analysis.json").exists())
+            self.assertTrue((reports_dir / "signal_density.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
+            self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
+            self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -617,6 +621,99 @@ class TestPriorityValidation(unittest.TestCase):
             combination_analysis["strongest_combination"]["combination"],
             "just_break_ma20_plus_low_position_ma20",
         )
+
+    def test_strategy_analysis_splits_sniper_and_steady(self):
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=self.make_combo_current_universe_report("2026-04-10"),
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_combo_current_universe_report("2026-04-10"),
+            next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        combination_analysis = generate_factor_combination_analysis_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+            },
+        )
+        strategy_analysis = generate_strategy_analysis_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+            },
+        )
+
+        self.assertEqual(strategy_analysis["report_version"], "v16-strategy-analysis")
+        self.assertEqual(strategy_analysis["strategies"]["sniper"]["label"], "狙擊型")
+        self.assertEqual(strategy_analysis["strategies"]["steady"]["label"], "穩定型")
+        self.assertEqual(
+            strategy_analysis["strategies"]["sniper"]["avg_return_pct"],
+            combination_analysis["combinations"]["just_break_ma20_plus_low_position_ma20"]["avg_return_pct"],
+        )
+        self.assertEqual(
+            strategy_analysis["strategies"]["steady"]["win_rate_pct"],
+            combination_analysis["combinations"]["low_k_turn_up_plus_low_position_ma20"]["win_rate_pct"],
+        )
+        self.assertEqual(strategy_analysis["style_choice"]["high_return"]["strategy"], "sniper")
+        self.assertEqual(strategy_analysis["style_choice"]["steady"]["strategy"], "steady")
+
+    def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=self.make_combo_current_universe_report("2026-04-10"),
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_combo_current_universe_report("2026-04-10"),
+            next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        signal_density = generate_signal_density_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+            },
+        )
+
+        self.assertEqual(signal_density["report_version"], "v17-signal-density-analysis")
+        self.assertEqual(len(signal_density["daily_hit_counts"]), 2)
+        self.assertEqual(signal_density["daily_hit_counts"][0]["strategy_hits"]["sniper"], 0)
+        self.assertEqual(signal_density["daily_hit_counts"][0]["zero_hit_diagnosis"]["is_zero_hit_day"], True)
+        self.assertEqual(signal_density["daily_hit_counts"][0]["strategy_blockers"]["sniper"]["strictest_condition"]["condition"], "ma20_break")
+        self.assertEqual(signal_density["daily_hit_counts"][0]["strategy_blockers"]["steady"]["strictest_condition"]["condition"], "kd_low_turn_up")
+        self.assertEqual(signal_density["daily_hit_counts"][1]["strategy_hits"]["sniper"], 1)
+        self.assertEqual(signal_density["daily_hit_counts"][1]["strategy_hits"]["steady"], 1)
+        self.assertEqual(signal_density["weekly_hit_counts"][0]["strategy_hits"]["sniper"], 1)
+        self.assertEqual(signal_density["weekly_hit_counts"][0]["strategy_hits"]["steady"], 1)
+        self.assertEqual(signal_density["overall_condition_density"]["strictest_condition"]["condition"], "kd_low_turn_up")
+        self.assertEqual(signal_density["latest_day_summary"]["strictest_condition"]["condition"], "kd_low_turn_up")
 
 if __name__ == "__main__":
     # 執行單元測試

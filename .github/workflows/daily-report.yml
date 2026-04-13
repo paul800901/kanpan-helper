@@ -118,6 +118,14 @@ jobs:
             echo "Error: 因子組合分析生成失敗，找不到 reports/factor_combination_analysis.json"
             exit 1
           fi
+          if [ ! -f "reports/strategy_analysis.json" ]; then
+            echo "Error: 策略分裂分析生成失敗，找不到 reports/strategy_analysis.json"
+            exit 1
+          fi
+          if [ ! -f "reports/signal_density.json" ]; then
+            echo "Error: 訊號密度分析生成失敗，找不到 reports/signal_density.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
@@ -128,6 +136,8 @@ jobs:
           python -m json.tool reports/priority-history.json > /dev/null
           python -m json.tool reports/factor_analysis.json > /dev/null
           python -m json.tool reports/factor_combination_analysis.json > /dev/null
+          python -m json.tool reports/strategy_analysis.json > /dev/null
+          python -m json.tool reports/signal_density.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports
