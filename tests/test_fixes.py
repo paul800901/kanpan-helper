@@ -174,6 +174,43 @@ class TestVolumeRatio(unittest.TestCase):
         self.assertAlmostEqual(score.volume_ratio, 1.5, places=1)
 
 
+class TestChartData(unittest.TestCase):
+    """測試個股圖表序列輸出"""
+
+    def test_score_contains_chart_data_series(self):
+        candles = []
+        base_price = 100.0
+        for index in range(30):
+            close = base_price + index * 1.5
+            open_price = close - 0.8
+            candles.append({
+                "date": f"2026-03-{index + 1:02d}",
+                "open": f"{open_price}",
+                "close": f"{close}",
+                "max": f"{close + 1.2}",
+                "min": f"{open_price - 1.0}",
+                "Trading_Volume": str(10000 + index * 500)
+            })
+
+        test_data = {
+            "symbol": "TEST",
+            "candles": candles,
+            "institutional": []
+        }
+
+        indicators = calculate_indicators(test_data)
+        self.assertIsNotNone(indicators)
+
+        score = score_stock(indicators)
+        self.assertIsNotNone(score.chart_data)
+        self.assertTrue(score.chart_data["available"])
+        self.assertEqual(score.chart_data["window"], 30)
+        self.assertEqual(len(score.chart_data["candles"]), 30)
+        self.assertAlmostEqual(score.chart_data["candles"][-1]["close"], score.latest_close, places=2)
+        self.assertAlmostEqual(score.chart_data["candles"][-1]["ma5"], score.ma5, places=2)
+        self.assertAlmostEqual(score.chart_data["candles"][-1]["ma20"], score.ma20, places=2)
+
+
 class TestInstitutionalScoring(unittest.TestCase):
     """測試法人評分邏輯"""
     

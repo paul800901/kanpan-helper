@@ -15,6 +15,7 @@ class StockIndicators:
     low_prices: List[float]
     volumes: List[int]
     dates: List[str]
+    open_prices: Optional[List[float]] = None
     
     # 移動平均線
     ma5: Optional[float] = None
@@ -45,6 +46,9 @@ class StockIndicators:
     def __post_init__(self):
         """計算所有指標"""
         self.data_issues = []
+
+        if not self.open_prices or len(self.open_prices) != len(self.close_prices):
+            self.open_prices = list(self.close_prices)
         
         if self.close_prices:
             self.latest_close = self.close_prices[-1]
@@ -241,6 +245,7 @@ def calculate_indicators(stock_data: Dict) -> Optional[StockIndicators]:
     
     # 提取資料
     try:
+        open_prices = [float(c.get("open", c["close"])) for c in candles]
         close_prices = [float(c["close"]) for c in candles]
         high_prices = [float(c["max"]) for c in candles]
         low_prices = [float(c["min"]) for c in candles]
@@ -257,7 +262,8 @@ def calculate_indicators(stock_data: Dict) -> Optional[StockIndicators]:
         high_prices=high_prices,
         low_prices=low_prices,
         volumes=volumes,
-        dates=dates
+        dates=dates,
+        open_prices=open_prices
     )
     
     # 計算法人指標

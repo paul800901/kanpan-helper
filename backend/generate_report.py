@@ -706,6 +706,11 @@ def generate_universe_stock(score: StockScore) -> Dict:
         "one_line_summary": generate_one_line_summary(score),
         "plain_reasons": generate_plain_reasons(score),
         "plain_risks": generate_plain_risks(score),
+        "chart_data": score.chart_data or {
+            "available": False,
+            "issues": ["圖表資料不足"],
+            "candles": []
+        },
         "indicators": {
             "close": score.latest_close,
             "ma5": score.ma5,

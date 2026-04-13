@@ -1,5 +1,5 @@
 """排名與打分模組"""
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass
 from backend.calc_indicators import StockIndicators
 from backend.config import SCORE_WEIGHTS, INSTITUTIONAL_DAYS
@@ -32,11 +32,137 @@ class StockScore:
     institutional_total_net: int = 0
     has_sufficient_data: bool = True
     data_issues: List[str] = None
+    chart_data: Optional[Dict[str, Any]] = None
     
     # 排名資訊（由 rank_stocks 設定）
     rank: int = 0
     rank_percentile: float = 0.0
     total_stocks: int = 0
+
+
+def _round_or_none(value: Optional[float], digits: int = 2) -> Optional[float]:
+    if value is None:
+        return None
+    return round(float(value), digits)
+
+
+def _rolling_average(values: List[float], period: int) -> List[Optional[float]]:
+    series: List[Optional[float]] = []
+    for index in range(len(values)):
+        if index + 1 < period:
+            series.append(None)
+            continue
+        window = values[index - period + 1:index + 1]
+        series.append(round(sum(window) / period, 2))
+    return series
+
+
+def _ema_series(values: List[float], period: int) -> List[Optional[float]]:
+    if not values:
+        return []
+
+    multiplier = 2 / (period + 1)
+    ema: Optional[float] = None
+    series: List[Optional[float]] = []
+
+    for value in values:
+        numeric_value = float(value)
+        if ema is None:
+            ema = numeric_value
+        else:
+            ema = (numeric_value - ema) * multiplier + ema
+        series.append(ema)
+
+    return series
+
+
+def _macd_series(values: List[float]) -> Tuple[List[Optional[float]], List[Optional[float]], List[Optional[float]]]:
+    if len(values) < 26:
+        empty = [None] * len(values)
+        return empty, empty, empty
+
+    ema12 = _ema_series(values, 12)
+    ema26 = _ema_series(values, 26)
+    dif_series: List[Optional[float]] = []
+    macd_series: List[Optional[float]] = []
+    histogram_series: List[Optional[float]] = []
+
+    signal: Optional[float] = None
+    multiplier = 2 / (9 + 1)
+
+    for fast, slow in zip(ema12, ema26):
+        if fast is None or slow is None:
+            dif_series.append(None)
+            macd_series.append(None)
+            histogram_series.append(None)
+            continue
+
+        dif = fast - slow
+        if signal is None:
+            signal = dif
+        else:
+            signal = (dif - signal) * multiplier + signal
+
+        histogram = dif - signal
+        dif_series.append(round(dif, 4))
+        macd_series.append(round(signal, 4))
+        histogram_series.append(round(histogram, 4))
+
+    return dif_series, macd_series, histogram_series
+
+
+def build_chart_data(indicators: StockIndicators, max_points: int = 30) -> Dict[str, Any]:
+    open_prices = indicators.open_prices or indicators.close_prices
+    total_points = min(
+        len(open_prices),
+        len(indicators.high_prices),
+        len(indicators.low_prices),
+        len(indicators.close_prices),
+        len(indicators.volumes),
+        len(indicators.dates)
+    )
+
+    if total_points < 2:
+        return {
+            "available": False,
+            "issues": ["K線資料不足"],
+            "candles": []
+        }
+
+    close_prices = indicators.close_prices[:total_points]
+    ma5_series = _rolling_average(close_prices, 5)
+    ma20_series = _rolling_average(close_prices, 20)
+    dif_series, macd_series, histogram_series = _macd_series(close_prices)
+
+    start_index = max(0, total_points - max_points)
+    candles = []
+    for index in range(start_index, total_points):
+        candles.append({
+            "date": indicators.dates[index],
+            "open": _round_or_none(open_prices[index]),
+            "high": _round_or_none(indicators.high_prices[index]),
+            "low": _round_or_none(indicators.low_prices[index]),
+            "close": _round_or_none(close_prices[index]),
+            "volume": int(indicators.volumes[index]),
+            "ma5": _round_or_none(ma5_series[index]),
+            "ma20": _round_or_none(ma20_series[index]),
+            "dif": _round_or_none(dif_series[index], 4),
+            "macd": _round_or_none(macd_series[index], 4),
+            "histogram": _round_or_none(histogram_series[index], 4)
+        })
+
+    issues: List[str] = []
+    if not any(item.get("ma20") is not None for item in candles):
+        issues.append("MA20資料不足")
+    if not any(item.get("histogram") is not None for item in candles):
+        issues.append("MACD資料不足")
+
+    return {
+        "available": True,
+        "issues": issues,
+        "window": len(candles),
+        "candles": candles
+    }
 
 
 def evaluate_trend(indicators: StockIndicators) -> Tuple[str, int]:
@@ -234,7 +360,8 @@ def score_stock(indicators: StockIndicators) -> StockScore:
         institutional_consecutive_days=indicators.institutional_consecutive_days,
         institutional_total_net=indicators.institutional_total_net,
         has_sufficient_data=indicators.has_sufficient_data,
-        data_issues=indicators.data_issues
+        data_issues=indicators.data_issues,
+        chart_data=build_chart_data(indicators)
     )
 
 

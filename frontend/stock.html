@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1b2a">
-    <title>個股詳情 - 看盤助手 v30</title>
+    <title>個股詳情 - 看盤助手 v31</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .back-btn {
@@ -149,6 +149,100 @@
             border-radius: 10px;
         }
 
+        /* ── Charts ── */
+        .chart-card {
+            padding: 18px 16px;
+        }
+        .chart-topline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .chart-note {
+            font-size: 12px;
+            color: #7a8795;
+        }
+        .chart-block {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px;
+        }
+        .chart-block + .chart-block {
+            margin-top: 12px;
+        }
+        .chart-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .chart-block-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1a2d40;
+            margin-bottom: 6px;
+        }
+        .chart-block-meta {
+            font-size: 12px;
+            color: #6c7d90;
+            text-align: right;
+            line-height: 1.5;
+        }
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #556476;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+        .chart-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .stock-chart-svg {
+            display: block;
+            width: 100%;
+            min-width: 620px;
+            height: auto;
+        }
+        .chart-placeholder {
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7a8795;
+            font-size: 14px;
+            background: white;
+            border: 1px dashed #d7e3ef;
+            border-radius: 12px;
+        }
+        .chart-fallback {
+            padding: 14px;
+            border-radius: 10px;
+            background: #fff7ed;
+            color: #b45309;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
         /* ── Summary ── */
         .summary-text {
             font-size: 17px;
@@ -263,6 +357,24 @@
 
         .loading-page { text-align: center; padding: 80px 20px; color: #666; font-size: 16px; }
         .error-page { text-align: center; padding: 60px 20px; color: #b71c1c; font-size: 16px; }
+
+        @media (max-width: 480px) {
+            .chart-card {
+                padding: 16px 14px;
+            }
+            .chart-block {
+                padding: 10px;
+            }
+            .chart-block-header {
+                flex-direction: column;
+            }
+            .chart-block-meta {
+                text-align: left;
+            }
+            .stock-chart-svg {
+                min-width: 540px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -337,6 +449,63 @@
             </div>
         </div>
 
+        <!-- 圖表區 -->
+        <div class="d-card chart-card" id="chartCard">
+            <div class="d-card-title">圖表區</div>
+            <div class="chart-topline">
+                <div class="chart-note" id="chartWindowLabel">近 30 個交易日</div>
+                <div class="chart-note" id="chartSourceLabel">同源於 universe 報表</div>
+            </div>
+            <div id="chartFallback" class="chart-fallback" style="display:none"></div>
+            <div id="chartPanel">
+                <div class="chart-block">
+                    <div class="chart-block-header">
+                        <div>
+                            <div class="chart-block-title">K 線 + MA5 / MA20</div>
+                            <div class="chart-legend">
+                                <span class="legend-item"><span class="legend-dot" style="background:#d14b4b"></span>上漲</span>
+                                <span class="legend-item"><span class="legend-dot" style="background:#1d8a63"></span>下跌</span>
+                                <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>MA5</span>
+                                <span class="legend-item"><span class="legend-dot" style="background:#2563eb"></span>MA20</span>
+                            </div>
+                        </div>
+                        <div class="chart-block-meta" id="priceChartMeta">--</div>
+                    </div>
+                    <div class="chart-scroll">
+                        <svg id="priceChart" class="stock-chart-svg" aria-label="K線圖"></svg>
+                    </div>
+                </div>
+
+                <div class="chart-block">
+                    <div class="chart-block-header">
+                        <div class="chart-block-title">成交量</div>
+                        <div class="chart-block-meta" id="volumeChartMeta">--</div>
+                    </div>
+                    <div class="chart-scroll">
+                        <svg id="volumeChart" class="stock-chart-svg" aria-label="成交量圖"></svg>
+                    </div>
+                </div>
+
+                <div class="chart-block">
+                    <div class="chart-block-header">
+                        <div>
+                            <div class="chart-block-title">MACD 柱狀圖</div>
+                            <div class="chart-legend">
+                                <span class="legend-item"><span class="legend-dot" style="background:rgba(209,75,75,0.7)"></span>正柱</span>
+                                <span class="legend-item"><span class="legend-dot" style="background:rgba(29,138,99,0.7)"></span>負柱</span>
+                                <span class="legend-item"><span class="legend-dot" style="background:#d97706"></span>DIF</span>
+                                <span class="legend-item"><span class="legend-dot" style="background:#2563eb"></span>MACD</span>
+                            </div>
+                        </div>
+                        <div class="chart-block-meta" id="macdChartMeta">--</div>
+                    </div>
+                    <div class="chart-scroll">
+                        <svg id="macdChart" class="stock-chart-svg" aria-label="MACD圖"></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 決策摘要 -->
         <div class="d-card">
             <div class="d-card-title">決策摘要</div>
@@ -405,6 +574,20 @@ const BASE = IS_GITHUB
     ? 'https://paul800901.github.io/kanpan-helper/reports'
     : '../reports';
 
+const CHART_COLORS = Object.freeze({
+    up: '#d14b4b',
+    down: '#1d8a63',
+    ma5: '#f59e0b',
+    ma20: '#2563eb',
+    dif: '#d97706',
+    macd: '#2563eb',
+    grid: 'rgba(26,58,92,0.12)',
+    axis: '#7a8795',
+    histogramPositive: 'rgba(209,75,75,0.72)',
+    histogramNegative: 'rgba(29,138,99,0.72)',
+    zeroLine: 'rgba(26,58,92,0.24)'
+});
+
 let requestVersion = createRequestVersion();
 
 // ====== Utils ======
@@ -417,6 +600,14 @@ function esc(s) {
 function fmt(n) { return n != null ? Number(n).toLocaleString('zh-TW') : '--'; }
 function fmtPct(r) { return r != null ? Math.round(r * 100) + '%' : '--'; }
 function fmtNum(n, dec) { return n != null ? Number(n).toFixed(dec ?? 1) : '--'; }
+function fmtCompactVolume(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '--';
+    const abs = Math.abs(num);
+    if (abs >= 100000000) return `${(num / 100000000).toFixed(1)}億`;
+    if (abs >= 10000) return `${(num / 10000).toFixed(1)}萬`;
+    return num.toLocaleString('zh-TW');
+}
 
 function toNum(value) {
     const num = Number(value);
@@ -433,6 +624,23 @@ function fmtZonePrice(value) {
 
 function createRequestVersion() {
     return String(Date.now());
+}
+
+function shortDateLabel(dateText) {
+    if (!dateText) return '--';
+    const parts = String(dateText).split('-');
+    return parts.length === 3 ? `${parts[1]}/${parts[2]}` : String(dateText);
+}
+
+function fmtAxisNumber(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '--';
+    const abs = Math.abs(num);
+    const maximumFractionDigits = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
+    return num.toLocaleString('zh-TW', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits
+    });
 }
 
 function buildFreshUrl(url, version = requestVersion) {
@@ -710,6 +918,356 @@ function renderDecisionSummary(stock) {
     renderEntryZones(stock, summary);
 }
 
+function setChartSvg(svg, width, height, markup) {
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.innerHTML = markup;
+}
+
+function renderChartPlaceholder(svg, message, height = 140) {
+    const width = 620;
+    setChartSvg(svg, width, height, `
+        <rect x="0" y="0" width="${width}" height="${height}" rx="12" fill="#ffffff" stroke="#d7e3ef" stroke-dasharray="5 5"></rect>
+        <text x="${width / 2}" y="${height / 2}" fill="#7a8795" font-size="14" text-anchor="middle" dominant-baseline="middle">${esc(message)}</text>
+    `);
+}
+
+function getChartRange(values, paddingRatio = 0.08) {
+    const numericValues = values.filter(value => Number.isFinite(value));
+    if (!numericValues.length) return null;
+
+    const minValue = Math.min(...numericValues);
+    const maxValue = Math.max(...numericValues);
+
+    if (minValue === maxValue) {
+        const padding = Math.abs(minValue || 1) * 0.04 || 1;
+        return { min: minValue - padding, max: maxValue + padding };
+    }
+
+    const padding = (maxValue - minValue) * paddingRatio;
+    return {
+        min: minValue - padding,
+        max: maxValue + padding
+    };
+}
+
+function scaleToY(value, range, top, height) {
+    return top + ((range.max - value) / (range.max - range.min)) * height;
+}
+
+function buildLinePath(points) {
+    let path = '';
+    let started = false;
+
+    points.forEach(point => {
+        if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+            started = false;
+            return;
+        }
+
+        if (!started) {
+            path += `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+            started = true;
+        } else {
+            path += ` L ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+        }
+    });
+
+    return path;
+}
+
+function getDateTickIndices(length) {
+    const base = [0, Math.floor((length - 1) / 2), length - 1];
+    return base.filter((value, index) => base.indexOf(value) === index);
+}
+
+function renderPriceChart(candles) {
+    const svg = document.getElementById('priceChart');
+    if (!Array.isArray(candles) || candles.length < 2) {
+        renderChartPlaceholder(svg, 'K 線資料不足');
+        document.getElementById('priceChartMeta').textContent = '資料不足';
+        return;
+    }
+
+    const width = Math.max(620, candles.length * 18);
+    const height = 280;
+    const left = 10;
+    const right = 52;
+    const top = 14;
+    const bottom = 26;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const step = plotWidth / candles.length;
+    const bodyWidth = Math.max(6, Math.min(12, step * 0.64));
+
+    const priceValues = [];
+    candles.forEach(candle => {
+        priceValues.push(toNum(candle.low), toNum(candle.high), toNum(candle.ma5), toNum(candle.ma20));
+    });
+    const range = getChartRange(priceValues, 0.06);
+    if (!range) {
+        renderChartPlaceholder(svg, 'K 線資料不足');
+        document.getElementById('priceChartMeta').textContent = '資料不足';
+        return;
+    }
+
+    const gridValues = Array.from({ length: 4 }, (_, index) => range.max - ((range.max - range.min) * index) / 3);
+    let gridMarkup = '';
+    let axisMarkup = '';
+    gridValues.forEach(value => {
+        const y = scaleToY(value, range, top, plotHeight);
+        gridMarkup += `<line x1="${left}" y1="${y.toFixed(2)}" x2="${(left + plotWidth).toFixed(2)}" y2="${y.toFixed(2)}" stroke="${CHART_COLORS.grid}" stroke-width="1"></line>`;
+        axisMarkup += `<text x="${width - right + 6}" y="${(y + 4).toFixed(2)}" fill="${CHART_COLORS.axis}" font-size="11">${fmtAxisNumber(value)}</text>`;
+    });
+
+    let wickMarkup = '';
+    let bodyMarkup = '';
+    const ma5Points = [];
+    const ma20Points = [];
+
+    candles.forEach((candle, index) => {
+        const open = toNum(candle.open);
+        const high = toNum(candle.high);
+        const low = toNum(candle.low);
+        const close = toNum(candle.close);
+        const x = left + step * index + step / 2;
+
+        if (open == null || high == null || low == null || close == null) {
+            ma5Points.push(null);
+            ma20Points.push(null);
+            return;
+        }
+
+        const highY = scaleToY(high, range, top, plotHeight);
+        const lowY = scaleToY(low, range, top, plotHeight);
+        const openY = scaleToY(open, range, top, plotHeight);
+        const closeY = scaleToY(close, range, top, plotHeight);
+        const tone = close >= open ? CHART_COLORS.up : CHART_COLORS.down;
+        const bodyTop = Math.min(openY, closeY);
+        const bodyHeight = Math.max(2, Math.abs(openY - closeY));
+
+        wickMarkup += `<line x1="${x.toFixed(2)}" y1="${highY.toFixed(2)}" x2="${x.toFixed(2)}" y2="${lowY.toFixed(2)}" stroke="${tone}" stroke-width="1.6"></line>`;
+        bodyMarkup += `<rect x="${(x - bodyWidth / 2).toFixed(2)}" y="${bodyTop.toFixed(2)}" width="${bodyWidth.toFixed(2)}" height="${bodyHeight.toFixed(2)}" rx="1.5" fill="${tone}"></rect>`;
+
+        const ma5 = toNum(candle.ma5);
+        const ma20 = toNum(candle.ma20);
+        ma5Points.push(ma5 == null ? null : { x, y: scaleToY(ma5, range, top, plotHeight) });
+        ma20Points.push(ma20 == null ? null : { x, y: scaleToY(ma20, range, top, plotHeight) });
+    });
+
+    const ma5Path = buildLinePath(ma5Points);
+    const ma20Path = buildLinePath(ma20Points);
+    const tickIndices = getDateTickIndices(candles.length);
+    const dateMarkup = tickIndices.map(index => {
+        const x = left + step * index + step / 2;
+        const label = shortDateLabel(candles[index]?.date);
+        return `<text x="${x.toFixed(2)}" y="${height - 6}" fill="${CHART_COLORS.axis}" font-size="11" text-anchor="middle">${label}</text>`;
+    }).join('');
+
+    setChartSvg(svg, width, height, `
+        <rect x="0" y="0" width="${width}" height="${height}" rx="12" fill="#ffffff"></rect>
+        ${gridMarkup}
+        ${wickMarkup}
+        ${bodyMarkup}
+        ${ma5Path ? `<path d="${ma5Path}" fill="none" stroke="${CHART_COLORS.ma5}" stroke-width="2"></path>` : ''}
+        ${ma20Path ? `<path d="${ma20Path}" fill="none" stroke="${CHART_COLORS.ma20}" stroke-width="2"></path>` : ''}
+        ${axisMarkup}
+        ${dateMarkup}
+    `);
+
+    const lastCandle = candles[candles.length - 1];
+    document.getElementById('priceChartMeta').textContent = `${shortDateLabel(candles[0]?.date)} - ${shortDateLabel(lastCandle?.date)}\n收盤 ${fmt(lastCandle?.close)}`;
+}
+
+function renderVolumeChart(candles) {
+    const svg = document.getElementById('volumeChart');
+    if (!Array.isArray(candles) || candles.length < 2) {
+        renderChartPlaceholder(svg, '成交量資料不足', 170);
+        document.getElementById('volumeChartMeta').textContent = '資料不足';
+        return;
+    }
+
+    const width = Math.max(620, candles.length * 18);
+    const height = 170;
+    const left = 10;
+    const right = 52;
+    const top = 12;
+    const bottom = 26;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const step = plotWidth / candles.length;
+    const bodyWidth = Math.max(6, Math.min(12, step * 0.7));
+    const volumes = candles.map(candle => toNum(candle.volume)).filter(value => value != null);
+    const maxVolume = volumes.length ? Math.max(...volumes) : null;
+
+    if (maxVolume == null || maxVolume <= 0) {
+        renderChartPlaceholder(svg, '成交量資料不足', 170);
+        document.getElementById('volumeChartMeta').textContent = '資料不足';
+        return;
+    }
+
+    const guideValues = [maxVolume, maxVolume / 2, 0];
+    let gridMarkup = '';
+    let axisMarkup = '';
+    guideValues.forEach(value => {
+        const y = top + (1 - value / maxVolume) * plotHeight;
+        gridMarkup += `<line x1="${left}" y1="${y.toFixed(2)}" x2="${(left + plotWidth).toFixed(2)}" y2="${y.toFixed(2)}" stroke="${CHART_COLORS.grid}" stroke-width="1"></line>`;
+        axisMarkup += `<text x="${width - right + 6}" y="${(y + 4).toFixed(2)}" fill="${CHART_COLORS.axis}" font-size="11">${fmtCompactVolume(value)}</text>`;
+    });
+
+    let barMarkup = '';
+    candles.forEach((candle, index) => {
+        const volume = toNum(candle.volume);
+        const open = toNum(candle.open);
+        const close = toNum(candle.close);
+        if (volume == null || open == null || close == null) return;
+
+        const x = left + step * index + step / 2;
+        const barHeight = Math.max(1.5, (volume / maxVolume) * plotHeight);
+        const y = top + plotHeight - barHeight;
+        const tone = close >= open ? CHART_COLORS.up : CHART_COLORS.down;
+        barMarkup += `<rect x="${(x - bodyWidth / 2).toFixed(2)}" y="${y.toFixed(2)}" width="${bodyWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1.5" fill="${tone}"></rect>`;
+    });
+
+    const tickIndices = getDateTickIndices(candles.length);
+    const dateMarkup = tickIndices.map(index => {
+        const x = left + step * index + step / 2;
+        return `<text x="${x.toFixed(2)}" y="${height - 6}" fill="${CHART_COLORS.axis}" font-size="11" text-anchor="middle">${shortDateLabel(candles[index]?.date)}</text>`;
+    }).join('');
+
+    setChartSvg(svg, width, height, `
+        <rect x="0" y="0" width="${width}" height="${height}" rx="12" fill="#ffffff"></rect>
+        ${gridMarkup}
+        ${barMarkup}
+        ${axisMarkup}
+        ${dateMarkup}
+    `);
+
+    const lastCandle = candles[candles.length - 1];
+    document.getElementById('volumeChartMeta').textContent = `最新量 ${fmtCompactVolume(lastCandle?.volume)}\n區間峰值 ${fmtCompactVolume(maxVolume)}`;
+}
+
+function renderMacdChart(candles) {
+    const svg = document.getElementById('macdChart');
+    const values = [];
+    candles.forEach(candle => {
+        values.push(toNum(candle.dif), toNum(candle.macd), toNum(candle.histogram));
+    });
+    const numericValues = values.filter(value => value != null);
+
+    if (!Array.isArray(candles) || candles.length < 2 || !numericValues.length) {
+        renderChartPlaceholder(svg, 'MACD 資料不足', 190);
+        document.getElementById('macdChartMeta').textContent = '資料不足';
+        return;
+    }
+
+    const width = Math.max(620, candles.length * 18);
+    const height = 190;
+    const left = 10;
+    const right = 52;
+    const top = 12;
+    const bottom = 26;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const step = plotWidth / candles.length;
+    const bodyWidth = Math.max(6, Math.min(12, step * 0.64));
+    const maxAbs = Math.max(...numericValues.map(value => Math.abs(value)));
+    const range = { min: -maxAbs * 1.15, max: maxAbs * 1.15 };
+    const zeroY = scaleToY(0, range, top, plotHeight);
+
+    const guideValues = [range.max, range.max / 2, 0, range.min / 2, range.min];
+    let gridMarkup = '';
+    let axisMarkup = '';
+    guideValues.forEach(value => {
+        const y = scaleToY(value, range, top, plotHeight);
+        const stroke = Math.abs(value) < 1e-9 ? CHART_COLORS.zeroLine : CHART_COLORS.grid;
+        const strokeWidth = Math.abs(value) < 1e-9 ? 1.4 : 1;
+        gridMarkup += `<line x1="${left}" y1="${y.toFixed(2)}" x2="${(left + plotWidth).toFixed(2)}" y2="${y.toFixed(2)}" stroke="${stroke}" stroke-width="${strokeWidth}"></line>`;
+        axisMarkup += `<text x="${width - right + 6}" y="${(y + 4).toFixed(2)}" fill="${CHART_COLORS.axis}" font-size="11">${fmtNum(value, 2)}</text>`;
+    });
+
+    let histogramMarkup = '';
+    const difPoints = [];
+    const macdPoints = [];
+    candles.forEach((candle, index) => {
+        const x = left + step * index + step / 2;
+        const dif = toNum(candle.dif);
+        const macd = toNum(candle.macd);
+        const histogram = toNum(candle.histogram);
+
+        if (histogram != null) {
+            const y = scaleToY(histogram, range, top, plotHeight);
+            const barTop = Math.min(y, zeroY);
+            const barHeight = Math.max(1.5, Math.abs(y - zeroY));
+            const tone = histogram >= 0 ? CHART_COLORS.histogramPositive : CHART_COLORS.histogramNegative;
+            histogramMarkup += `<rect x="${(x - bodyWidth / 2).toFixed(2)}" y="${barTop.toFixed(2)}" width="${bodyWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1.5" fill="${tone}"></rect>`;
+        }
+
+        difPoints.push(dif == null ? null : { x, y: scaleToY(dif, range, top, plotHeight) });
+        macdPoints.push(macd == null ? null : { x, y: scaleToY(macd, range, top, plotHeight) });
+    });
+
+    const difPath = buildLinePath(difPoints);
+    const macdPath = buildLinePath(macdPoints);
+    const tickIndices = getDateTickIndices(candles.length);
+    const dateMarkup = tickIndices.map(index => {
+        const x = left + step * index + step / 2;
+        return `<text x="${x.toFixed(2)}" y="${height - 6}" fill="${CHART_COLORS.axis}" font-size="11" text-anchor="middle">${shortDateLabel(candles[index]?.date)}</text>`;
+    }).join('');
+
+    setChartSvg(svg, width, height, `
+        <rect x="0" y="0" width="${width}" height="${height}" rx="12" fill="#ffffff"></rect>
+        ${gridMarkup}
+        ${histogramMarkup}
+        ${difPath ? `<path d="${difPath}" fill="none" stroke="${CHART_COLORS.dif}" stroke-width="2"></path>` : ''}
+        ${macdPath ? `<path d="${macdPath}" fill="none" stroke="${CHART_COLORS.macd}" stroke-width="2"></path>` : ''}
+        ${axisMarkup}
+        ${dateMarkup}
+    `);
+
+    const lastCandle = candles[candles.length - 1];
+    document.getElementById('macdChartMeta').textContent = `DIF ${fmtNum(lastCandle?.dif, 4)} / MACD ${fmtNum(lastCandle?.macd, 4)}\n柱值 ${fmtNum(lastCandle?.histogram, 4)}`;
+}
+
+function renderCharts(stock) {
+    const chartData = stock?.chart_data || {};
+    const candles = Array.isArray(chartData.candles) ? chartData.candles : [];
+    const issues = Array.isArray(chartData.issues) ? chartData.issues.filter(Boolean) : [];
+    const fallbackEl = document.getElementById('chartFallback');
+
+    document.getElementById('chartWindowLabel').textContent = candles.length
+        ? `近 ${chartData.window || candles.length} 個交易日`
+        : '圖表資料不足';
+    document.getElementById('chartSourceLabel').textContent = urlDate
+        ? `${urlDate} universe 同源資料`
+        : '同源於 universe 報表';
+
+    if (!candles.length) {
+        fallbackEl.style.display = 'block';
+        fallbackEl.textContent = '這份報表沒有足夠的歷史序列，圖表先以保底提示顯示。';
+        renderChartPlaceholder(document.getElementById('priceChart'), 'K 線資料不足');
+        renderChartPlaceholder(document.getElementById('volumeChart'), '成交量資料不足', 170);
+        renderChartPlaceholder(document.getElementById('macdChart'), 'MACD 資料不足', 190);
+        document.getElementById('priceChartMeta').textContent = '資料不足';
+        document.getElementById('volumeChartMeta').textContent = '資料不足';
+        document.getElementById('macdChartMeta').textContent = '資料不足';
+        return;
+    }
+
+    if (issues.length) {
+        fallbackEl.style.display = 'block';
+        fallbackEl.textContent = `部分圖表以保底顯示：${issues.join('、')}`;
+    } else {
+        fallbackEl.style.display = 'none';
+        fallbackEl.textContent = '';
+    }
+
+    renderPriceChart(candles);
+    renderVolumeChart(candles);
+    renderMacdChart(candles);
+}
+
 // ====== Fetch ======
 async function fetchJSON(url, version = requestVersion) {
     const r = await fetch(buildFreshUrl(url, version), { cache: 'no-store' });
@@ -757,6 +1315,8 @@ function renderStock(stock) {
     setChip('sigVol',   stock.volume ? `量能：${stock.volume}` : '');
     setChip('sigInst',  stock.institutional ? `法人：${stock.institutional}` : '');
     setChip('sigKd',    stock.kd_state ? `KD：${stock.kd_state}` : '');
+
+    renderCharts(stock);
 
     document.getElementById('decisionAdvice').textContent = summary.advice;
     document.getElementById('decisionReason').textContent = summary.reason;
@@ -901,7 +1461,7 @@ document.addEventListener('DOMContentLoaded', init);
 </script>
 <script>
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js?v=20260414-v30', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('service-worker.js?v=20260414-v31', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.log('SW 錯誤:', err));
     }
