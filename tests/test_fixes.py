@@ -667,7 +667,7 @@ class TestPriorityValidation(unittest.TestCase):
             },
         )
 
-        self.assertEqual(strategy_analysis["report_version"], "v16-strategy-analysis")
+        self.assertEqual(strategy_analysis["report_version"], "v19-strategy-analysis")
         self.assertEqual(strategy_analysis["strategies"]["sniper"]["label"], "狙擊型")
         self.assertEqual(strategy_analysis["strategies"]["steady"]["label"], "穩定型")
         self.assertEqual(
@@ -680,6 +680,20 @@ class TestPriorityValidation(unittest.TestCase):
         )
         self.assertEqual(strategy_analysis["style_choice"]["high_return"]["strategy"], "sniper")
         self.assertEqual(strategy_analysis["style_choice"]["steady"]["strategy"], "steady")
+        self.assertIn("sniper_v2", strategy_analysis["strategy_v2_names"])
+        self.assertIn("steady_v2", strategy_analysis["strategy_v2_names"])
+        self.assertEqual(strategy_analysis["strategies_v2"]["sniper_v2"]["generation"], "v2")
+        self.assertEqual(strategy_analysis["strategies_v2"]["steady_v2"]["generation"], "v2")
+        self.assertEqual(strategy_analysis["strategy_variant_comparison"]["sniper"]["v1"]["strategy"], "sniper")
+        self.assertEqual(strategy_analysis["strategy_variant_comparison"]["sniper"]["v2"]["strategy"], "sniper_v2")
+        self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v1"]["strategy"], "steady")
+        self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v2"]["strategy"], "steady_v2")
+        self.assertTrue(strategy_analysis["strategy_variant_comparison"]["sniper"]["v2_avg_return_positive"])
+        self.assertIn("families_with_more_hits", strategy_analysis["v2_summary"])
+        self.assertIn("sniper", strategy_analysis["v2_summary"]["families_with_more_hits"])
+        self.assertIn("sniper", strategy_analysis["v2_summary"]["families_with_positive_avg_return"])
+        self.assertTrue(strategy_analysis["strategy_variant_comparison"]["sniper"]["meets_v19_goal"])
+
 
     def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):
         report_a = generate_priority_snapshot(

@@ -1,4 +1,4 @@
-"""v18 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v19 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
 FACTOR_ANALYSIS_REPORT_VERSION = "v18-factor-analysis"
 FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
-STRATEGY_ANALYSIS_REPORT_VERSION = "v16-strategy-analysis"
+STRATEGY_ANALYSIS_REPORT_VERSION = "v19-strategy-analysis"
 SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -51,6 +51,9 @@ STRATEGY_DEFINITIONS = {
         "selection_hint": "偏攻擊，樣本較少，但成立時平均報酬較高。",
         "combination_source": "just_break_ma20_plus_low_position_ma20",
         "condition_names": ["ma20_break", "low_position"],
+        "factor_names": ["just_break_ma20", "low_position_ma20"],
+        "family": "sniper",
+        "generation": "v1",
     },
     "steady": {
         "label": "穩定型",
@@ -59,6 +62,30 @@ STRATEGY_DEFINITIONS = {
         "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
         "combination_source": "low_k_turn_up_plus_low_position_ma20",
         "condition_names": ["kd_low_turn_up", "low_position"],
+        "factor_names": ["low_k_turn_up", "low_position_ma20"],
+        "family": "steady",
+        "generation": "v1",
+    },
+}
+
+STRATEGY_V2_DEFINITIONS = {
+    "sniper_v2": {
+        "label": "狙擊型 v2",
+        "style_focus": "高報酬",
+        "description": "MA20_v2 + 低位因子",
+        "selection_hint": "把 MA20 擴成區間條件，提高命中密度，但平均報酬通常會比舊狙擊型更平。",
+        "factor_names": ["ma20_v2", "low_position_ma20"],
+        "family": "sniper",
+        "generation": "v2",
+    },
+    "steady_v2": {
+        "label": "穩定型 v2",
+        "style_focus": "穩定",
+        "description": "MA20_v2 + KD 低檔翻揚",
+        "selection_hint": "保留 KD 低檔翻揚，但把 MA20 改成區間條件，優先提升可用樣本。",
+        "factor_names": ["ma20_v2", "low_k_turn_up"],
+        "family": "steady",
+        "generation": "v2",
     },
 }
 
@@ -1304,15 +1331,19 @@ def _build_strategy_summary(
     source_summary: Optional[Dict[str, Any]],
 ) -> Dict[str, Any]:
     summary = source_summary or {}
+    hit_count = int(summary.get("sample_count") or 0)
     return {
         "strategy": strategy_name,
         "label": definition["label"],
         "style_focus": definition["style_focus"],
         "description": definition["description"],
         "selection_hint": definition["selection_hint"],
-        "combination_source": definition["combination_source"],
-        "factor_names": list(summary.get("factor_names") or []),
-        "sample_count": int(summary.get("sample_count") or 0),
+        "family": definition.get("family") or strategy_name,
+        "generation": definition.get("generation") or "v1",
+        "combination_source": definition.get("combination_source"),
+        "factor_names": list(summary.get("factor_names") or definition.get("factor_names") or []),
+        "sample_count": hit_count,
+        "hit_count": hit_count,
         "avg_return_pct": summary.get("avg_return_pct"),
         "win_rate_pct": summary.get("win_rate_pct"),
         "avg_return_edge_vs_best_single_factor": summary.get("avg_return_edge_vs_best_single_factor"),
@@ -1331,6 +1362,10 @@ def _summarize_strategy(item: Optional[Dict[str, Any]]) -> Optional[Dict[str, An
         "style_focus": item["style_focus"],
         "description": item["description"],
         "selection_hint": item["selection_hint"],
+        "family": item.get("family"),
+        "generation": item.get("generation"),
+        "factor_names": list(item.get("factor_names") or []),
+        "hit_count": item.get("hit_count"),
         "sample_count": item["sample_count"],
         "avg_return_pct": item["avg_return_pct"],
         "win_rate_pct": item["win_rate_pct"],
@@ -1338,6 +1373,76 @@ def _summarize_strategy(item: Optional[Dict[str, Any]]) -> Optional[Dict[str, An
         "beats_constituent_single_factors": item["beats_constituent_single_factors"],
         "best_single_factor": item["best_single_factor"],
         "verdict": item["verdict"],
+    }
+
+
+def _sample_matches_factor(
+    sample: Dict[str, Any],
+    factor_name: str,
+    lower_third_cutoff: Optional[float],
+) -> bool:
+    if factor_name == "just_break_ma20":
+        return _is_just_break_ma20(sample)
+    if factor_name == "ma20_v2":
+        return _is_ma20_v2(sample)
+    if factor_name == "low_position_ma20":
+        return _is_low_position_sample(sample, lower_third_cutoff)
+    if factor_name == "low_k_turn_up":
+        return _is_low_k_turn_up(sample)
+    raise KeyError(f"未支援的策略因子：{factor_name}")
+
+
+def _build_strategy_variant_summary(
+    strategy_name: str,
+    definition: Dict[str, Any],
+    samples: List[Dict[str, Any]],
+    single_factor_baselines: Dict[str, Dict[str, Any]],
+    lower_third_cutoff: Optional[float],
+) -> Dict[str, Any]:
+    factor_names = list(definition.get("factor_names") or [])
+    source_summary = _build_factor_combination_summary(
+        strategy_name,
+        definition["description"],
+        samples,
+        lambda sample: all(
+            _sample_matches_factor(sample, factor_name, lower_third_cutoff)
+            for factor_name in factor_names
+        ),
+        factor_names,
+        single_factor_baselines,
+    )
+    return _build_strategy_summary(strategy_name, definition, source_summary)
+
+
+def _build_strategy_variant_comparison(
+    family_name: str,
+    family_label: str,
+    v1_strategy: Optional[Dict[str, Any]],
+    v2_strategy: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    v1_hit_count = int((v1_strategy or {}).get("hit_count") or 0)
+    v2_hit_count = int((v2_strategy or {}).get("hit_count") or 0)
+    v2_avg_return_positive = ((v2_strategy or {}).get("avg_return_pct") or 0) > 0
+    v2_hit_count_increase = v2_hit_count > v1_hit_count
+
+    return {
+        "family": family_name,
+        "label": family_label,
+        "v1": _summarize_strategy(v1_strategy),
+        "v2": _summarize_strategy(v2_strategy),
+        "hit_count_delta": v2_hit_count - v1_hit_count,
+        "hit_count_ratio": _round_number(v2_hit_count / v1_hit_count) if v1_hit_count else None,
+        "avg_return_delta_pct": _safe_diff(
+            (v2_strategy or {}).get("avg_return_pct"),
+            (v1_strategy or {}).get("avg_return_pct"),
+        ),
+        "win_rate_delta_pct": _safe_diff(
+            (v2_strategy or {}).get("win_rate_pct"),
+            (v1_strategy or {}).get("win_rate_pct"),
+        ),
+        "v2_hit_count_increase": v2_hit_count_increase,
+        "v2_avg_return_positive": v2_avg_return_positive,
+        "meets_v19_goal": v2_hit_count_increase and v2_avg_return_positive,
     }
 
 
@@ -1884,12 +1989,51 @@ def generate_strategy_analysis_report(
     market_prices: Optional[Any] = None,
     universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
     factor_combination_report = generate_factor_combination_analysis_report(
-        priority_reports,
-        market_prices=market_prices,
+        ordered_reports,
+        market_prices=market_lookup,
         universe_reports_by_date=universe_reports_by_date,
     )
     combinations = factor_combination_report.get("combinations") or {}
+    low_position_definition = factor_combination_report.get("low_position_definition") or {}
+    lower_third_cutoff = _as_float(low_position_definition.get("lower_third_cutoff"))
+    single_factor_baselines = {
+        "just_break_ma20": _build_positive_factor_baseline(
+            "just_break_ma20",
+            "剛跌破 MA20",
+            "剛跌破組",
+            trading_samples,
+            _is_just_break_ma20,
+        ),
+        "ma20_v2": _build_positive_factor_baseline(
+            "ma20_v2",
+            "接近 MA20 區間",
+            "接近 MA20 / 3 日內跌破組",
+            trading_samples,
+            _is_ma20_v2,
+        ),
+        "low_position_ma20": _build_positive_factor_baseline(
+            "low_position_ma20",
+            "低位因子",
+            "低位組",
+            trading_samples,
+            lambda sample: _is_low_position_sample(sample, lower_third_cutoff),
+        ),
+        "low_k_turn_up": _build_positive_factor_baseline(
+            "low_k_turn_up",
+            "KD 低檔翻揚",
+            "低檔翻揚組",
+            trading_samples,
+            _is_low_k_turn_up,
+        ),
+    }
 
     strategies = {
         strategy_name: _build_strategy_summary(
@@ -1898,6 +2042,20 @@ def generate_strategy_analysis_report(
             combinations.get(definition["combination_source"]),
         )
         for strategy_name, definition in STRATEGY_DEFINITIONS.items()
+    }
+    strategies_v2 = {
+        strategy_name: _build_strategy_variant_summary(
+            strategy_name,
+            definition,
+            trading_samples,
+            single_factor_baselines,
+            lower_third_cutoff,
+        )
+        for strategy_name, definition in STRATEGY_V2_DEFINITIONS.items()
+    }
+    strategy_variants = {
+        **strategies,
+        **strategies_v2,
     }
 
     ranked_by_avg_return = sorted(
@@ -1910,20 +2068,65 @@ def generate_strategy_analysis_report(
         key=lambda item: ((item.get("win_rate_pct") if item.get("win_rate_pct") is not None else float("-inf")), item.get("sample_count") or 0),
         reverse=True,
     )
+    variant_ranked_by_avg_return = sorted(
+        strategy_variants.values(),
+        key=lambda item: ((item.get("avg_return_pct") if item.get("avg_return_pct") is not None else float("-inf")), item.get("sample_count") or 0),
+        reverse=True,
+    )
+    variant_ranked_by_win_rate = sorted(
+        strategy_variants.values(),
+        key=lambda item: ((item.get("win_rate_pct") if item.get("win_rate_pct") is not None else float("-inf")), item.get("sample_count") or 0),
+        reverse=True,
+    )
 
     high_return_strategy = next((item for item in ranked_by_avg_return if item.get("avg_return_pct") is not None), None)
     sniper_strategy = strategies.get("sniper")
     steady_profile = strategies.get("steady")
+    strategy_variant_comparison = {
+        "sniper": _build_strategy_variant_comparison(
+            "sniper",
+            STRATEGY_DEFINITIONS["sniper"]["label"],
+            strategies.get("sniper"),
+            strategies_v2.get("sniper_v2"),
+        ),
+        "steady": _build_strategy_variant_comparison(
+            "steady",
+            STRATEGY_DEFINITIONS["steady"]["label"],
+            strategies.get("steady"),
+            strategies_v2.get("steady_v2"),
+        ),
+    }
+    v2_summary = {
+        "families_with_more_hits": [
+            family_name
+            for family_name, summary in strategy_variant_comparison.items()
+            if summary.get("v2_hit_count_increase")
+        ],
+        "families_with_positive_avg_return": [
+            family_name
+            for family_name, summary in strategy_variant_comparison.items()
+            if summary.get("v2_avg_return_positive")
+        ],
+        "families_meeting_v19_goal": [
+            family_name
+            for family_name, summary in strategy_variant_comparison.items()
+            if summary.get("meets_v19_goal")
+        ],
+    }
 
     return {
         "report_version": STRATEGY_ANALYSIS_REPORT_VERSION,
         "generated_at": get_taiwan_now().isoformat(),
         "evaluation_horizon": factor_combination_report.get("evaluation_horizon"),
-        "evaluated_days": factor_combination_report.get("evaluated_days"),
-        "candidate_samples": factor_combination_report.get("candidate_samples"),
+        "evaluated_days": evaluated_days,
+        "candidate_samples": len(trading_samples),
         "strategy_names": list(STRATEGY_DEFINITIONS.keys()),
-        "low_position_definition": factor_combination_report.get("low_position_definition"),
+        "strategy_v2_names": list(STRATEGY_V2_DEFINITIONS.keys()),
+        "strategy_variant_names": list(strategy_variants.keys()),
+        "low_position_definition": low_position_definition,
         "strategies": strategies,
+        "strategies_v2": strategies_v2,
+        "strategy_variants": strategy_variants,
         "ranking_by_avg_return": [
             _summarize_strategy(item)
             for item in ranked_by_avg_return
@@ -1931,6 +2134,14 @@ def generate_strategy_analysis_report(
         "ranking_by_win_rate": [
             _summarize_strategy(item)
             for item in ranked_by_win_rate
+        ],
+        "variant_ranking_by_avg_return": [
+            _summarize_strategy(item)
+            for item in variant_ranked_by_avg_return
+        ],
+        "variant_ranking_by_win_rate": [
+            _summarize_strategy(item)
+            for item in variant_ranked_by_win_rate
         ],
         "style_choice": {
             "high_return": _summarize_strategy(sniper_strategy or high_return_strategy),
@@ -1946,6 +2157,8 @@ def generate_strategy_analysis_report(
                 (sniper_strategy or {}).get("win_rate_pct"),
             ),
         },
+        "strategy_variant_comparison": strategy_variant_comparison,
+        "v2_summary": v2_summary,
     }
 
 
