@@ -1,12 +1,13 @@
 ﻿/**
- * 看盤助手 v30 - 首頁
- * 讀取 YYYY-MM-DD-lite.json + YYYY-MM-DD-ai.json + strategy_activation.json。
+ * 看盤助手 v31 - 首頁
+ * 讀取 YYYY-MM-DD-lite.json + YYYY-MM-DD-ai.json + YYYY-MM-DD-universe.json + strategy_activation.json。
  */
 
 // === State ===
 let liteData = null;
 let aiData = null;
 let fullData = null;
+let universeData = null;
 let activationData = null;
 let indexData = null;
 let currentDate = null;
@@ -28,6 +29,16 @@ const BASE = IS_GITHUB
     ? 'https://paul800901.github.io/kanpan-helper/reports'
     : '../reports';
 
+const MINI_CHART_COLORS = Object.freeze({
+    up: '#d14b4b',
+    down: '#1d8a63',
+    ma5: '#f59e0b',
+    ma20: '#2563eb',
+    grid: 'rgba(26,58,92,0.10)',
+    frame: '#d7e3ef',
+    text: '#627d98'
+});
+
 // === Utils ===
 function esc(text) {
     if (text == null) return '';
@@ -45,6 +56,7 @@ function fmtPct(r) {
 }
 
 function toNum(value) {
+    if (value == null || value === '') return null;
     const num = Number(value);
     return Number.isFinite(num) ? num : null;
 }
@@ -55,6 +67,13 @@ function fmtZonePrice(value) {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
     });
+}
+
+function shortDateLabel(dateText) {
+    if (!dateText) return '--';
+    const [year, month, day] = String(dateText).split('-');
+    if (!month || !day) return String(dateText);
+    return `${month}/${day}`;
 }
 
 function isConsecutiveInstitutionalBuy(label) {
@@ -531,11 +550,12 @@ async function loadIndex() {
 }
 
 async function loadReports(date) {
-    const [lite, ai, full, activation] = await Promise.allSettled([
+    const [lite, ai, full, activation, universe] = await Promise.allSettled([
         fetchJSON(`${BASE}/${date}-lite.json`),
         fetchJSON(`${BASE}/${date}-ai.json`),
         fetchJSON(`${BASE}/${date}.json`),
-        fetchJSON(`${BASE}/strategy_activation.json`)
+        fetchJSON(`${BASE}/strategy_activation.json`),
+        fetchJSON(`${BASE}/${date}-universe.json`)
     ]);
     if (lite.status === 'rejected') {
         throw new Error(`lite 報告載入失敗: ${lite.reason.message}`);
@@ -546,11 +566,15 @@ async function loadReports(date) {
     if (activation.status === 'rejected') {
         console.warn(`strategy_activation.json 不存在，首頁將隱藏 steady_v5 啟用判斷: ${activation.reason.message}`);
     }
+    if (universe.status === 'rejected') {
+        console.warn(`${date}-universe.json 不存在，首頁將隱藏焦點圖表區: ${universe.reason.message}`);
+    }
     return {
         lite: lite.value,
         ai: ai.status === 'fulfilled' ? ai.value : null,
         full: full.status === 'fulfilled' ? full.value : null,
-        activation: activation.status === 'fulfilled' ? activation.value : null
+        activation: activation.status === 'fulfilled' ? activation.value : null,
+        universe: universe.status === 'fulfilled' ? universe.value : null
     };
 }
 
@@ -584,6 +608,7 @@ function showLoading() {
     document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('aiOverview').style.display = 'none';
     document.getElementById('activationSection').style.display = 'none';
+    document.getElementById('focusChartSection').style.display = 'none';
     document.getElementById('groupSection').style.display = 'none';
     document.getElementById('stockSection').style.display = 'none';
     document.getElementById('footerBar').style.display = 'none';
@@ -681,6 +706,308 @@ function renderStrategyActivation() {
         </div>
     `).join('');
 
+    section.style.display = 'block';
+}
+
+function setSvgMarkup(svg, width, height, markup) {
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.innerHTML = markup;
+}
+
+function renderMiniChartPlaceholder(svg, message) {
+    const width = 320;
+    const height = 148;
+    setSvgMarkup(svg, width, height, `
+        <rect x="0" y="0" width="${width}" height="${height}" rx="14" fill="#f8fbff" stroke="${MINI_CHART_COLORS.frame}" stroke-dasharray="5 5"></rect>
+        <text x="${width / 2}" y="${height / 2}" fill="${MINI_CHART_COLORS.text}" font-size="13" text-anchor="middle" dominant-baseline="middle">${esc(message)}</text>
+    `);
+}
+
+function getChartRange(values, paddingRatio = 0.06) {
+    const numericValues = values.filter(value => Number.isFinite(value));
+    if (!numericValues.length) return null;
+
+    const minValue = Math.min(...numericValues);
+    const maxValue = Math.max(...numericValues);
+
+    if (minValue === maxValue) {
+        const padding = Math.abs(minValue || 1) * 0.04 || 1;
+        return { min: minValue - padding, max: maxValue + padding };
+    }
+
+    const padding = (maxValue - minValue) * paddingRatio;
+    return {
+        min: minValue - padding,
+        max: maxValue + padding
+    };
+}
+
+function scaleToY(value, range, top, height) {
+    return top + ((range.max - value) / (range.max - range.min)) * height;
+}
+
+function buildLinePath(points) {
+    let path = '';
+    let started = false;
+
+    points.forEach(point => {
+        if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+            started = false;
+            return;
+        }
+
+        if (!started) {
+            path += `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+            started = true;
+        } else {
+            path += ` L ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+        }
+    });
+
+    return path;
+}
+
+function compareFocusCandidate(left, right) {
+    const adviceDiff = getAdvicePriority(right.summary.advice) - getAdvicePriority(left.summary.advice);
+    if (adviceDiff) return adviceDiff;
+
+    const rightScore = right.score ?? -Infinity;
+    const leftScore = left.score ?? -Infinity;
+    if (rightScore !== leftScore) return rightScore - leftScore;
+
+    const leftRank = left.rank ?? Infinity;
+    const rightRank = right.rank ?? Infinity;
+    if (leftRank !== rightRank) return leftRank - rightRank;
+
+    return String(left.stock.symbol).localeCompare(String(right.stock.symbol), 'zh-Hant');
+}
+
+function buildStockDetailLink(symbol) {
+    return `stock.html?symbol=${encodeURIComponent(symbol)}&date=${encodeURIComponent(currentDate || '')}`;
+}
+
+function getFocusChartCandidates() {
+    const stocks = liteData?.stocks || [];
+    const fullMap = {};
+    const universeMap = {};
+
+    if (fullData?.stocks) {
+        fullData.stocks.forEach(stock => {
+            fullMap[stock.symbol] = stock;
+        });
+    }
+    if (universeData?.stocks) {
+        universeData.stocks.forEach(stock => {
+            universeMap[stock.symbol] = stock;
+        });
+    }
+
+    const actionable = [];
+    const watchlist = [];
+
+    stocks.forEach(stock => {
+        const universeStock = universeMap[stock.symbol];
+        const chartData = universeStock?.chart_data;
+        const candles = Array.isArray(chartData?.candles) ? chartData.candles : [];
+        if (!chartData?.available || candles.length < 6) {
+            return;
+        }
+
+        const baseStock = fullMap[stock.symbol] || stock;
+        const summary = getDecisionSummary(baseStock);
+        const lastCandle = candles[candles.length - 1] || {};
+        const candidate = {
+            stock,
+            universeStock,
+            summary,
+            candles,
+            rank: toNum(stock.rank ?? universeStock?.rank),
+            score: toNum(baseStock.score ?? stock.score ?? universeStock?.score),
+            close: toNum(stock?.indicators?.close) ?? toNum(lastCandle.close),
+            ma5: toNum(stock?.indicators?.ma5) ?? toNum(lastCandle.ma5),
+            volumeRatio: toNum(stock?.indicators?.volume_ratio) ?? toNum(universeStock?.volume_ratio),
+            trend: String(stock?.signals?.trend ?? universeStock?.trend ?? '--').trim() || '--',
+            institutional: String(stock?.signals?.institutional ?? universeStock?.institutional ?? '--').trim() || '--'
+        };
+
+        if (getAdvicePriority(summary.advice) >= getAdvicePriority('可留意')) {
+            actionable.push(candidate);
+            return;
+        }
+
+        if (!isAvoidAdvice(summary.advice)) {
+            watchlist.push(candidate);
+        }
+    });
+
+    actionable.sort(compareFocusCandidate);
+    watchlist.sort(compareFocusCandidate);
+
+    const picked = actionable.slice(0, 3);
+    watchlist.forEach(candidate => {
+        if (picked.length >= 3) return;
+        if (picked.some(item => item.stock.symbol === candidate.stock.symbol)) return;
+        picked.push(candidate);
+    });
+
+    return picked;
+}
+
+function buildFocusChartCard(candidate) {
+    const summaryBucket = getAdviceBucket(candidate.summary.advice);
+    const previewCandles = candidate.candles.slice(-24);
+    const firstCandle = previewCandles[0];
+    const lastCandle = previewCandles[previewCandles.length - 1];
+    const footerRight = candidate.institutional !== '--'
+        ? `${candidate.trend} / ${candidate.institutional}`
+        : candidate.trend;
+
+    return `
+        <a class="focus-chart-card" href="${buildStockDetailLink(candidate.stock.symbol)}" aria-label="查看 ${esc(candidate.stock.symbol)} ${esc(candidate.stock.name)} 完整個股頁">
+            <div class="focus-chart-top">
+                <div class="focus-chart-top-main">
+                    <div class="focus-chart-symbol-line">
+                        <span class="focus-chart-symbol">${esc(candidate.stock.symbol)}</span>
+                        <span class="focus-chart-name">${esc(candidate.stock.name)}</span>
+                    </div>
+                    <div class="focus-chart-reason">${esc(candidate.summary.reason)}</div>
+                </div>
+                <div class="focus-chart-rank">#${candidate.rank ?? '--'}</div>
+            </div>
+            <div class="focus-chart-pills">
+                <span class="focus-chart-pill advice ${summaryBucket}">${esc(candidate.summary.advice)}</span>
+                <span class="focus-chart-pill score">${fmt(candidate.score)} 分</span>
+            </div>
+            <div class="focus-chart-stats">
+                <div class="focus-chart-stat">
+                    <span>收盤</span>
+                    <strong>${fmtZonePrice(candidate.close)}</strong>
+                </div>
+                <div class="focus-chart-stat">
+                    <span>MA5</span>
+                    <strong>${fmtZonePrice(candidate.ma5)}</strong>
+                </div>
+                <div class="focus-chart-stat">
+                    <span>量比</span>
+                    <strong>${fmtPct(candidate.volumeRatio)}</strong>
+                </div>
+            </div>
+            <div class="focus-chart-canvas">
+                <svg class="focus-chart-svg" aria-hidden="true"></svg>
+            </div>
+            <div class="focus-chart-footer">
+                <span>${esc(shortDateLabel(firstCandle?.date))} - ${esc(shortDateLabel(lastCandle?.date))}</span>
+                <span>${esc(footerRight)}</span>
+            </div>
+        </a>`;
+}
+
+function renderMiniFocusChart(svg, candles) {
+    if (!svg) return;
+
+    const usableCandles = Array.isArray(candles) ? candles.slice(-24) : [];
+    if (usableCandles.length < 2) {
+        renderMiniChartPlaceholder(svg, '圖表資料不足');
+        return;
+    }
+
+    const width = 320;
+    const height = 148;
+    const left = 10;
+    const right = 10;
+    const top = 10;
+    const bottom = 24;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const step = plotWidth / usableCandles.length;
+    const bodyWidth = Math.max(4, Math.min(8, step * 0.58));
+
+    const priceValues = [];
+    usableCandles.forEach(candle => {
+        priceValues.push(toNum(candle.low), toNum(candle.high), toNum(candle.ma5), toNum(candle.ma20));
+    });
+    const range = getChartRange(priceValues, 0.05);
+    if (!range) {
+        renderMiniChartPlaceholder(svg, '圖表資料不足');
+        return;
+    }
+
+    const guideMarkup = [0.15, 0.5, 0.85].map(ratio => {
+        const y = top + plotHeight * ratio;
+        return `<line x1="${left}" y1="${y.toFixed(2)}" x2="${(left + plotWidth).toFixed(2)}" y2="${y.toFixed(2)}" stroke="${MINI_CHART_COLORS.grid}" stroke-width="1"></line>`;
+    }).join('');
+
+    let wickMarkup = '';
+    let bodyMarkup = '';
+    const ma5Points = [];
+    const ma20Points = [];
+
+    usableCandles.forEach((candle, index) => {
+        const open = toNum(candle.open);
+        const high = toNum(candle.high);
+        const low = toNum(candle.low);
+        const close = toNum(candle.close);
+        const x = left + step * index + step / 2;
+
+        if (open == null || high == null || low == null || close == null) {
+            ma5Points.push(null);
+            ma20Points.push(null);
+            return;
+        }
+
+        const tone = close >= open ? MINI_CHART_COLORS.up : MINI_CHART_COLORS.down;
+        const highY = scaleToY(high, range, top, plotHeight);
+        const lowY = scaleToY(low, range, top, plotHeight);
+        const openY = scaleToY(open, range, top, plotHeight);
+        const closeY = scaleToY(close, range, top, plotHeight);
+        const bodyTop = Math.min(openY, closeY);
+        const bodyHeight = Math.max(2, Math.abs(openY - closeY));
+
+        wickMarkup += `<line x1="${x.toFixed(2)}" y1="${highY.toFixed(2)}" x2="${x.toFixed(2)}" y2="${lowY.toFixed(2)}" stroke="${tone}" stroke-width="1.3"></line>`;
+        bodyMarkup += `<rect x="${(x - bodyWidth / 2).toFixed(2)}" y="${bodyTop.toFixed(2)}" width="${bodyWidth.toFixed(2)}" height="${bodyHeight.toFixed(2)}" rx="1.2" fill="${tone}"></rect>`;
+
+        const ma5 = toNum(candle.ma5);
+        const ma20 = toNum(candle.ma20);
+        ma5Points.push(ma5 == null ? null : { x, y: scaleToY(ma5, range, top, plotHeight) });
+        ma20Points.push(ma20 == null ? null : { x, y: scaleToY(ma20, range, top, plotHeight) });
+    });
+
+    const ma5Path = buildLinePath(ma5Points);
+    const ma20Path = buildLinePath(ma20Points);
+    const startLabel = shortDateLabel(usableCandles[0]?.date);
+    const endLabel = shortDateLabel(usableCandles[usableCandles.length - 1]?.date);
+
+    setSvgMarkup(svg, width, height, `
+        <rect x="0" y="0" width="${width}" height="${height}" rx="14" fill="#f8fbff" stroke="${MINI_CHART_COLORS.frame}"></rect>
+        ${guideMarkup}
+        ${wickMarkup}
+        ${bodyMarkup}
+        ${ma5Path ? `<path d="${ma5Path}" fill="none" stroke="${MINI_CHART_COLORS.ma5}" stroke-width="2"></path>` : ''}
+        ${ma20Path ? `<path d="${ma20Path}" fill="none" stroke="${MINI_CHART_COLORS.ma20}" stroke-width="2"></path>` : ''}
+        <text x="${left}" y="${height - 7}" fill="${MINI_CHART_COLORS.text}" font-size="11">${esc(startLabel)}</text>
+        <text x="${width - right}" y="${height - 7}" fill="${MINI_CHART_COLORS.text}" font-size="11" text-anchor="end">${esc(endLabel)}</text>
+    `);
+}
+
+function renderFocusCharts() {
+    const section = document.getElementById('focusChartSection');
+    const list = document.getElementById('focusChartList');
+    if (!section || !list) return;
+
+    const candidates = getFocusChartCandidates();
+    if (!candidates.length) {
+        list.innerHTML = '';
+        section.style.display = 'none';
+        return;
+    }
+
+    list.innerHTML = candidates.map(buildFocusChartCard).join('');
+    const svgs = list.querySelectorAll('.focus-chart-svg');
+    candidates.forEach((candidate, index) => {
+        renderMiniFocusChart(svgs[index], candidate.candles);
+    });
     section.style.display = 'block';
 }
 
@@ -850,6 +1177,7 @@ async function loadAndRender(date) {
         liteData = result.lite;
         aiData   = result.ai;
         fullData = result.full;
+        universeData = result.universe;
         activationData = result.activation;
 
         if (!aiData) {
@@ -858,6 +1186,7 @@ async function loadAndRender(date) {
 
         renderAIOverview();
         renderStrategyActivation();
+        renderFocusCharts();
         renderGroups();
         renderStockCards();
         renderFooter();

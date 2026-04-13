@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1b2a">
-    <meta name="description" content="看盤助手 v30 - AI 摘要與 steady_v5 啟用判斷">
-    <title>看盤助手 v30</title>
+    <meta name="description" content="看盤助手 v31 - AI 摘要、steady_v5 啟用判斷與焦點圖表">
+    <title>看盤助手 v31</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="style.css">
@@ -17,7 +17,7 @@
         <div class="header-top">
             <div class="app-brand">
                 <span class="app-title">看盤助手</span>
-                <span class="version-badge">v30</span>
+                <span class="version-badge">v31</span>
             </div>
             <button class="reload-btn" id="reloadBtn" title="重新載入最新報告">↻</button>
         </div>
@@ -38,7 +38,7 @@
         <!-- 載入狀態 -->
         <div class="loading-state" id="loadingState">
             <div class="loading-spinner"></div>
-            <div class="loading-text">載入 AI 報告與策略判斷中...</div>
+            <div class="loading-text">載入 AI 報告、策略判斷與焦點圖表中...</div>
         </div>
 
         <!-- AI 市場總覽 -->
@@ -61,6 +61,17 @@
                 <div class="activation-meta" id="activationMeta"></div>
                 <div class="activation-gates" id="activationGates"></div>
             </div>
+        </section>
+
+        <section class="focus-chart-section" id="focusChartSection" style="display:none">
+            <div class="section-title">焦點圖表</div>
+            <div class="section-subtitle">只放 3 檔，先看迷你 K 線結構，再點進個股頁看完整 K 線、量能與 MACD。</div>
+            <div class="focus-chart-legend">
+                <span class="focus-chart-legend-item"><span class="legend-dot legend-kline"></span>K 線</span>
+                <span class="focus-chart-legend-item"><span class="legend-dot legend-ma5"></span>MA5</span>
+                <span class="focus-chart-legend-item"><span class="legend-dot legend-ma20"></span>MA20</span>
+            </div>
+            <div class="focus-chart-strip" id="focusChartList"></div>
         </section>
 
         <!-- 分群說明 -->
@@ -110,10 +121,10 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260414-v30"></script>
+    <script src="app.js?v=20260414-v31b"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js?v=20260414-v30', { updateViaCache: 'none' })
+            navigator.serviceWorker.register('service-worker.js?v=20260414-v31b', { updateViaCache: 'none' })
                 .then(reg => reg.update())
                 .catch(err => console.log('SW 錯誤:', err));
         }

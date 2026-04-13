@@ -1,4 +1,4 @@
-﻿/* 看盤助手 v30 - 正式版樣式 */
+﻿/* 看盤助手 v31 - 正式版樣式 */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
@@ -402,6 +402,208 @@ body {
     border-radius: 2px;
 }
 
+.section-subtitle {
+    font-size: 14px;
+    color: #52667a;
+    margin: -2px 0 12px;
+    line-height: 1.55;
+}
+
+/* ======== FOCUS CHART SECTION ======== */
+.focus-chart-section {
+    padding: 8px 16px 8px;
+}
+
+.focus-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.focus-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: #627d98;
+    font-weight: 700;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.legend-dot.legend-kline {
+    width: 18px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #d14b4b 0 50%, #1d8a63 50% 100%);
+}
+
+.legend-dot.legend-ma5 { background: #f59e0b; }
+.legend-dot.legend-ma20 { background: #2563eb; }
+
+.focus-chart-strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(300px, 1fr);
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+}
+
+.focus-chart-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 338px;
+    padding: 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+    border: 1px solid #d9e4f1;
+    box-shadow: 0 4px 16px rgba(13, 27, 42, 0.08);
+    text-decoration: none;
+    color: inherit;
+    scroll-snap-align: start;
+}
+
+.focus-chart-card:active {
+    transform: translateY(1px);
+}
+
+.focus-chart-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.focus-chart-top-main {
+    flex: 1;
+}
+
+.focus-chart-symbol-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.focus-chart-symbol {
+    font-size: 28px;
+    font-weight: 800;
+    color: #18324a;
+    line-height: 1;
+}
+
+.focus-chart-name {
+    font-size: 15px;
+    color: #627d98;
+}
+
+.focus-chart-rank {
+    min-width: 48px;
+    padding: 7px 10px;
+    border-radius: 12px;
+    background: #e8f0f8;
+    color: #1a3a5c;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.focus-chart-reason {
+    font-size: 14px;
+    color: #243b53;
+    line-height: 1.55;
+}
+
+.focus-chart-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.focus-chart-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.focus-chart-pill.score {
+    background: #eff5fb;
+    color: #33506a;
+}
+
+.focus-chart-pill.advice.strong {
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.focus-chart-pill.advice.watch {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.focus-chart-pill.advice.avoid {
+    background: #ffebee;
+    color: #b71c1c;
+}
+
+.focus-chart-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.focus-chart-stat {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #dfe8f1;
+}
+
+.focus-chart-stat span {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 12px;
+    color: #708090;
+}
+
+.focus-chart-stat strong {
+    font-size: 16px;
+    color: #163049;
+}
+
+.focus-chart-canvas {
+    background: white;
+    border: 1px solid #d7e3ef;
+    border-radius: 16px;
+    padding: 8px;
+}
+
+.focus-chart-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.focus-chart-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    color: #627d98;
+    line-height: 1.5;
+}
+
 /* ======== STOCK CARD ======== */
 .stock-card {
     background: white;
@@ -768,12 +970,28 @@ body {
     .rank-num, .score-num { font-size: 34px; }
     .why-text { font-size: 16px; }
     .overview-text { font-size: 18px; }
+    .focus-chart-symbol { font-size: 24px; }
+    .focus-chart-card { min-height: 326px; padding: 16px; }
+    .focus-chart-stats { gap: 8px; }
+    .focus-chart-stat { padding: 9px 10px; }
+    .focus-chart-stat strong { font-size: 14px; }
     .decision-summary-row { grid-template-columns: 44px 1fr; gap: 8px; }
     .decision-summary-text { font-size: 13px; }
     .entry-zone-row { grid-template-columns: 60px 1fr; gap: 8px; }
     .entry-zone-text { font-size: 13px; }
     .ai-judgment-row { grid-template-columns: 36px 1fr; gap: 8px; }
     .ai-judgment-text { font-size: 13px; }
+}
+
+@media (max-width: 720px) {
+    .focus-chart-strip {
+        grid-auto-columns: 88%;
+    }
+
+    .focus-chart-footer {
+        flex-direction: column;
+        gap: 4px;
+    }
 }
 
 /* ======== NAVIGATION ======== */

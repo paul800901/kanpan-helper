@@ -610,6 +610,7 @@ function fmtCompactVolume(value) {
 }
 
 function toNum(value) {
+    if (value == null || value === '') return null;
     const num = Number(value);
     return Number.isFinite(num) ? num : null;
 }
@@ -1461,7 +1462,7 @@ document.addEventListener('DOMContentLoaded', init);
 </script>
 <script>
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js?v=20260414-v31', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('service-worker.js?v=20260414-v31b', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.log('SW 錯誤:', err));
     }
