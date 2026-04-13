@@ -110,6 +110,10 @@ jobs:
             echo "Error: Priority 歷史統計生成失敗，找不到 reports/priority-history.json"
             exit 1
           fi
+          if [ ! -f "reports/factor_analysis.json" ]; then
+            echo "Error: 因子分析生成失敗，找不到 reports/factor_analysis.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
@@ -118,6 +122,7 @@ jobs:
           python -m json.tool reports/${TODAY}-context.json > /dev/null
           python -m json.tool reports/${TODAY}-priority.json > /dev/null
           python -m json.tool reports/priority-history.json > /dev/null
+          python -m json.tool reports/factor_analysis.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports

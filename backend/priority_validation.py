@@ -16,6 +16,7 @@ from backend.historical_reports import MARKET_INDEX_ID, ensure_historical_report
 
 PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
+FACTOR_ANALYSIS_REPORT_VERSION = "v13-factor-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -105,12 +106,26 @@ def _comparison_win_rate(left_values: List[Optional[float]], right_values: List[
     return _round_number((sum(comparable) / total) * 100)
 
 
+def _factor_verdict(spread: Optional[float]) -> str:
+    if spread is None:
+        return "資料不足"
+    if spread > 0:
+        return "有效"
+    if spread < 0:
+        return "拖累"
+    return "中性"
+
+
 def _priority_report_path(date_str: str, base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / f"{date_str}-priority.json"
 
 
 def _priority_history_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "priority-history.json"
+
+
+def _factor_analysis_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "factor_analysis.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -742,6 +757,164 @@ def _build_stability_summary(
     }
 
 
+def _collect_trading_interval_candidates(
+    priority_reports: List[Dict[str, Any]],
+    market_lookup: Dict[str, Optional[float]],
+) -> tuple[List[Dict[str, Any]], int]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    candidates: List[Dict[str, Any]] = []
+    evaluated_days = 0
+
+    for report in ordered_reports:
+        market_return = _market_return(str(report.get("date") or ""), str(report.get("next_report_date") or ""), market_lookup)
+        if market_return is None:
+            continue
+
+        evaluated_days += 1
+        for candidate in report.get("candidates") or []:
+            return_pct = _extract_return_pct(candidate)
+            if return_pct is None:
+                continue
+            candidates.append({
+                "date": report.get("date"),
+                "next_report_date": report.get("next_report_date"),
+                "return_pct": return_pct,
+                "candidate": candidate,
+            })
+
+    return candidates, evaluated_days
+
+
+def _build_factor_bucket_summary(
+    label: str,
+    factor_value: Any,
+    values: List[float],
+) -> Dict[str, Any]:
+    return {
+        "label": label,
+        "factor_value": factor_value,
+        "sample_count": len(values),
+        "avg_return_pct": _mean(values),
+        "win_rate_pct": _win_rate(values),
+    }
+
+
+def _build_factor_section(
+    factor_name: str,
+    factor_label: str,
+    ordered_buckets: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    high_bucket = ordered_buckets[0] if ordered_buckets else None
+    low_bucket = ordered_buckets[-1] if ordered_buckets else None
+    spread = _safe_diff(
+        (high_bucket or {}).get("avg_return_pct"),
+        (low_bucket or {}).get("avg_return_pct"),
+    )
+
+    return {
+        "factor": factor_name,
+        "label": factor_label,
+        "bucket_count": len(ordered_buckets),
+        "buckets": ordered_buckets,
+        "high_group": high_bucket,
+        "low_group": low_bucket,
+        "spread_avg_return_pct": spread,
+        "spread_win_rate_pct": _safe_diff(
+            (high_bucket or {}).get("win_rate_pct"),
+            (low_bucket or {}).get("win_rate_pct"),
+        ),
+        "verdict": _factor_verdict(spread),
+    }
+
+
+def _build_hit_count_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    grouped: Dict[int, List[float]] = {}
+    for sample in samples:
+        candidate = sample["candidate"]
+        grouped.setdefault(int(candidate.get("hit_count") or 0), []).append(sample["return_pct"])
+
+    buckets = [
+        _build_factor_bucket_summary(str(hit_count), hit_count, grouped[hit_count])
+        for hit_count in sorted(grouped.keys(), reverse=True)
+    ]
+    return _build_factor_section("hit_count", "情境命中數", buckets)
+
+
+def _build_technical_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    grouped: Dict[int, Dict[str, Any]] = {}
+    for sample in samples:
+        technical_state = sample["candidate"].get("technical_state") or {}
+        advice = str(technical_state.get("advice") or "技術資料不足")
+        advice_priority = int(technical_state.get("advice_priority") or 0)
+        bucket = grouped.setdefault(advice_priority, {"label": advice, "values": []})
+        bucket["values"].append(sample["return_pct"])
+
+    buckets = [
+        _build_factor_bucket_summary(grouped[priority]["label"], priority, grouped[priority]["values"])
+        for priority in sorted(grouped.keys(), reverse=True)
+    ]
+    return _build_factor_section("technical", "技術面", buckets)
+
+
+def _build_zone_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    grouped: Dict[int, Dict[str, Any]] = {}
+    for sample in samples:
+        technical_state = sample["candidate"].get("technical_state") or {}
+        zone_label = str(technical_state.get("zone_label") or "區間外")
+        zone_priority = int(technical_state.get("zone_priority") or 0)
+        bucket = grouped.setdefault(zone_priority, {"label": zone_label, "values": []})
+        bucket["values"].append(sample["return_pct"])
+
+    buckets = [
+        _build_factor_bucket_summary(grouped[priority]["label"], priority, grouped[priority]["values"])
+        for priority in sorted(grouped.keys(), reverse=True)
+    ]
+    return _build_factor_section("zone", "區間位置", buckets)
+
+
+def generate_factor_analysis_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(ordered_reports, market_lookup)
+
+    hit_count_section = _build_hit_count_factor(trading_samples)
+    technical_section = _build_technical_factor(trading_samples)
+    zone_section = _build_zone_factor(trading_samples)
+
+    factor_effect_ranking = sorted(
+        [hit_count_section, technical_section, zone_section],
+        key=lambda item: item.get("spread_avg_return_pct") if item.get("spread_avg_return_pct") is not None else float("-inf"),
+        reverse=True,
+    )
+
+    return {
+        "report_version": FACTOR_ANALYSIS_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": "next_available_report",
+        "evaluated_days": evaluated_days,
+        "candidate_samples": len(trading_samples),
+        "factors": {
+            "hit_count": hit_count_section,
+            "technical": technical_section,
+            "zone": zone_section,
+        },
+        "factor_effect_ranking": [
+            {
+                "factor": section["factor"],
+                "label": section["label"],
+                "verdict": section["verdict"],
+                "spread_avg_return_pct": section["spread_avg_return_pct"],
+                "high_group_label": (section.get("high_group") or {}).get("label"),
+                "low_group_label": (section.get("low_group") or {}).get("label"),
+            }
+            for section in factor_effect_ranking
+        ],
+    }
+
+
 def generate_priority_history_report(
     priority_reports: List[Dict[str, Any]],
     market_prices: Optional[Any] = None,
@@ -908,6 +1081,10 @@ def save_priority_history_report(report: Dict[str, Any], base_dir: Optional[Path
     return _save_json(_priority_history_path(base_dir), report)
 
 
+def save_factor_analysis_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_factor_analysis_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -925,6 +1102,11 @@ def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any
 def generate_priority_history_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
     report = generate_priority_history_report(load_priority_reports(base_dir=base_dir), market_prices=market_prices)
     return save_priority_history_report(report, base_dir=base_dir)
+
+
+def generate_factor_analysis_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    report = generate_factor_analysis_report(load_priority_reports(base_dir=base_dir), market_prices=market_prices)
+    return save_factor_analysis_report(report, base_dir=base_dir)
 
 
 def backfill_priority_validation_reports(
@@ -985,6 +1167,7 @@ def backfill_priority_validation_reports(
             })
 
     history_path = generate_priority_history_from_reports(base_dir=base_dir, market_prices=market_prices)
+    factor_analysis_path = generate_factor_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -995,6 +1178,7 @@ def backfill_priority_validation_reports(
         "ensured_context_paths": ensured_context_paths,
         "priority_paths": priority_paths,
         "history_path": str(history_path),
+        "factor_analysis_path": str(factor_analysis_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

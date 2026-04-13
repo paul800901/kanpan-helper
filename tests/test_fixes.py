@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -501,6 +501,32 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertTrue(history["stats"]["validation_readiness"]["is_sample_size_ready"] is False)
         self.assertEqual(history["replay_days"][0]["top1_returns"][0]["symbol"], "BBB")
         self.assertEqual(history["replay_days"][0]["benchmark_return"]["market_return"], 1.0)
+
+    def test_factor_analysis_breaks_down_three_factors(self):
+        report = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_universe_report("2026-04-10"),
+            next_universe_report=self.make_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        factor_analysis = generate_factor_analysis_report(
+            [report],
+            market_prices={
+                "2026-04-10": 100.0,
+                "2026-04-11": 101.0,
+            },
+        )
+
+        self.assertEqual(factor_analysis["report_version"], "v13-factor-analysis")
+        self.assertEqual(factor_analysis["evaluated_days"], 1)
+        self.assertEqual(factor_analysis["candidate_samples"], 4)
+        self.assertEqual(factor_analysis["factors"]["hit_count"]["high_group"]["factor_value"], 2)
+        self.assertEqual(factor_analysis["factors"]["hit_count"]["low_group"]["factor_value"], 1)
+        self.assertEqual(factor_analysis["factors"]["technical"]["high_group"]["label"], "強勢續看")
+        self.assertEqual(factor_analysis["factors"]["zone"]["high_group"]["label"], "試單區優先")
+        self.assertIn(factor_analysis["factors"]["zone"]["verdict"], ["有效", "拖累", "中性"])
+        self.assertEqual(len(factor_analysis["factor_effect_ranking"]), 3)
 
 if __name__ == "__main__":
     # 執行單元測試
