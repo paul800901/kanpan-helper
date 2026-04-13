@@ -134,6 +134,10 @@ jobs:
             echo "Error: 時序對齊分析生成失敗，找不到 reports/timing_alignment.json"
             exit 1
           fi
+          if [ ! -f "reports/steady_v2_signature.json" ]; then
+            echo "Error: steady_v2 特徵分析生成失敗，找不到 reports/steady_v2_signature.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
@@ -148,6 +152,7 @@ jobs:
           python -m json.tool reports/signal_density.json > /dev/null
           python -m json.tool reports/steady_v2_blockers.json > /dev/null
           python -m json.tool reports/timing_alignment.json > /dev/null
+          python -m json.tool reports/steady_v2_signature.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports

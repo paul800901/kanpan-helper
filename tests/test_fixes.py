@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -519,11 +519,13 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "signal_density.json").exists())
             self.assertTrue((reports_dir / "steady_v2_blockers.json").exists())
             self.assertTrue((reports_dir / "timing_alignment.json").exists())
+            self.assertTrue((reports_dir / "steady_v2_signature.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
             self.assertTrue(result["steady_v2_blockers_path"].endswith("steady_v2_blockers.json"))
             self.assertTrue(result["timing_alignment_path"].endswith("timing_alignment.json"))
+            self.assertTrue(result["steady_v2_signature_path"].endswith("steady_v2_signature.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -857,6 +859,53 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertTrue(timing["recommendation"]["beats_kd_event_baseline"])
         self.assertEqual(timing["event_samples"][0]["first_alignment_delay_days"], 1)
         self.assertTrue(timing["event_samples"][0]["lookahead"]["day_1"]["in_ma20_v2"])
+
+    def test_steady_v2_signature_report_finds_ma20_and_selloff_features(self):
+        current_universe = self.make_combo_current_universe_report("2026-04-10")
+        for stock in current_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 98.5
+                stock["indicators"]["k"] = 25.0
+                stock["indicators"]["volume_ratio"] = 1.3
+
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=current_universe,
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            current_universe,
+            next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        signature = generate_steady_v2_signature_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": current_universe,
+            },
+        )
+
+        self.assertEqual(signature["report_version"], "v23-steady-v2-signature")
+        self.assertEqual(signature["strategy_target"]["focus_strategy"], "steady_v2")
+        self.assertEqual(signature["sample_partition"]["steady_v2_count"], 1)
+        self.assertEqual(signature["sample_partition"]["steady_v3_total_count"], 2)
+        self.assertEqual(signature["sample_partition"]["steady_v3_other_count"], 1)
+        self.assertEqual(signature["groups"]["steady_v2"]["samples"][0]["symbol"], "BBB")
+        self.assertEqual(signature["groups"]["steady_v3_other"]["samples"][0]["symbol"], "DDD")
+        self.assertEqual(signature["metric_comparison"]["abs_ma20_gap_pct"]["direction"], "v2_lower")
+        self.assertEqual(signature["metric_comparison"]["has_sharp_drop"]["direction"], "v2_higher")
+        self.assertIn("ma20_distance", [item["feature_key"] for item in signature["key_signatures"]])
+        self.assertEqual(len(signature["key_signatures"]), 2)
+        self.assertIn("更貼近 MA20", signature["signature_summary"])
 
 if __name__ == "__main__":
     # 執行單元測試

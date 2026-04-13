@@ -1,4 +1,4 @@
-"""v22 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v23 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -23,12 +23,14 @@ STRATEGY_ANALYSIS_REPORT_VERSION = "v22-strategy-analysis"
 SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 STEADY_V2_BLOCKER_REPORT_VERSION = "v20-steady-v2-blockers"
 TIMING_ALIGNMENT_REPORT_VERSION = "v21-timing-alignment"
+STEADY_V2_SIGNATURE_REPORT_VERSION = "v23-steady-v2-signature"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
 MA20_V2_BAND_PCT = 0.02
 MA20_V2_RECENT_BREAK_LOOKBACK = 3
 TIMING_ALIGNMENT_LOOKAHEAD_DAYS = [1, 2, 3]
+STEADY_V2_SIGNATURE_SHARP_DROP_THRESHOLD_PCT = -3.0
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -56,6 +58,55 @@ STEADY_V2_BLOCKER_CONDITION_DEFINITIONS = {
 }
 STEADY_V2_BLOCKER_CONDITION_ORDER = {
     name: index for index, name in enumerate(STEADY_V2_BLOCKER_CONDITION_DEFINITIONS.keys())
+}
+
+STEADY_V2_SIGNATURE_METRIC_DEFINITIONS = {
+    "k_value": {
+        "label": "KD 數值",
+        "description": "當日 K 值",
+        "kind": "numeric",
+        "feature_key": "k_depth",
+        "preferred_v2_direction": None,
+        "signature_label": "KD 區間不同",
+    },
+    "abs_ma20_gap_pct": {
+        "label": "距 MA20",
+        "description": "abs((close - ma20) / ma20) * 100",
+        "kind": "numeric",
+        "feature_key": "ma20_distance",
+        "preferred_v2_direction": "lower",
+        "signature_label": "更貼近 MA20",
+    },
+    "volume_ratio": {
+        "label": "volume_ratio",
+        "description": "當日成交量 / 20 日均量",
+        "kind": "numeric",
+        "feature_key": "volume_ratio",
+        "preferred_v2_direction": None,
+        "signature_label": "量能結構不同",
+    },
+    "prior_pullback_pct": {
+        "label": "之前跌幅",
+        "description": "(當日 close - 最近 2 日高點 close) / 最近 2 日高點 close * 100",
+        "kind": "numeric",
+        "feature_key": "selloff",
+        "preferred_v2_direction": "lower",
+        "signature_label": "訊號前回落更深",
+    },
+    "has_sharp_drop": {
+        "label": "急跌率",
+        "description": f"最近 3 個交易日任一單日跌幅 <= {STEADY_V2_SIGNATURE_SHARP_DROP_THRESHOLD_PCT}%",
+        "kind": "boolean",
+        "feature_key": "selloff",
+        "preferred_v2_direction": "higher",
+        "signature_label": "更常出現在急跌後",
+    },
+}
+STEADY_V2_SIGNATURE_FEATURE_PRIORITY = {
+    "ma20_distance": 0,
+    "selloff": 1,
+    "k_depth": 2,
+    "volume_ratio": 3,
 }
 
 STRATEGY_DEFINITIONS = {
@@ -253,6 +304,10 @@ def _steady_v2_blockers_path(base_dir: Optional[Path] = None) -> Path:
 
 def _timing_alignment_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "timing_alignment.json"
+
+
+def _steady_v2_signature_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "steady_v2_signature.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -1151,6 +1206,307 @@ def _is_low_k_turn_up(sample: Dict[str, Any]) -> bool:
         and current_k is not None
         and current_k < 30
         and current_k > previous_k
+    )
+
+
+def _ma20_gap_pct_as_percent(sample: Dict[str, Any]) -> Optional[float]:
+    gap_pct = _ma20_gap_pct(sample)
+    if gap_pct is None:
+        return None
+    return _round_number(gap_pct * 100)
+
+
+def _recent_close_history(sample: Dict[str, Any]) -> List[float]:
+    history_entries = list(sample.get("recent_universe_history") or [])
+    if not history_entries:
+        history_entries = [
+            {
+                "date": sample.get("previous_date"),
+                "stock": sample.get("previous_universe_stock"),
+            },
+            {
+                "date": sample.get("date"),
+                "stock": sample.get("current_universe_stock"),
+            },
+        ]
+
+    closes: List[float] = []
+    for entry in history_entries:
+        indicators = ((entry.get("stock") or {}).get("indicators") or {})
+        close = _as_float(indicators.get("close"))
+        if close is None:
+            continue
+        closes.append(close)
+    return closes
+
+
+def _prior_pullback_pct(sample: Dict[str, Any]) -> Optional[float]:
+    close_history = _recent_close_history(sample)
+    if len(close_history) < 2:
+        return None
+    current_close = close_history[-1]
+    previous_peak = max(close_history[:-1])
+    if previous_peak in (None, 0):
+        return None
+    return _round_number(((current_close - previous_peak) / previous_peak) * 100)
+
+
+def _recent_daily_change_pcts(sample: Dict[str, Any]) -> List[float]:
+    close_history = _recent_close_history(sample)
+    daily_changes: List[float] = []
+    for previous_close, current_close in zip(close_history, close_history[1:]):
+        if previous_close in (None, 0):
+            continue
+        daily_changes.append(_round_number(((current_close - previous_close) / previous_close) * 100))
+    return daily_changes
+
+
+def _has_sharp_drop(sample: Dict[str, Any]) -> bool:
+    return any(
+        change_pct <= STEADY_V2_SIGNATURE_SHARP_DROP_THRESHOLD_PCT
+        for change_pct in _recent_daily_change_pcts(sample)
+    )
+
+
+def _signature_group_label(group_name: str) -> str:
+    labels = {
+        "steady_v2": "steady_v2 樣本",
+        "steady_v3_other": "steady_v3 其餘樣本",
+    }
+    return labels.get(group_name) or group_name
+
+
+def _sample_name(sample: Dict[str, Any]) -> str:
+    current_stock = sample.get("current_universe_stock") or {}
+    candidate = sample.get("candidate") or {}
+    return str(current_stock.get("name") or candidate.get("name") or "")
+
+
+def _build_steady_v2_signature_sample(sample: Dict[str, Any]) -> Dict[str, Any]:
+    ma20_gap_pct = _ma20_gap_pct_as_percent(sample)
+    return {
+        "symbol": str((sample.get("candidate") or {}).get("symbol") or ""),
+        "name": _sample_name(sample),
+        "date": str(sample.get("date") or ""),
+        "return_pct": _as_float(sample.get("return_pct")),
+        "k_value": _candidate_metric(sample, "k"),
+        "ma20_gap_pct": ma20_gap_pct,
+        "abs_ma20_gap_pct": _round_number(abs(ma20_gap_pct)) if ma20_gap_pct is not None else None,
+        "volume_ratio": _candidate_metric(sample, "volume_ratio"),
+        "prior_pullback_pct": _prior_pullback_pct(sample),
+        "has_sharp_drop": _has_sharp_drop(sample),
+    }
+
+
+def _build_signature_numeric_summary(values: List[float]) -> Dict[str, Any]:
+    return {
+        "sample_count": len(values),
+        "avg_value": _mean(values),
+        "min_value": _round_number(min(values)) if values else None,
+        "max_value": _round_number(max(values)) if values else None,
+    }
+
+
+def _build_signature_boolean_summary(values: List[bool]) -> Dict[str, Any]:
+    true_count = sum(1 for value in values if value)
+    false_count = sum(1 for value in values if not value)
+    return {
+        "sample_count": len(values),
+        "true_count": true_count,
+        "false_count": false_count,
+        "true_rate_pct": _round_number((true_count / len(values)) * 100) if values else None,
+    }
+
+
+def _build_steady_v2_signature_group_summary(group_name: str, samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    sample_rows = [
+        _build_steady_v2_signature_sample(sample)
+        for sample in sorted(
+            samples,
+            key=lambda item: (str(item.get("date") or ""), str((item.get("candidate") or {}).get("symbol") or "")),
+        )
+    ]
+    returns = [value for value in (_as_float(item.get("return_pct")) for item in sample_rows) if value is not None]
+    return {
+        "group": group_name,
+        "label": _signature_group_label(group_name),
+        "sample_count": len(sample_rows),
+        "avg_return_pct": _mean(returns),
+        "win_rate_pct": _win_rate(returns),
+        "samples": sample_rows,
+        "metrics": {
+            "k_value": _build_signature_numeric_summary([value for value in (_as_float(item.get("k_value")) for item in sample_rows) if value is not None]),
+            "abs_ma20_gap_pct": _build_signature_numeric_summary([value for value in (_as_float(item.get("abs_ma20_gap_pct")) for item in sample_rows) if value is not None]),
+            "volume_ratio": _build_signature_numeric_summary([value for value in (_as_float(item.get("volume_ratio")) for item in sample_rows) if value is not None]),
+            "prior_pullback_pct": _build_signature_numeric_summary([value for value in (_as_float(item.get("prior_pullback_pct")) for item in sample_rows) if value is not None]),
+            "has_sharp_drop": _build_signature_boolean_summary([bool(item.get("has_sharp_drop")) for item in sample_rows]),
+        },
+    }
+
+
+def _numeric_metric_direction(delta: Optional[float]) -> str:
+    if delta is None:
+        return "insufficient_data"
+    if delta > 0:
+        return "v2_higher"
+    if delta < 0:
+        return "v2_lower"
+    return "equal"
+
+
+def _numeric_metric_gap_score(v2_values: List[float], comparison_values: List[float], delta: Optional[float]) -> Optional[float]:
+    if delta is None:
+        return None
+    combined = list(v2_values) + list(comparison_values)
+    if not combined:
+        return None
+    value_range = max(combined) - min(combined)
+    if value_range == 0:
+        return 0.0 if delta == 0 else _round_number(abs(delta))
+    return _round_number(abs(delta) / value_range)
+
+
+def _matches_preferred_direction(direction: str, preferred_direction: Optional[str]) -> bool:
+    if preferred_direction == "higher":
+        return direction == "v2_higher"
+    if preferred_direction == "lower":
+        return direction == "v2_lower"
+    return direction in {"v2_higher", "v2_lower"}
+
+
+def _build_signature_numeric_metric_comparison(
+    metric_name: str,
+    definition: Dict[str, Any],
+    v2_group: Dict[str, Any],
+    comparison_group: Dict[str, Any],
+) -> Dict[str, Any]:
+    v2_values = [value for value in (_as_float(item.get(metric_name)) for item in v2_group.get("samples") or []) if value is not None]
+    comparison_values = [value for value in (_as_float(item.get(metric_name)) for item in comparison_group.get("samples") or []) if value is not None]
+    v2_avg = _mean(v2_values)
+    comparison_avg = _mean(comparison_values)
+    delta = _safe_diff(v2_avg, comparison_avg)
+    direction = _numeric_metric_direction(delta)
+    preferred_direction = definition.get("preferred_v2_direction")
+    return {
+        "metric": metric_name,
+        "label": definition.get("label") or metric_name,
+        "description": definition.get("description") or metric_name,
+        "metric_type": "numeric",
+        "feature_key": definition.get("feature_key"),
+        "signature_label": definition.get("signature_label"),
+        "preferred_v2_direction": preferred_direction,
+        "v2_summary": _build_signature_numeric_summary(v2_values),
+        "comparison_summary": _build_signature_numeric_summary(comparison_values),
+        "v2_avg_value": v2_avg,
+        "comparison_avg_value": comparison_avg,
+        "avg_delta": delta,
+        "direction": direction,
+        "gap_score": _numeric_metric_gap_score(v2_values, comparison_values, delta),
+        "qualifies_as_signature": _matches_preferred_direction(direction, preferred_direction),
+        "summary": (
+            f"steady_v2 平均{definition.get('label') or metric_name}為 {v2_avg}，"
+            f"其餘 steady_v3 樣本為 {comparison_avg}，差異 {delta}。"
+        ),
+    }
+
+
+def _build_signature_boolean_metric_comparison(
+    metric_name: str,
+    definition: Dict[str, Any],
+    v2_group: Dict[str, Any],
+    comparison_group: Dict[str, Any],
+) -> Dict[str, Any]:
+    v2_values = [bool(item.get(metric_name)) for item in v2_group.get("samples") or []]
+    comparison_values = [bool(item.get(metric_name)) for item in comparison_group.get("samples") or []]
+    v2_summary = _build_signature_boolean_summary(v2_values)
+    comparison_summary = _build_signature_boolean_summary(comparison_values)
+    rate_diff = _safe_diff(v2_summary.get("true_rate_pct"), comparison_summary.get("true_rate_pct"))
+    direction = _numeric_metric_direction(rate_diff)
+    preferred_direction = definition.get("preferred_v2_direction")
+    return {
+        "metric": metric_name,
+        "label": definition.get("label") or metric_name,
+        "description": definition.get("description") or metric_name,
+        "metric_type": "boolean",
+        "feature_key": definition.get("feature_key"),
+        "signature_label": definition.get("signature_label"),
+        "preferred_v2_direction": preferred_direction,
+        "v2_summary": v2_summary,
+        "comparison_summary": comparison_summary,
+        "rate_diff_pct": rate_diff,
+        "direction": direction,
+        "gap_score": _round_number(abs(rate_diff) / 100) if rate_diff is not None else None,
+        "qualifies_as_signature": _matches_preferred_direction(direction, preferred_direction),
+        "summary": (
+            f"steady_v2 的{definition.get('label') or metric_name}為 {v2_summary.get('true_rate_pct')}%，"
+            f"其餘 steady_v3 樣本為 {comparison_summary.get('true_rate_pct')}%，差異 {rate_diff} 個百分點。"
+        ),
+    }
+
+
+def _select_steady_v2_key_signatures(metric_comparison: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    candidates = [
+        item for item in metric_comparison.values()
+        if item.get("gap_score") is not None and item.get("qualifies_as_signature")
+    ]
+    if not candidates:
+        candidates = [
+            item for item in metric_comparison.values()
+            if item.get("gap_score") is not None
+        ]
+
+    ordered_candidates = sorted(
+        candidates,
+        key=lambda item: (
+            -(item.get("gap_score") or 0),
+            STEADY_V2_SIGNATURE_FEATURE_PRIORITY.get(str(item.get("feature_key") or ""), 999),
+            str(item.get("metric") or ""),
+        ),
+    )
+
+    selected: List[Dict[str, Any]] = []
+    seen_feature_keys = set()
+    for item in ordered_candidates:
+        feature_key = str(item.get("feature_key") or item.get("metric") or "")
+        if feature_key in seen_feature_keys:
+            continue
+        selected.append({
+            "feature_key": feature_key,
+            "metric": item.get("metric"),
+            "label": item.get("label"),
+            "signature_label": item.get("signature_label") or item.get("label"),
+            "direction": item.get("direction"),
+            "gap_score": item.get("gap_score"),
+            "summary": item.get("summary"),
+        })
+        seen_feature_keys.add(feature_key)
+        if len(selected) >= 2:
+            break
+    return selected
+
+
+def _build_steady_v2_signature_summary(
+    key_signatures: List[Dict[str, Any]],
+    v2_group: Dict[str, Any],
+    comparison_group: Dict[str, Any],
+) -> str:
+    v2_count = int(v2_group.get("sample_count") or 0)
+    comparison_count = int(comparison_group.get("sample_count") or 0)
+    if not v2_count:
+        return "沒有 steady_v2 樣本，無法反推出高品質特徵。"
+    if not comparison_count:
+        return "steady_v3 沒有其他可比較樣本，無法建立 v2 專屬特徵。"
+    if not key_signatures:
+        return "資料差異不明顯，暫時看不出 steady_v2 的關鍵特徵。"
+
+    labels = [str(item.get("signature_label") or item.get("label") or "") for item in key_signatures if item.get("signature_label") or item.get("label")]
+    if len(labels) == 1:
+        feature_text = labels[0]
+    else:
+        feature_text = "、".join(labels[:-1]) + f" 與 {labels[-1]}"
+    return (
+        f"steady_v2 的 {v2_count} 個樣本，相較其餘 {comparison_count} 個 steady_v3 樣本，"
+        f"最明顯的共同特徵是 {feature_text}。"
     )
 
 
@@ -2262,6 +2618,79 @@ def generate_timing_alignment_report(
     }
 
 
+def generate_steady_v2_signature_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    strategy_analysis_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    strategy_report = strategy_analysis_report or generate_strategy_analysis_report(
+        ordered_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+
+    steady_v3_samples = [sample for sample in trading_samples if _is_low_k_turn_up(sample)]
+    steady_v2_samples = [sample for sample in steady_v3_samples if _is_ma20_v2(sample)]
+    steady_v3_other_samples = [sample for sample in steady_v3_samples if not _is_ma20_v2(sample)]
+
+    groups = {
+        "steady_v2": _build_steady_v2_signature_group_summary("steady_v2", steady_v2_samples),
+        "steady_v3_other": _build_steady_v2_signature_group_summary("steady_v3_other", steady_v3_other_samples),
+    }
+    metric_comparison = {
+        metric_name: (
+            _build_signature_numeric_metric_comparison(metric_name, definition, groups["steady_v2"], groups["steady_v3_other"])
+            if definition.get("kind") == "numeric"
+            else _build_signature_boolean_metric_comparison(metric_name, definition, groups["steady_v2"], groups["steady_v3_other"])
+        )
+        for metric_name, definition in STEADY_V2_SIGNATURE_METRIC_DEFINITIONS.items()
+    }
+    key_signatures = _select_steady_v2_key_signatures(metric_comparison)
+    strategy_snapshot = ((strategy_report.get("strategy_variant_comparison") or {}).get("steady") or {})
+
+    return {
+        "report_version": STEADY_V2_SIGNATURE_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": strategy_report.get("evaluation_horizon"),
+        "evaluated_days": evaluated_days,
+        "candidate_samples": len(trading_samples),
+        "strategy_target": {
+            "family": "steady",
+            "focus_strategy": "steady_v2",
+            "comparison_strategy": "steady_v3",
+            "comparison_group": "steady_v3_other",
+            "focus_condition_names": ["kd_low_turn_up", "ma20_v2"],
+            "comparison_condition_names": ["kd_low_turn_up"],
+        },
+        "sample_partition": {
+            "steady_v2_count": len(steady_v2_samples),
+            "steady_v3_total_count": len(steady_v3_samples),
+            "steady_v3_other_count": len(steady_v3_other_samples),
+        },
+        "metric_definitions": STEADY_V2_SIGNATURE_METRIC_DEFINITIONS,
+        "strategy_variant_snapshot": {
+            "v2": strategy_snapshot.get("v2"),
+            "v3": strategy_snapshot.get("v3"),
+        },
+        "groups": groups,
+        "metric_comparison": metric_comparison,
+        "key_signatures": key_signatures,
+        "signature_summary": _build_steady_v2_signature_summary(
+            key_signatures,
+            groups["steady_v2"],
+            groups["steady_v3_other"],
+        ),
+    }
+
+
 def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not ranked_items:
         return []
@@ -3206,6 +3635,10 @@ def save_timing_alignment_report(report: Dict[str, Any], base_dir: Optional[Path
     return _save_json(_timing_alignment_path(base_dir), report)
 
 
+def save_steady_v2_signature_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_steady_v2_signature_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -3311,6 +3744,23 @@ def generate_timing_alignment_from_reports(base_dir: Optional[Path] = None, mark
     return save_timing_alignment_report(report, base_dir=base_dir)
 
 
+def generate_steady_v2_signature_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    strategy_report = generate_strategy_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    report = generate_steady_v2_signature_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+    )
+    return save_steady_v2_signature_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -3375,6 +3825,7 @@ def backfill_priority_validation_reports(
     signal_density_path = generate_signal_density_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v2_blockers_path = generate_steady_v2_blockers_from_reports(base_dir=base_dir, market_prices=market_prices)
     timing_alignment_path = generate_timing_alignment_from_reports(base_dir=base_dir, market_prices=market_prices)
+    steady_v2_signature_path = generate_steady_v2_signature_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -3391,6 +3842,7 @@ def backfill_priority_validation_reports(
         "signal_density_path": str(signal_density_path),
         "steady_v2_blockers_path": str(steady_v2_blockers_path),
         "timing_alignment_path": str(timing_alignment_path),
+        "steady_v2_signature_path": str(steady_v2_signature_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,
