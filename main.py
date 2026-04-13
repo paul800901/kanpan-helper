@@ -203,6 +203,12 @@ def run_pipeline(
         print(f"[OK] Priority 快照已就緒: {priority_path}")
     if history_path:
         print(f"[OK] Priority 歷史統計已就緒: {history_path}")
+    if validation_result.get("evaluated_days") is not None:
+        print(f"[OK] 已可評估樣本天數: {validation_result['evaluated_days']}")
+    if validation_result.get("history_window"):
+        generated_days = len(validation_result["history_window"].get("generated") or [])
+        target_days = len(validation_result["history_window"].get("target_dates") or [])
+        print(f"[OK] v12 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
 
     if validation_result.get("skipped"):
         print(f"[INFO] 有 {len(validation_result['skipped'])} 個歷史日期因缺資料而略過")

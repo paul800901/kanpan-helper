@@ -1,4 +1,4 @@
-"""v11 排序驗證層：每日 priority 快照與歷史統計。"""
+"""v12 排序驗證層：每日 priority 快照與歷史統計。"""
 
 from __future__ import annotations
 
@@ -10,12 +10,15 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from backend.config import get_taiwan_now, get_today_str
 from backend.context_cards import generate_context_report_from_files
+from backend.fetch_data import FinMindAPI
+from backend.historical_reports import MARKET_INDEX_ID, ensure_historical_report_window
 
 
-PRIORITY_REPORT_VERSION = "v11-priority-validation"
-HISTORY_REPORT_VERSION = "v11-priority-history"
+PRIORITY_REPORT_VERSION = "v12-priority-validation"
+HISTORY_REPORT_VERSION = "v12-priority-history"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+MIN_EVALUATED_DAYS = 20
 
 FINAL_ADVICE_PRIORITY = {
     "暫不考慮": 1,
@@ -77,6 +80,29 @@ def _win_rate(values: Iterable[float]) -> Optional[float]:
         return None
     wins = sum(1 for value in items if value > 0)
     return _round_number((wins / len(items)) * 100)
+
+
+def _std_dev(values: Iterable[float]) -> Optional[float]:
+    items = [float(value) for value in values]
+    if len(items) < 2:
+        return 0.0 if items else None
+    avg = sum(items) / len(items)
+    variance = sum((value - avg) ** 2 for value in items) / len(items)
+    return _round_number(variance ** 0.5)
+
+
+def _safe_diff(left: Optional[float], right: Optional[float]) -> Optional[float]:
+    if left is None or right is None:
+        return None
+    return _round_number(left - right)
+
+
+def _comparison_win_rate(left_values: List[Optional[float]], right_values: List[Optional[float]]) -> Optional[float]:
+    comparable = [1 for left, right in zip(left_values, right_values) if left is not None and right is not None and left > right]
+    total = sum(1 for left, right in zip(left_values, right_values) if left is not None and right is not None)
+    if total == 0:
+        return None
+    return _round_number((sum(comparable) / total) * 100)
 
 
 def _priority_report_path(date_str: str, base_dir: Optional[Path] = None) -> Path:
@@ -439,15 +465,23 @@ def _extract_return_pct(candidate: Dict[str, Any]) -> Optional[float]:
 
 def _build_snapshot_evaluation(candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
     evaluated_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates) if value is not None]
+    top1_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates if int(candidate.get("priority_rank") or 0) <= 1) if value is not None]
     top3_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates if int(candidate.get("priority_rank") or 0) <= 3) if value is not None]
+    top5_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates if int(candidate.get("priority_rank") or 0) <= 5) if value is not None]
 
     return {
         "evaluated_candidate_count": len(evaluated_returns),
+        "top1_evaluated_count": len(top1_returns),
         "top3_evaluated_count": len(top3_returns),
+        "top5_evaluated_count": len(top5_returns),
         "all_avg_return_pct": _mean(evaluated_returns),
+        "top1_avg_return_pct": _mean(top1_returns),
         "top3_avg_return_pct": _mean(top3_returns),
+        "top5_avg_return_pct": _mean(top5_returns),
         "all_win_rate_pct": _win_rate(evaluated_returns),
+        "top1_win_rate_pct": _win_rate(top1_returns),
         "top3_win_rate_pct": _win_rate(top3_returns),
+        "top5_win_rate_pct": _win_rate(top5_returns),
     }
 
 
@@ -547,7 +581,9 @@ def generate_priority_snapshot(
             "next_universe": f"{next_report_date}-universe.json" if next_report_date else None,
         },
         "candidate_count": len(candidates),
+        "top1_symbols": [candidate["symbol"] for candidate in candidates[:1]],
         "top3_symbols": [candidate["symbol"] for candidate in candidates[:3]],
+        "top5_symbols": [candidate["symbol"] for candidate in candidates[:5]],
         "evaluation": evaluation,
         "candidates": candidates,
     }
@@ -629,30 +665,155 @@ def _build_bucket_stats(
     return stats
 
 
-def generate_priority_history_report(priority_reports: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _normalize_market_prices(market_prices: Optional[Any]) -> Dict[str, Optional[float]]:
+    if market_prices is None:
+        return {}
+    if isinstance(market_prices, dict):
+        return {str(date): _as_float(close) for date, close in market_prices.items()}
+
+    lookup: Dict[str, Optional[float]] = {}
+    for row in market_prices:
+        if not isinstance(row, dict):
+            continue
+        date_str = str(row.get("date") or "").strip()
+        if not date_str:
+            continue
+        lookup[date_str] = _as_float(row.get("close"))
+    return lookup
+
+
+def _fetch_market_price_lookup(priority_reports: List[Dict[str, Any]]) -> Dict[str, Optional[float]]:
+    if not priority_reports:
+        return {}
+
+    start_date = str(priority_reports[0].get("date") or "")
+    end_date = str(priority_reports[-1].get("next_report_date") or priority_reports[-1].get("date") or "")
+    if not start_date or not end_date:
+        return {}
+
+    api = FinMindAPI()
+    return _normalize_market_prices(api.get_market_index_prices(start_date, end_date, data_id=MARKET_INDEX_ID))
+
+
+def _market_return(date_str: Optional[str], next_date: Optional[str], market_lookup: Dict[str, Optional[float]]) -> Optional[float]:
+    if not date_str or not next_date:
+        return None
+    current_close = market_lookup.get(date_str)
+    next_close = market_lookup.get(next_date)
+    if current_close in (None, 0) or next_close is None:
+        return None
+    return _round_number(((next_close - current_close) / current_close) * 100)
+
+
+def _build_topn_day_summary(candidates: List[Dict[str, Any]], limit: int) -> Dict[str, Any]:
+    selected = [candidate for candidate in candidates if int(candidate.get("priority_rank") or 0) <= limit]
+    returns = []
+    for candidate in selected:
+        return_pct = _extract_return_pct(candidate)
+        returns.append({
+            "priority_rank": candidate.get("priority_rank"),
+            "symbol": candidate.get("symbol"),
+            "return_pct": return_pct,
+        })
+
+    valid_returns = [item["return_pct"] for item in returns if item["return_pct"] is not None]
+    return {
+        "symbols": [candidate.get("symbol") for candidate in selected],
+        "returns": returns,
+        "avg_return_pct": _mean(valid_returns),
+        "win_rate_pct": _win_rate(valid_returns),
+        "evaluated_count": len(valid_returns),
+    }
+
+
+def _build_stability_summary(
+    strategy_returns: List[Optional[float]],
+    market_returns: List[Optional[float]],
+    random_returns: List[Optional[float]],
+) -> Dict[str, Any]:
+    valid_strategy_returns = [value for value in strategy_returns if value is not None]
+    return {
+        "evaluated_days": len(valid_strategy_returns),
+        "avg_return": _mean(valid_strategy_returns),
+        "return_std_dev": _std_dev(valid_strategy_returns),
+        "positive_day_ratio": _win_rate(valid_strategy_returns),
+        "outperform_market_ratio": _comparison_win_rate(strategy_returns, market_returns),
+        "outperform_random_ratio": _comparison_win_rate(strategy_returns, random_returns),
+    }
+
+
+def generate_priority_history_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+) -> Dict[str, Any]:
     generated_at = get_taiwan_now().isoformat()
     ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
     replay_days: List[Dict[str, Any]] = []
     all_candidates: List[Dict[str, Any]] = []
+    top1_day_returns: List[Optional[float]] = []
+    top3_day_returns: List[Optional[float]] = []
+    top5_day_returns: List[Optional[float]] = []
+    market_day_returns: List[Optional[float]] = []
+    random_day_returns: List[Optional[float]] = []
 
     for report in ordered_reports:
         candidates = list(report.get("candidates") or [])
         evaluation = report.get("evaluation") or {}
+        valid_candidate_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates) if value is not None]
+        top1_summary = _build_topn_day_summary(candidates, 1)
+        top3_summary = _build_topn_day_summary(candidates, 3)
+        top5_summary = _build_topn_day_summary(candidates, 5)
+        market_return = _market_return(str(report.get("date") or ""), str(report.get("next_report_date") or ""), market_lookup)
+        random_candidate_avg_return = _mean(valid_candidate_returns)
+        is_trading_interval = market_return is not None
+
         replay_days.append({
             "date": report.get("date"),
             "priority_file": f"{report.get('date')}-priority.json",
             "candidate_count": report.get("candidate_count", len(candidates)),
+            "top1_symbols": report.get("top1_symbols") or top1_summary["symbols"],
             "top3_symbols": report.get("top3_symbols") or [],
+            "top5_symbols": report.get("top5_symbols") or top5_summary["symbols"],
             "next_report_date": report.get("next_report_date"),
+            "top1_returns": top1_summary["returns"],
+            "top3_returns": top3_summary["returns"],
+            "top5_returns": top5_summary["returns"],
+            "top1_avg_return": top1_summary["avg_return_pct"],
+            "top3_avg_return": top3_summary["avg_return_pct"],
+            "top5_avg_return": top5_summary["avg_return_pct"],
+            "is_trading_interval": is_trading_interval,
+            "benchmark_return": {
+                "market_return": market_return,
+                "random_selection_expected_return": random_candidate_avg_return,
+            },
+            "top1_avg_return_pct": top1_summary["avg_return_pct"],
             "top3_avg_return_pct": evaluation.get("top3_avg_return_pct"),
+            "top5_avg_return_pct": top5_summary["avg_return_pct"],
             "all_avg_return_pct": evaluation.get("all_avg_return_pct"),
         })
-        all_candidates.extend(candidates)
+        if is_trading_interval:
+            all_candidates.extend(candidates)
+            top1_day_returns.append(top1_summary["avg_return_pct"])
+            top3_day_returns.append(top3_summary["avg_return_pct"])
+            top5_day_returns.append(top5_summary["avg_return_pct"])
+            market_day_returns.append(market_return)
+            random_day_returns.append(random_candidate_avg_return)
 
     evaluated_candidates = [candidate for candidate in all_candidates if _extract_return_pct(candidate) is not None]
+    top1_candidates = [candidate for candidate in evaluated_candidates if int(candidate.get("priority_rank") or 0) <= 1]
     top3_candidates = [candidate for candidate in evaluated_candidates if int(candidate.get("priority_rank") or 0) <= 3]
+    top5_candidates = [candidate for candidate in evaluated_candidates if int(candidate.get("priority_rank") or 0) <= 5]
     all_returns = [_extract_return_pct(candidate) for candidate in evaluated_candidates]
+    top1_returns = [_extract_return_pct(candidate) for candidate in top1_candidates]
     top3_returns = [_extract_return_pct(candidate) for candidate in top3_candidates]
+    top5_returns = [_extract_return_pct(candidate) for candidate in top5_candidates]
+
+    top1_avg_return = _mean([value for value in top1_returns if value is not None])
+    top3_avg_return = _mean([value for value in top3_returns if value is not None])
+    top5_avg_return = _mean([value for value in top5_returns if value is not None])
+    market_avg_return = _mean([value for value in market_day_returns if value is not None])
+    random_avg_return = _mean([value for value in random_day_returns if value is not None])
 
     advice_stats = _build_bucket_stats(
         evaluated_candidates,
@@ -692,15 +853,47 @@ def generate_priority_history_report(priority_reports: List[Dict[str, Any]]) -> 
         "replay_days": replay_days,
         "stats": {
             "snapshot_count": len(ordered_reports),
-            "evaluated_snapshot_count": sum(1 for day in replay_days if day.get("all_avg_return_pct") is not None),
+            "evaluated_snapshot_count": sum(1 for day in replay_days if day.get("is_trading_interval")),
             "candidate_samples": len(all_candidates),
             "evaluated_candidate_samples": len(evaluated_candidates),
+            "top1_avg_return": top1_avg_return,
+            "top3_avg_return": top3_avg_return,
+            "top5_avg_return": top5_avg_return,
+            "benchmark_return": {
+                "market_avg_return": market_avg_return,
+                "random_selection_expected_return": random_avg_return,
+                "market_index": MARKET_INDEX_ID,
+            },
+            "validation_readiness": {
+                "minimum_evaluated_days_required": MIN_EVALUATED_DAYS,
+                "evaluated_days": len(top1_day_returns),
+                "is_sample_size_ready": len(top1_day_returns) >= MIN_EVALUATED_DAYS,
+            },
+            "topn_vs_benchmark": {
+                "top1_minus_market": _safe_diff(top1_avg_return, market_avg_return),
+                "top3_minus_market": _safe_diff(top3_avg_return, market_avg_return),
+                "top5_minus_market": _safe_diff(top5_avg_return, market_avg_return),
+                "top1_minus_random": _safe_diff(top1_avg_return, random_avg_return),
+                "top3_minus_random": _safe_diff(top3_avg_return, random_avg_return),
+                "top5_minus_random": _safe_diff(top5_avg_return, random_avg_return),
+            },
+            "stability": {
+                "top1": _build_stability_summary(top1_day_returns, market_day_returns, random_day_returns),
+                "top3": _build_stability_summary(top3_day_returns, market_day_returns, random_day_returns),
+                "top5": _build_stability_summary(top5_day_returns, market_day_returns, random_day_returns),
+            },
             "top3_vs_all": {
+                "top1_sample_count": len(top1_candidates),
                 "top3_sample_count": len(top3_candidates),
+                "top5_sample_count": len(top5_candidates),
                 "all_candidate_sample_count": len(evaluated_candidates),
+                "top1_avg_return_pct": top1_avg_return,
                 "top3_avg_return_pct": _mean([value for value in top3_returns if value is not None]),
+                "top5_avg_return_pct": top5_avg_return,
                 "all_candidates_avg_return_pct": _mean([value for value in all_returns if value is not None]),
+                "top1_win_rate_pct": _win_rate([value for value in top1_returns if value is not None]),
                 "top3_win_rate_pct": _win_rate([value for value in top3_returns if value is not None]),
+                "top5_win_rate_pct": _win_rate([value for value in top5_returns if value is not None]),
                 "all_candidates_win_rate_pct": _win_rate([value for value in all_returns if value is not None]),
             },
             "hit_count_effect": hit_count_stats,
@@ -729,8 +922,8 @@ def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any
     return reports
 
 
-def generate_priority_history_from_reports(base_dir: Optional[Path] = None) -> Path:
-    report = generate_priority_history_report(load_priority_reports(base_dir=base_dir))
+def generate_priority_history_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    report = generate_priority_history_report(load_priority_reports(base_dir=base_dir), market_prices=market_prices)
     return save_priority_history_report(report, base_dir=base_dir)
 
 
@@ -738,11 +931,25 @@ def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
     target_date: Optional[str] = None,
+    min_evaluated_days: int = MIN_EVALUATED_DAYS,
+    auto_backfill_history: Optional[bool] = None,
+    market_prices: Optional[Any] = None,
 ) -> Dict[str, Any]:
     reports_dir = _reports_dir(base_dir)
     ensured_context_paths: List[str] = []
     priority_paths: List[str] = []
     skipped: List[Dict[str, str]] = []
+    history_window: Optional[Dict[str, Any]] = None
+
+    if auto_backfill_history is None:
+        auto_backfill_history = base_dir is None
+
+    if auto_backfill_history:
+        history_window = ensure_historical_report_window(
+            min_available_dates=min_evaluated_days + 1,
+            end_date=target_date,
+            base_dir=base_dir,
+        )
 
     for date_str in _iter_daily_report_dates(reports_dir):
         if not (reports_dir / f"{date_str}-universe.json").exists():
@@ -777,15 +984,19 @@ def backfill_priority_validation_reports(
                 "reason": str(exc),
             })
 
-    history_path = generate_priority_history_from_reports(base_dir=base_dir)
+    history_path = generate_priority_history_from_reports(base_dir=base_dir, market_prices=market_prices)
+    history_report = _load_json(Path(history_path), required=True) or {}
+    evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
 
     return {
         "available_dates": available_dates,
+        "evaluated_days": evaluated_days,
         "ensured_context_paths": ensured_context_paths,
         "priority_paths": priority_paths,
         "history_path": str(history_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
+        "history_window": history_window,
         "skipped": skipped,
     }

@@ -3,7 +3,7 @@
 import requests
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import List, Dict, Optional, Tuple
 from backend.config import (
     DATA_DIR, DEFAULT_STOCKS, get_today_str, get_cache_path, get_taiwan_now
@@ -18,6 +18,58 @@ class FinMindAPI:
         self.session = requests.Session()
         # 從環境變數讀取 API token（GitHub Actions 會注入）
         self.api_token = os.environ.get('FINMIND_API_TOKEN')
+
+    def _normalize_date(self, value: Optional[object]) -> str:
+        if value is None:
+            return get_taiwan_now().strftime("%Y-%m-%d")
+        if isinstance(value, datetime):
+            return value.strftime("%Y-%m-%d")
+        if isinstance(value, date):
+            return value.strftime("%Y-%m-%d")
+        return str(value)
+
+    def _request_dataset(self, dataset: str, data_id: str, start_date: object, end_date: object) -> List[Dict]:
+        params = {
+            "dataset": dataset,
+            "data_id": data_id,
+            "start_date": self._normalize_date(start_date),
+            "end_date": self._normalize_date(end_date)
+        }
+
+        if self.api_token:
+            params["token"] = self.api_token
+
+        response = self.session.get(self.BASE_URL, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        return list(data.get("data") or [])
+
+    def get_stock_candles_in_range(self, symbol: str, start_date: object, end_date: object) -> List[Dict]:
+        """取得指定區間的股票日 K 線資料。"""
+        try:
+            data = self._request_dataset("TaiwanStockPrice", symbol, start_date, end_date)
+            return sorted(data, key=lambda item: item.get("date", ""))
+        except Exception as e:
+            print(f"  [WARN] 抓取 {symbol} 價格資料失敗: {e}")
+            return []
+
+    def get_institutional_data_in_range(self, symbol: str, start_date: object, end_date: object) -> List[Dict]:
+        """取得指定區間的法人買賣超原始資料。"""
+        try:
+            data = self._request_dataset("TaiwanStockInstitutionalInvestorsBuySell", symbol, start_date, end_date)
+            return sorted(data, key=lambda item: item.get("date", ""))
+        except Exception as e:
+            print(f"  [WARN] 抓取 {symbol} 法人資料失敗: {e}")
+            return []
+
+    def get_market_index_prices(self, start_date: object, end_date: object, data_id: str = "TAIEX") -> List[Dict]:
+        """取得指定區間的大盤資料，預設使用 TAIEX。"""
+        try:
+            data = self._request_dataset("TaiwanStockPrice", data_id, start_date, end_date)
+            return sorted(data, key=lambda item: item.get("date", ""))
+        except Exception as e:
+            print(f"  [WARN] 抓取 {data_id} 大盤資料失敗: {e}")
+            return []
     
     def get_stock_candles(self, symbol: str, days: int = 40) -> List[Dict]:
         """
@@ -33,30 +85,8 @@ class FinMindAPI:
         end_date = get_taiwan_now()
         start_date = end_date - timedelta(days=days + 30)  # 多抓一些確保足夠交易日
         
-        params = {
-            "dataset": "TaiwanStockPrice",
-            "data_id": symbol,
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d")
-        }
-        
-        # 如果有 API token，加入請求參數
-        if self.api_token:
-            params["token"] = self.api_token
-        
-        try:
-            response = self.session.get(self.BASE_URL, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            if data.get("data"):
-                # 只取最近 N 天
-                return data["data"][-days:]
-            return []
-            
-        except Exception as e:
-            print(f"  [WARN] 抓取 {symbol} 價格資料失敗: {e}")
-            return []
+        data = self.get_stock_candles_in_range(symbol, start_date, end_date)
+        return data[-days:] if data else []
     
     def get_institutional_data(self, symbol: str, days: int = 10) -> List[Dict]:
         """
@@ -74,31 +104,8 @@ class FinMindAPI:
         end_date = get_taiwan_now()
         start_date = end_date - timedelta(days=days + 30)
         
-        params = {
-            "dataset": "TaiwanStockInstitutionalInvestorsBuySell",
-            "data_id": symbol,
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d")
-        }
-        
-        # 如果有 API token，加入請求參數
-        if self.api_token:
-            params["token"] = self.api_token
-        
-        try:
-            response = self.session.get(self.BASE_URL, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            if data.get("data"):
-                # 按日期排序，但保留原始欄位（不聚合）
-                sorted_data = sorted(data["data"], key=lambda x: x["date"])
-                return sorted_data[-days:]
-            return []
-            
-        except Exception as e:
-            print(f"  [WARN] 抓取 {symbol} 法人資料失敗: {e}")
-            return []
+        data = self.get_institutional_data_in_range(symbol, start_date, end_date)
+        return data[-days:] if data else []
 
 
 def fetch_all_stocks(

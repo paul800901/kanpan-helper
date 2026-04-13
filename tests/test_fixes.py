@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -452,7 +452,16 @@ class TestPriorityValidation(unittest.TestCase):
             (reports_dir / f"{date_a}-universe.json").write_text(json.dumps(self.make_universe_report(date_a), ensure_ascii=False), encoding="utf-8")
             (reports_dir / f"{date_b}-universe.json").write_text(json.dumps(self.make_next_universe_report(date_b), ensure_ascii=False), encoding="utf-8")
 
-            result = backfill_priority_validation_reports(base_dir=root, target_date=date_b)
+            result = backfill_priority_validation_reports(
+                base_dir=root,
+                target_date=date_b,
+                min_evaluated_days=1,
+                auto_backfill_history=False,
+                market_prices={
+                    date_a: 100.0,
+                    date_b: 101.0,
+                },
+            )
 
             self.assertTrue((reports_dir / f"{date_a}-priority.json").exists())
             self.assertTrue((reports_dir / f"{date_b}-priority.json").exists())
@@ -466,6 +475,32 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertEqual(history["replay_days"][0]["next_report_date"], date_b)
             self.assertEqual(history["stats"]["hit_count_effect"][0]["hit_count"], 2)
             self.assertEqual(history["stats"]["top3_vs_all"]["top3_sample_count"], 3)
+
+    def test_priority_history_adds_topn_and_benchmark_fields(self):
+        report = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_universe_report("2026-04-10"),
+            next_universe_report=self.make_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        history = generate_priority_history_report(
+            [report],
+            market_prices={
+                "2026-04-10": 100.0,
+                "2026-04-11": 101.0,
+            },
+        )
+
+        self.assertAlmostEqual(history["stats"]["top1_avg_return"], 3.0, places=4)
+        self.assertAlmostEqual(history["stats"]["top3_avg_return"], 2.697, places=3)
+        self.assertAlmostEqual(history["stats"]["top5_avg_return"], 0.6338, places=4)
+        self.assertAlmostEqual(history["stats"]["benchmark_return"]["market_avg_return"], 1.0, places=4)
+        self.assertAlmostEqual(history["stats"]["benchmark_return"]["random_selection_expected_return"], 0.6338, places=4)
+        self.assertAlmostEqual(history["stats"]["topn_vs_benchmark"]["top1_minus_market"], 2.0, places=4)
+        self.assertTrue(history["stats"]["validation_readiness"]["is_sample_size_ready"] is False)
+        self.assertEqual(history["replay_days"][0]["top1_returns"][0]["symbol"], "BBB")
+        self.assertEqual(history["replay_days"][0]["benchmark_return"]["market_return"], 1.0)
 
 if __name__ == "__main__":
     # 執行單元測試

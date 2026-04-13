@@ -21,14 +21,34 @@ def main() -> int:
         action="store_true",
         help="重新產生既有 context 報告",
     )
+    parser.add_argument(
+        "--min-evaluated-days",
+        type=int,
+        default=20,
+        help="至少保留多少個已可評估的交易日樣本（預設 20）",
+    )
+    parser.add_argument(
+        "--skip-history-window",
+        action="store_true",
+        help="只重算 context / priority / history，不自動補齊最近樣本視窗",
+    )
     args = parser.parse_args()
 
-    result = backfill_priority_validation_reports(refresh_context=args.refresh_context)
+    result = backfill_priority_validation_reports(
+        refresh_context=args.refresh_context,
+        min_evaluated_days=args.min_evaluated_days,
+        auto_backfill_history=not args.skip_history_window,
+    )
 
-    print("[OK] v11 回填完成")
+    print("[OK] v12 回填完成")
     print(f"   可回放日期: {len(result['available_dates'])}")
+    print(f"   已可評估日期: {result['evaluated_days']}")
     print(f"   Priority 檔案: {len(result['priority_paths'])}")
     print(f"   History: {result['history_path']}")
+
+    if result.get("history_window"):
+        print(f"   歷史目標日期: {len(result['history_window']['target_dates'])}")
+        print(f"   新補報告日期: {len(result['history_window']['generated'])}")
 
     if result.get("skipped"):
         print(f"   略過日期: {len(result['skipped'])}")
