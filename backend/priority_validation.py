@@ -1,4 +1,4 @@
-"""v25 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v26 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ STEADY_V2_BLOCKER_REPORT_VERSION = "v20-steady-v2-blockers"
 TIMING_ALIGNMENT_REPORT_VERSION = "v21-timing-alignment"
 STEADY_V2_SIGNATURE_REPORT_VERSION = "v23-steady-v2-signature"
 STEADY_V4_TRACKING_REPORT_VERSION = "v25-steady-v4-tracking"
+STEADY_V4_ALPHA_BREAKDOWN_REPORT_VERSION = "v26-steady-v4-alpha-breakdown"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -114,6 +115,82 @@ STEADY_V2_SIGNATURE_FEATURE_PRIORITY = {
     "selloff": 1,
     "k_depth": 2,
     "volume_ratio": 3,
+}
+STEADY_V4_ALPHA_METRIC_DEFINITIONS = {
+    "priority_rank": {
+        "label": "排序名次",
+        "description": "priority 快照名次",
+        "kind": "numeric",
+        "feature_key": "priority_rank",
+        "focus_high_label": "排序名次較後",
+        "focus_low_label": "排序名次較前",
+    },
+    "hit_count": {
+        "label": "題材命中數",
+        "description": "context 卡片中的命中次數",
+        "kind": "numeric",
+        "feature_key": "hit_count",
+        "focus_high_label": "題材共振較多",
+        "focus_low_label": "題材共振較少",
+    },
+    "k_value": {
+        "label": "K 值",
+        "description": "當日 K 值",
+        "kind": "numeric",
+        "feature_key": "k_level",
+        "focus_high_label": "K 值較高",
+        "focus_low_label": "K 值較低",
+    },
+    "abs_ma20_gap_pct": {
+        "label": "距 MA20",
+        "description": "abs((close - ma20) / ma20) * 100",
+        "kind": "numeric",
+        "feature_key": "ma20_distance",
+        "focus_high_label": "距 MA20 較遠",
+        "focus_low_label": "更貼近 MA20",
+    },
+    "volume_ratio": {
+        "label": "volume_ratio",
+        "description": "當日成交量 / 20 日均量",
+        "kind": "numeric",
+        "feature_key": "volume_ratio",
+        "focus_high_label": "量比更高",
+        "focus_low_label": "量比更低",
+    },
+    "prior_pullback_pct": {
+        "label": "之前跌幅",
+        "description": "(當日 close - 最近 2 日高點 close) / 最近 2 日高點 close * 100",
+        "kind": "numeric",
+        "feature_key": "pullback",
+        "focus_high_label": "前段回落較淺",
+        "focus_low_label": "前段回落較深",
+    },
+    "close_above_ma20": {
+        "label": "站上 MA20",
+        "description": "close >= ma20",
+        "kind": "boolean",
+        "feature_key": "ma20_side",
+        "focus_high_label": "更常站上 MA20",
+        "focus_low_label": "更常在 MA20 下方",
+    },
+    "has_sharp_drop": {
+        "label": "急跌率",
+        "description": f"最近 3 個交易日任一單日跌幅 <= {STEADY_V2_SIGNATURE_SHARP_DROP_THRESHOLD_PCT}%",
+        "kind": "boolean",
+        "feature_key": "selloff",
+        "focus_high_label": "更常出現在急跌後",
+        "focus_low_label": "較少出現在急跌後",
+    },
+}
+STEADY_V4_ALPHA_FEATURE_PRIORITY = {
+    "ma20_distance": 0,
+    "k_level": 1,
+    "volume_ratio": 2,
+    "ma20_side": 3,
+    "pullback": 4,
+    "hit_count": 5,
+    "priority_rank": 6,
+    "selloff": 7,
 }
 
 STRATEGY_DEFINITIONS = {
@@ -331,6 +408,10 @@ def _steady_v2_signature_path(base_dir: Optional[Path] = None) -> Path:
 
 def _steady_v4_tracking_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "steady_v4_tracking.json"
+
+
+def _steady_v4_alpha_breakdown_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "steady_v4_alpha_breakdown.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -1454,6 +1535,455 @@ def _build_steady_v4_tracking_assessment(tracking_windows: Dict[str, Dict[str, A
         "long_window_stability_confirmed": long_stable if long_ready else None,
         "long_window_edge_confirmed": long_edge if long_ready else None,
         "summary": summary,
+    }
+
+
+def _steady_v4_alpha_group_label(group_name: str) -> str:
+    labels = {
+        "all_steady_v4": "steady_v4 全部樣本",
+        "outperform_market": "跑贏市場樣本",
+        "underperform_market": "落後市場樣本",
+        "market_neutral": "與市場持平樣本",
+    }
+    return labels.get(group_name) or group_name
+
+
+def _build_steady_v4_alpha_sample(sample: Dict[str, Any], market_return_pct: Optional[float]) -> Dict[str, Any]:
+    candidate = sample.get("candidate") or {}
+    ma20_gap_pct = _ma20_gap_pct_as_percent(sample)
+    next_day_return_pct = _as_float(sample.get("return_pct"))
+    alpha_pct = _safe_diff(next_day_return_pct, market_return_pct)
+    return {
+        "symbol": str(candidate.get("symbol") or ""),
+        "name": _sample_name(sample),
+        "date": str(sample.get("date") or ""),
+        "next_report_date": str(sample.get("next_report_date") or ""),
+        "priority_rank": int(candidate.get("priority_rank") or 0),
+        "hit_count": int(candidate.get("hit_count") or 0),
+        "next_day_return_pct": next_day_return_pct,
+        "market_return_pct": market_return_pct,
+        "alpha_pct": alpha_pct,
+        "k_value": _candidate_metric(sample, "k"),
+        "ma20_gap_pct": ma20_gap_pct,
+        "abs_ma20_gap_pct": _round_number(abs(ma20_gap_pct)) if ma20_gap_pct is not None else None,
+        "volume_ratio": _candidate_metric(sample, "volume_ratio"),
+        "prior_pullback_pct": _prior_pullback_pct(sample),
+        "close_above_ma20": bool((_as_float(ma20_gap_pct) or 0) >= 0) if ma20_gap_pct is not None else False,
+        "has_sharp_drop": _has_sharp_drop(sample),
+        "outperform_market": alpha_pct > 0 if alpha_pct is not None else None,
+        "underperform_market": alpha_pct < 0 if alpha_pct is not None else None,
+    }
+
+
+def _group_metric_direction(delta: Optional[float]) -> str:
+    if delta is None:
+        return "insufficient_data"
+    if delta > 0:
+        return "focus_higher"
+    if delta < 0:
+        return "focus_lower"
+    return "equal"
+
+
+def _group_signature_label(definition: Dict[str, Any], direction: str) -> str:
+    if direction == "focus_higher":
+        return str(definition.get("focus_high_label") or definition.get("label") or "")
+    if direction == "focus_lower":
+        return str(definition.get("focus_low_label") or definition.get("label") or "")
+    return str(definition.get("label") or "")
+
+
+def _build_group_numeric_metric_comparison(
+    metric_name: str,
+    definition: Dict[str, Any],
+    focus_group: Dict[str, Any],
+    comparison_group: Dict[str, Any],
+) -> Dict[str, Any]:
+    focus_values = [value for value in (_as_float(item.get(metric_name)) for item in focus_group.get("samples") or []) if value is not None]
+    comparison_values = [value for value in (_as_float(item.get(metric_name)) for item in comparison_group.get("samples") or []) if value is not None]
+    focus_avg = _mean(focus_values)
+    comparison_avg = _mean(comparison_values)
+    delta = _safe_diff(focus_avg, comparison_avg)
+    direction = _group_metric_direction(delta)
+    return {
+        "metric": metric_name,
+        "label": definition.get("label") or metric_name,
+        "description": definition.get("description") or metric_name,
+        "metric_type": "numeric",
+        "feature_key": definition.get("feature_key"),
+        "focus_summary": _build_signature_numeric_summary(focus_values),
+        "comparison_summary": _build_signature_numeric_summary(comparison_values),
+        "focus_avg_value": focus_avg,
+        "comparison_avg_value": comparison_avg,
+        "avg_delta": delta,
+        "direction": direction,
+        "gap_score": _numeric_metric_gap_score(focus_values, comparison_values, delta),
+        "signature_label": _group_signature_label(definition, direction),
+        "summary": (
+            f"{focus_group.get('label')}平均{definition.get('label') or metric_name}為 {focus_avg}，"
+            f"{comparison_group.get('label')}為 {comparison_avg}，差異 {delta}。"
+        ),
+    }
+
+
+def _build_group_boolean_metric_comparison(
+    metric_name: str,
+    definition: Dict[str, Any],
+    focus_group: Dict[str, Any],
+    comparison_group: Dict[str, Any],
+) -> Dict[str, Any]:
+    focus_values = [bool(item.get(metric_name)) for item in focus_group.get("samples") or []]
+    comparison_values = [bool(item.get(metric_name)) for item in comparison_group.get("samples") or []]
+    focus_summary = _build_signature_boolean_summary(focus_values)
+    comparison_summary = _build_signature_boolean_summary(comparison_values)
+    rate_diff = _safe_diff(focus_summary.get("true_rate_pct"), comparison_summary.get("true_rate_pct"))
+    direction = _group_metric_direction(rate_diff)
+    return {
+        "metric": metric_name,
+        "label": definition.get("label") or metric_name,
+        "description": definition.get("description") or metric_name,
+        "metric_type": "boolean",
+        "feature_key": definition.get("feature_key"),
+        "focus_summary": focus_summary,
+        "comparison_summary": comparison_summary,
+        "rate_diff_pct": rate_diff,
+        "direction": direction,
+        "gap_score": _round_number(abs(rate_diff) / 100) if rate_diff is not None else None,
+        "signature_label": _group_signature_label(definition, direction),
+        "summary": (
+            f"{focus_group.get('label')}的{definition.get('label') or metric_name}為 {focus_summary.get('true_rate_pct')}%，"
+            f"{comparison_group.get('label')}為 {comparison_summary.get('true_rate_pct')}%，差異 {rate_diff} 個百分點。"
+        ),
+    }
+
+
+def _select_group_key_signatures(
+    metric_comparison: Dict[str, Dict[str, Any]],
+    feature_priority: Dict[str, int],
+) -> List[Dict[str, Any]]:
+    candidates = [item for item in metric_comparison.values() if item.get("gap_score") is not None]
+    ordered_candidates = sorted(
+        candidates,
+        key=lambda item: (
+            -(item.get("gap_score") or 0),
+            feature_priority.get(str(item.get("feature_key") or ""), 999),
+            str(item.get("metric") or ""),
+        ),
+    )
+
+    selected: List[Dict[str, Any]] = []
+    seen_feature_keys = set()
+    for item in ordered_candidates:
+        feature_key = str(item.get("feature_key") or item.get("metric") or "")
+        if feature_key in seen_feature_keys:
+            continue
+        selected.append({
+            "feature_key": feature_key,
+            "metric": item.get("metric"),
+            "label": item.get("label"),
+            "signature_label": item.get("signature_label") or item.get("label"),
+            "direction": item.get("direction"),
+            "gap_score": item.get("gap_score"),
+            "summary": item.get("summary"),
+        })
+        seen_feature_keys.add(feature_key)
+        if len(selected) >= 2:
+            break
+    return selected
+
+
+def _build_group_signature_summary(
+    key_signatures: List[Dict[str, Any]],
+    focus_group: Dict[str, Any],
+    comparison_group: Dict[str, Any],
+    empty_focus_message: str,
+    empty_comparison_message: str,
+    fallback_message: str,
+) -> str:
+    focus_count = int(focus_group.get("sample_count") or 0)
+    comparison_count = int(comparison_group.get("sample_count") or 0)
+    if not focus_count:
+        return empty_focus_message
+    if not comparison_count:
+        return empty_comparison_message
+    if not key_signatures:
+        return fallback_message
+
+    labels = [str(item.get("signature_label") or item.get("label") or "") for item in key_signatures if item.get("signature_label") or item.get("label")]
+    if len(labels) == 1:
+        feature_text = labels[0]
+    else:
+        feature_text = "、".join(labels[:-1]) + f" 與 {labels[-1]}"
+    return (
+        f"{focus_group.get('label')}的 {focus_count} 個樣本，相較 {comparison_group.get('label')}的 {comparison_count} 個樣本，"
+        f"最明顯的共同特徵是 {feature_text}。"
+    )
+
+
+def _build_steady_v4_alpha_group_summary(group_name: str, sample_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    returns = [value for value in (_as_float(item.get("next_day_return_pct")) for item in sample_rows) if value is not None]
+    market_returns = [value for value in (_as_float(item.get("market_return_pct")) for item in sample_rows) if value is not None]
+    alphas = [value for value in (_as_float(item.get("alpha_pct")) for item in sample_rows) if value is not None]
+    return {
+        "group": group_name,
+        "label": _steady_v4_alpha_group_label(group_name),
+        "sample_count": len(sample_rows),
+        "avg_return_pct": _mean(returns),
+        "avg_market_return_pct": _mean(market_returns),
+        "avg_alpha_pct": _mean(alphas),
+        "win_rate_pct": _win_rate(returns),
+        "outperform_rate_pct": _round_number((sum(1 for value in alphas if value > 0) / len(alphas)) * 100) if alphas else None,
+        "samples": sorted(sample_rows, key=lambda item: ((item.get("alpha_pct") if item.get("alpha_pct") is not None else float("-inf")), str(item.get("date") or ""), str(item.get("symbol") or "")), reverse=True),
+        "metrics": {
+            "priority_rank": _build_signature_numeric_summary([value for value in (_as_float(item.get("priority_rank")) for item in sample_rows) if value is not None]),
+            "hit_count": _build_signature_numeric_summary([value for value in (_as_float(item.get("hit_count")) for item in sample_rows) if value is not None]),
+            "k_value": _build_signature_numeric_summary([value for value in (_as_float(item.get("k_value")) for item in sample_rows) if value is not None]),
+            "abs_ma20_gap_pct": _build_signature_numeric_summary([value for value in (_as_float(item.get("abs_ma20_gap_pct")) for item in sample_rows) if value is not None]),
+            "volume_ratio": _build_signature_numeric_summary([value for value in (_as_float(item.get("volume_ratio")) for item in sample_rows) if value is not None]),
+            "prior_pullback_pct": _build_signature_numeric_summary([value for value in (_as_float(item.get("prior_pullback_pct")) for item in sample_rows) if value is not None]),
+            "close_above_ma20": _build_signature_boolean_summary([bool(item.get("close_above_ma20")) for item in sample_rows]),
+            "has_sharp_drop": _build_signature_boolean_summary([bool(item.get("has_sharp_drop")) for item in sample_rows]),
+        },
+    }
+
+
+def _build_steady_v4_symbol_alpha_breakdown(sample_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    grouped: Dict[str, Dict[str, Any]] = {}
+    for item in sample_rows:
+        symbol = str(item.get("symbol") or "")
+        if not symbol:
+            continue
+        group = grouped.setdefault(symbol, {
+            "symbol": symbol,
+            "name": item.get("name"),
+            "hit_dates": [],
+            "returns": [],
+            "market_returns": [],
+            "alphas": [],
+            "outperform_count": 0,
+            "underperform_count": 0,
+        })
+        group["hit_dates"].append(str(item.get("date") or ""))
+        return_pct = _as_float(item.get("next_day_return_pct"))
+        market_return_pct = _as_float(item.get("market_return_pct"))
+        alpha_pct = _as_float(item.get("alpha_pct"))
+        if return_pct is not None:
+            group["returns"].append(return_pct)
+        if market_return_pct is not None:
+            group["market_returns"].append(market_return_pct)
+        if alpha_pct is not None:
+            group["alphas"].append(alpha_pct)
+            if alpha_pct > 0:
+                group["outperform_count"] += 1
+            elif alpha_pct < 0:
+                group["underperform_count"] += 1
+
+    summaries = []
+    for item in grouped.values():
+        summaries.append({
+            "symbol": item["symbol"],
+            "name": item.get("name"),
+            "sample_count": len(item["hit_dates"]),
+            "hit_dates": sorted(item["hit_dates"]),
+            "avg_return_pct": _mean(item["returns"]),
+            "avg_market_return_pct": _mean(item["market_returns"]),
+            "avg_alpha_pct": _mean(item["alphas"]),
+            "win_rate_pct": _win_rate(item["returns"]),
+            "outperform_count": item["outperform_count"],
+            "underperform_count": item["underperform_count"],
+        })
+
+    return sorted(
+        summaries,
+        key=lambda item: (
+            item.get("avg_alpha_pct") if item.get("avg_alpha_pct") is not None else float("-inf"),
+            item.get("sample_count") or 0,
+            str(item.get("symbol") or ""),
+        ),
+        reverse=True,
+    )
+
+
+def _build_steady_v4_alpha_benchmark_summary(
+    all_group: Dict[str, Any],
+    outperform_group: Dict[str, Any],
+    underperform_group: Dict[str, Any],
+) -> Dict[str, Any]:
+    total_hits = int(all_group.get("sample_count") or 0)
+    outperform_count = int(outperform_group.get("sample_count") or 0)
+    underperform_count = int(underperform_group.get("sample_count") or 0)
+    avg_alpha_pct = _as_float(all_group.get("avg_alpha_pct"))
+    market_stronger = avg_alpha_pct is not None and avg_alpha_pct < 0
+    strongest_alpha_samples = [
+        {
+            "symbol": item.get("symbol"),
+            "name": item.get("name"),
+            "date": item.get("date"),
+            "alpha_pct": item.get("alpha_pct"),
+        }
+        for item in (outperform_group.get("samples") or [])[:2]
+    ]
+    largest_drags = [
+        {
+            "symbol": item.get("symbol"),
+            "name": item.get("name"),
+            "date": item.get("date"),
+            "alpha_pct": item.get("alpha_pct"),
+        }
+        for item in sorted(
+            underperform_group.get("samples") or [],
+            key=lambda item: (item.get("alpha_pct") if item.get("alpha_pct") is not None else float("inf")),
+        )[:2]
+    ]
+
+    if not total_hits:
+        summary = "目前沒有 steady_v4 命中樣本，無法拆解 alpha 來源。"
+    elif market_stronger:
+        summary = (
+            f"steady_v4 平均隔日報酬 {_metric_text(all_group.get('avg_return_pct'), '%')}，"
+            f"低於同期市場平均 {_metric_text(all_group.get('avg_market_return_pct'), '%')}；"
+            f"{total_hits} 個樣本裡只有 {outperform_count} 個跑贏市場、{underperform_count} 個落後市場，"
+            f"平均 alpha {_metric_text(avg_alpha_pct, '%')}，因此整體無法打敗市場。"
+        )
+    else:
+        summary = (
+            f"steady_v4 平均隔日報酬 {_metric_text(all_group.get('avg_return_pct'), '%')}，"
+            f"高於同期市場平均 {_metric_text(all_group.get('avg_market_return_pct'), '%')}，"
+            f"平均 alpha {_metric_text(avg_alpha_pct, '%')}。"
+        )
+
+    return {
+        "sample_count": total_hits,
+        "steady_v4_avg_return_pct": all_group.get("avg_return_pct"),
+        "market_avg_return_pct": all_group.get("avg_market_return_pct"),
+        "avg_alpha_pct": avg_alpha_pct,
+        "outperform_market_count": outperform_count,
+        "underperform_market_count": underperform_count,
+        "outperform_rate_pct": _round_number((outperform_count / total_hits) * 100) if total_hits else None,
+        "underperform_rate_pct": _round_number((underperform_count / total_hits) * 100) if total_hits else None,
+        "market_stronger": market_stronger,
+        "strongest_alpha_samples": strongest_alpha_samples,
+        "largest_drags": largest_drags,
+        "summary": summary,
+    }
+
+
+def generate_steady_v4_alpha_breakdown_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    strategy_analysis_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    strategy_report = strategy_analysis_report or generate_strategy_analysis_report(
+        ordered_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    factor_names = list((STRATEGY_V4_DEFINITIONS.get("steady_v4") or {}).get("factor_names") or [])
+    low_position_definition = strategy_report.get("low_position_definition") or {}
+    lower_third_cutoff = _as_float(low_position_definition.get("lower_third_cutoff"))
+
+    steady_v4_samples = [
+        sample for sample in trading_samples
+        if all(_sample_matches_factor(sample, factor_name, lower_third_cutoff) for factor_name in factor_names)
+    ]
+    steady_v4_rows = []
+    for sample in steady_v4_samples:
+        market_return_pct = _market_return(str(sample.get("date") or ""), str(sample.get("next_report_date") or ""), market_lookup)
+        steady_v4_rows.append(_build_steady_v4_alpha_sample(sample, market_return_pct))
+
+    outperform_rows = [item for item in steady_v4_rows if item.get("alpha_pct") is not None and item.get("alpha_pct") > 0]
+    underperform_rows = [item for item in steady_v4_rows if item.get("alpha_pct") is not None and item.get("alpha_pct") < 0]
+    neutral_rows = [item for item in steady_v4_rows if item.get("alpha_pct") == 0]
+
+    groups = {
+        "all_steady_v4": _build_steady_v4_alpha_group_summary("all_steady_v4", steady_v4_rows),
+        "outperform_market": _build_steady_v4_alpha_group_summary("outperform_market", outperform_rows),
+        "underperform_market": _build_steady_v4_alpha_group_summary("underperform_market", underperform_rows),
+        "market_neutral": _build_steady_v4_alpha_group_summary("market_neutral", neutral_rows),
+    }
+    alpha_metric_comparison = {
+        metric_name: (
+            _build_group_numeric_metric_comparison(metric_name, definition, groups["outperform_market"], groups["underperform_market"])
+            if definition.get("kind") == "numeric"
+            else _build_group_boolean_metric_comparison(metric_name, definition, groups["outperform_market"], groups["underperform_market"])
+        )
+        for metric_name, definition in STEADY_V4_ALPHA_METRIC_DEFINITIONS.items()
+    }
+    drag_metric_comparison = {
+        metric_name: (
+            _build_group_numeric_metric_comparison(metric_name, definition, groups["underperform_market"], groups["outperform_market"])
+            if definition.get("kind") == "numeric"
+            else _build_group_boolean_metric_comparison(metric_name, definition, groups["underperform_market"], groups["outperform_market"])
+        )
+        for metric_name, definition in STEADY_V4_ALPHA_METRIC_DEFINITIONS.items()
+    }
+    key_alpha_signatures = _select_group_key_signatures(alpha_metric_comparison, STEADY_V4_ALPHA_FEATURE_PRIORITY)
+    key_drag_signatures = _select_group_key_signatures(drag_metric_comparison, STEADY_V4_ALPHA_FEATURE_PRIORITY)
+    stock_alpha_breakdown = _build_steady_v4_symbol_alpha_breakdown(steady_v4_rows)
+    benchmark_comparison = _build_steady_v4_alpha_benchmark_summary(
+        groups["all_steady_v4"],
+        groups["outperform_market"],
+        groups["underperform_market"],
+    )
+
+    return {
+        "report_version": STEADY_V4_ALPHA_BREAKDOWN_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": strategy_report.get("evaluation_horizon"),
+        "evaluated_days": evaluated_days,
+        "candidate_samples": len(trading_samples),
+        "strategy_target": {
+            "strategy": "steady_v4",
+            "family": "steady",
+            "generation": "v4",
+            "description": STRATEGY_V4_DEFINITIONS["steady_v4"]["description"],
+            "factor_names": factor_names,
+        },
+        "benchmark_target": {
+            "type": "market_return",
+            "label": "同期市場平均",
+            "description": "以 steady_v4 命中當天對應的 next_report_date 大盤報酬作為比較基準",
+        },
+        "sample_partition": {
+            "steady_v4_hit_count": len(steady_v4_rows),
+            "outperform_market_count": len(outperform_rows),
+            "underperform_market_count": len(underperform_rows),
+            "market_neutral_count": len(neutral_rows),
+        },
+        "benchmark_comparison": benchmark_comparison,
+        "groups": groups,
+        "outperforming_stocks": [item for item in stock_alpha_breakdown if (_as_float(item.get("avg_alpha_pct")) or 0) > 0],
+        "dragging_stocks": [item for item in stock_alpha_breakdown if (_as_float(item.get("avg_alpha_pct")) or 0) < 0],
+        "stock_alpha_breakdown": stock_alpha_breakdown,
+        "alpha_metric_comparison": alpha_metric_comparison,
+        "drag_metric_comparison": drag_metric_comparison,
+        "key_alpha_signatures": key_alpha_signatures,
+        "key_drag_signatures": key_drag_signatures,
+        "alpha_summary": _build_group_signature_summary(
+            key_alpha_signatures,
+            groups["outperform_market"],
+            groups["underperform_market"],
+            "沒有跑贏市場的 steady_v4 樣本，暫時看不出 alpha 特徵。",
+            "沒有落後市場的 steady_v4 樣本，無法建立 alpha 對照組。",
+            "跑贏市場與落後市場樣本的差異不明顯，暫時看不出清楚的 alpha 特徵。",
+        ),
+        "drag_summary": _build_group_signature_summary(
+            key_drag_signatures,
+            groups["underperform_market"],
+            groups["outperform_market"],
+            "沒有落後市場的 steady_v4 樣本，暫時看不出拖累特徵。",
+            "沒有跑贏市場的 steady_v4 樣本，無法建立拖累對照組。",
+            "拖累樣本與跑贏市場樣本的差異不明顯，暫時看不出清楚的拖累特徵。",
+        ),
+        "summary": benchmark_comparison.get("summary"),
     }
 
 
@@ -4035,6 +4565,10 @@ def save_steady_v4_tracking_report(report: Dict[str, Any], base_dir: Optional[Pa
     return _save_json(_steady_v4_tracking_path(base_dir), report)
 
 
+def save_steady_v4_alpha_breakdown_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_steady_v4_alpha_breakdown_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -4174,6 +4708,23 @@ def generate_steady_v4_tracking_from_reports(base_dir: Optional[Path] = None, ma
     return save_steady_v4_tracking_report(report, base_dir=base_dir)
 
 
+def generate_steady_v4_alpha_breakdown_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    strategy_report = generate_strategy_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    report = generate_steady_v4_alpha_breakdown_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+    )
+    return save_steady_v4_alpha_breakdown_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -4240,6 +4791,7 @@ def backfill_priority_validation_reports(
     timing_alignment_path = generate_timing_alignment_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v2_signature_path = generate_steady_v2_signature_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v4_tracking_path = generate_steady_v4_tracking_from_reports(base_dir=base_dir, market_prices=market_prices)
+    steady_v4_alpha_breakdown_path = generate_steady_v4_alpha_breakdown_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -4258,6 +4810,7 @@ def backfill_priority_validation_reports(
         "timing_alignment_path": str(timing_alignment_path),
         "steady_v2_signature_path": str(steady_v2_signature_path),
         "steady_v4_tracking_path": str(steady_v4_tracking_path),
+        "steady_v4_alpha_breakdown_path": str(steady_v4_alpha_breakdown_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

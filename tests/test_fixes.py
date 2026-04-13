@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -521,6 +521,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "timing_alignment.json").exists())
             self.assertTrue((reports_dir / "steady_v2_signature.json").exists())
             self.assertTrue((reports_dir / "steady_v4_tracking.json").exists())
+            self.assertTrue((reports_dir / "steady_v4_alpha_breakdown.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
@@ -528,6 +529,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue(result["timing_alignment_path"].endswith("timing_alignment.json"))
             self.assertTrue(result["steady_v2_signature_path"].endswith("steady_v2_signature.json"))
             self.assertTrue(result["steady_v4_tracking_path"].endswith("steady_v4_tracking.json"))
+            self.assertTrue(result["steady_v4_alpha_breakdown_path"].endswith("steady_v4_alpha_breakdown.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -974,6 +976,66 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertIsNone(tracking["latest_assessment"]["stability_confirmed"])
         self.assertIsNone(tracking["latest_assessment"]["edge_confirmed"])
         self.assertIn("20 天視窗尚未完成", tracking["summary"])
+
+    def test_steady_v4_alpha_breakdown_report_finds_winners_and_drags(self):
+        current_universe = self.make_combo_current_universe_report("2026-04-10")
+        for stock in current_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 98.5
+                stock["indicators"]["k"] = 25.0
+                stock["indicators"]["volume_ratio"] = 1.3
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 99.5
+                stock["indicators"]["k"] = 24.0
+                stock["indicators"]["volume_ratio"] = 0.7
+
+        next_universe = self.make_combo_next_universe_report("2026-04-11")
+        for stock in next_universe["stocks"]:
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 98.0
+
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=current_universe,
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            current_universe,
+            next_universe_report=next_universe,
+            next_date="2026-04-11",
+        )
+
+        alpha = generate_steady_v4_alpha_breakdown_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": current_universe,
+            },
+        )
+
+        self.assertEqual(alpha["report_version"], "v26-steady-v4-alpha-breakdown")
+        self.assertEqual(alpha["strategy_target"]["strategy"], "steady_v4")
+        self.assertEqual(alpha["benchmark_target"]["type"], "market_return")
+        self.assertEqual(alpha["sample_partition"]["steady_v4_hit_count"], 2)
+        self.assertEqual(alpha["sample_partition"]["outperform_market_count"], 1)
+        self.assertEqual(alpha["sample_partition"]["underperform_market_count"], 1)
+        self.assertTrue(alpha["benchmark_comparison"]["market_stronger"])
+        self.assertEqual(alpha["groups"]["outperform_market"]["samples"][0]["symbol"], "BBB")
+        self.assertEqual(alpha["groups"]["underperform_market"]["samples"][0]["symbol"], "DDD")
+        self.assertEqual(alpha["outperforming_stocks"][0]["symbol"], "BBB")
+        self.assertEqual(alpha["dragging_stocks"][0]["symbol"], "DDD")
+        self.assertEqual(alpha["alpha_metric_comparison"]["volume_ratio"]["direction"], "focus_higher")
+        self.assertEqual(alpha["drag_metric_comparison"]["volume_ratio"]["direction"], "focus_lower")
+        self.assertGreaterEqual(len(alpha["key_alpha_signatures"]), 1)
+        self.assertGreaterEqual(len(alpha["key_drag_signatures"]), 1)
+        self.assertIn("無法打敗市場", alpha["summary"])
 
 if __name__ == "__main__":
     # 執行單元測試

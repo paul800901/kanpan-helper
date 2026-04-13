@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""回填 v25 排序驗證、單因子、組合、策略、密度、阻塞、時序、特徵與追蹤報告。"""
+"""回填 v26 排序驗證、單因子、組合、策略、密度、阻塞、時序、特徵、追蹤與 alpha 拆解報告。"""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from backend.priority_validation import backfill_priority_validation_reports
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="回填 v25 排序驗證層 reports")
+    parser = argparse.ArgumentParser(description="回填 v26 排序驗證層 reports")
     parser.add_argument(
         "--refresh-context",
         action="store_true",
@@ -40,7 +40,7 @@ def main() -> int:
         auto_backfill_history=not args.skip_history_window,
     )
 
-    print("[OK] v25 回填完成")
+    print("[OK] v26 回填完成")
     print(f"   可回放日期: {len(result['available_dates'])}")
     print(f"   已可評估日期: {result['evaluated_days']}")
     print(f"   Priority 檔案: {len(result['priority_paths'])}")
@@ -53,6 +53,7 @@ def main() -> int:
     print(f"   Timing Alignment: {result['timing_alignment_path']}")
     print(f"   steady_v2 Signature: {result['steady_v2_signature_path']}")
     print(f"   steady_v4 Tracking: {result['steady_v4_tracking_path']}")
+    print(f"   steady_v4 Alpha Breakdown: {result['steady_v4_alpha_breakdown_path']}")
 
     if result.get("history_window"):
         print(f"   歷史目標日期: {len(result['history_window']['target_dates'])}")

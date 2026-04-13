@@ -142,6 +142,10 @@ jobs:
             echo "Error: steady_v4 實戰追蹤生成失敗，找不到 reports/steady_v4_tracking.json"
             exit 1
           fi
+          if [ ! -f "reports/steady_v4_alpha_breakdown.json" ]; then
+            echo "Error: steady_v4 alpha 拆解生成失敗，找不到 reports/steady_v4_alpha_breakdown.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
@@ -158,6 +162,7 @@ jobs:
           python -m json.tool reports/timing_alignment.json > /dev/null
           python -m json.tool reports/steady_v2_signature.json > /dev/null
           python -m json.tool reports/steady_v4_tracking.json > /dev/null
+          python -m json.tool reports/steady_v4_alpha_breakdown.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports
