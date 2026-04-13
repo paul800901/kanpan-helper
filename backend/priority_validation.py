@@ -1,4 +1,4 @@
-"""v12 排序驗證層：每日 priority 快照與歷史統計。"""
+"""v15 排序驗證層：每日 priority 快照、單因子與組合分析。"""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from backend.historical_reports import MARKET_INDEX_ID, ensure_historical_report
 PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
 FACTOR_ANALYSIS_REPORT_VERSION = "v14-factor-analysis"
+FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -126,6 +127,10 @@ def _priority_history_path(base_dir: Optional[Path] = None) -> Path:
 
 def _factor_analysis_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "factor_analysis.json"
+
+
+def _factor_combination_analysis_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "factor_combination_analysis.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -869,22 +874,100 @@ def _build_boolean_factor(
     return _build_factor_section(factor_name, factor_label, buckets)
 
 
-def _build_low_position_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _ma20_gap_pct(sample: Dict[str, Any]) -> Optional[float]:
+    close = _candidate_metric(sample, "close")
+    ma20 = _candidate_metric(sample, "ma20")
+    if close is None or ma20 in (None, 0):
+        return None
+    return (close - ma20) / ma20
+
+
+def _collect_ma20_gap_samples(samples: List[Dict[str, Any]]) -> List[tuple[Dict[str, Any], float]]:
     valued_samples: List[tuple[Dict[str, Any], float]] = []
     for sample in samples:
-        close = _candidate_metric(sample, "close")
-        ma20 = _candidate_metric(sample, "ma20")
-        if close is None or ma20 in (None, 0):
+        gap_pct = _ma20_gap_pct(sample)
+        if gap_pct is None:
             continue
-        gap_pct = (close - ma20) / ma20
         valued_samples.append((sample, gap_pct))
+    return valued_samples
 
+
+def _low_position_cutoffs(samples: List[Dict[str, Any]]) -> tuple[List[tuple[Dict[str, Any], float]], Optional[float], Optional[float]]:
+    valued_samples = _collect_ma20_gap_samples(samples)
     if not valued_samples:
-        return _build_factor_section("low_position_ma20", "低位因子", [])
+        return valued_samples, None, None
 
     ordered_values = sorted(value for _, value in valued_samples)
     first_cut = ordered_values[len(ordered_values) // 3]
     second_cut = ordered_values[(len(ordered_values) * 2) // 3]
+    return valued_samples, first_cut, second_cut
+
+
+def _is_low_position_sample(sample: Dict[str, Any], lower_third_cutoff: Optional[float]) -> bool:
+    gap_pct = _ma20_gap_pct(sample)
+    if gap_pct is None or lower_third_cutoff is None:
+        return False
+    return gap_pct <= lower_third_cutoff
+
+
+def _is_just_break_ma20(sample: Dict[str, Any]) -> bool:
+    previous_close = _previous_metric(sample, "close")
+    previous_ma20 = _previous_metric(sample, "ma20")
+    current_close = _candidate_metric(sample, "close")
+    current_ma20 = _candidate_metric(sample, "ma20")
+    return (
+        previous_close is not None
+        and previous_ma20 not in (None, 0)
+        and current_close is not None
+        and current_ma20 not in (None, 0)
+        and previous_close >= previous_ma20
+        and current_close < current_ma20
+    )
+
+
+def _is_retest_ma20(sample: Dict[str, Any]) -> bool:
+    previous_close = _previous_metric(sample, "close")
+    previous_ma20 = _previous_metric(sample, "ma20")
+    current_close = _candidate_metric(sample, "close")
+    current_ma20 = _candidate_metric(sample, "ma20")
+    return (
+        previous_close is not None
+        and previous_ma20 not in (None, 0)
+        and current_close is not None
+        and current_ma20 not in (None, 0)
+        and previous_close > previous_ma20
+        and current_close >= current_ma20
+        and abs((current_close - current_ma20) / current_ma20) <= 0.01
+    )
+
+
+def _is_volume_expand_after_shrink(sample: Dict[str, Any]) -> bool:
+    previous_volume_ratio = _previous_metric(sample, "volume_ratio")
+    current_volume_ratio = _candidate_metric(sample, "volume_ratio")
+    return (
+        previous_volume_ratio is not None
+        and current_volume_ratio is not None
+        and previous_volume_ratio < 1
+        and current_volume_ratio >= 1.2
+    )
+
+
+def _is_low_k_turn_up(sample: Dict[str, Any]) -> bool:
+    previous_k = _previous_metric(sample, "k")
+    current_k = _candidate_metric(sample, "k")
+    return (
+        previous_k is not None
+        and current_k is not None
+        and current_k < 30
+        and current_k > previous_k
+    )
+
+
+def _build_low_position_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    valued_samples, first_cut, second_cut = _low_position_cutoffs(samples)
+
+    if not valued_samples:
+        return _build_factor_section("low_position_ma20", "低位因子", [])
 
     low_values = [sample["return_pct"] for sample, value in valued_samples if value <= first_cut]
     mid_values = [sample["return_pct"] for sample, value in valued_samples if first_cut < value < second_cut]
@@ -905,14 +988,7 @@ def _build_break_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
         "回檔因子：剛跌破 MA20",
         "剛跌破組",
         "非剛跌破組",
-        lambda sample: (
-            _previous_metric(sample, "close") is not None
-            and _previous_metric(sample, "ma20") not in (None, 0)
-            and _candidate_metric(sample, "close") is not None
-            and _candidate_metric(sample, "ma20") not in (None, 0)
-            and _previous_metric(sample, "close") >= _previous_metric(sample, "ma20")
-            and _candidate_metric(sample, "close") < _candidate_metric(sample, "ma20")
-        ),
+        _is_just_break_ma20,
     )
 
 
@@ -923,15 +999,7 @@ def _build_retest_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
         "回檔因子：剛回測 MA20",
         "剛回測組",
         "非剛回測組",
-        lambda sample: (
-            _previous_metric(sample, "close") is not None
-            and _previous_metric(sample, "ma20") not in (None, 0)
-            and _candidate_metric(sample, "close") is not None
-            and _candidate_metric(sample, "ma20") not in (None, 0)
-            and _previous_metric(sample, "close") > _previous_metric(sample, "ma20")
-            and _candidate_metric(sample, "close") >= _candidate_metric(sample, "ma20")
-            and abs((_candidate_metric(sample, "close") - _candidate_metric(sample, "ma20")) / _candidate_metric(sample, "ma20")) <= 0.01
-        ),
+        _is_retest_ma20,
     )
 
 
@@ -942,12 +1010,7 @@ def _build_volume_expand_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]
         "量縮後放量",
         "量縮後放量組",
         "其他量能組",
-        lambda sample: (
-            _previous_metric(sample, "volume_ratio") is not None
-            and _candidate_metric(sample, "volume_ratio") is not None
-            and _previous_metric(sample, "volume_ratio") < 1
-            and _candidate_metric(sample, "volume_ratio") >= 1.2
-        ),
+        _is_volume_expand_after_shrink,
     )
 
 
@@ -958,13 +1021,82 @@ def _build_low_k_turn_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
         "KD 低檔翻揚",
         "低檔翻揚組",
         "非低檔翻揚組",
-        lambda sample: (
-            _previous_metric(sample, "k") is not None
-            and _candidate_metric(sample, "k") is not None
-            and _candidate_metric(sample, "k") < 30
-            and _candidate_metric(sample, "k") > _previous_metric(sample, "k")
-        ),
+        _is_low_k_turn_up,
     )
+
+
+def _build_positive_factor_baseline(
+    factor_name: str,
+    factor_label: str,
+    positive_group_label: str,
+    samples: List[Dict[str, Any]],
+    predicate: Callable[[Dict[str, Any]], bool],
+) -> Dict[str, Any]:
+    values = [sample["return_pct"] for sample in samples if predicate(sample)]
+    return {
+        "factor": factor_name,
+        "label": factor_label,
+        "positive_group_label": positive_group_label,
+        "sample_count": len(values),
+        "avg_return_pct": _mean(values),
+        "win_rate_pct": _win_rate(values),
+    }
+
+
+def _build_factor_combination_summary(
+    combination_name: str,
+    combination_label: str,
+    samples: List[Dict[str, Any]],
+    predicate: Callable[[Dict[str, Any]], bool],
+    constituent_factor_names: List[str],
+    single_factor_baselines: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    values = [sample["return_pct"] for sample in samples if predicate(sample)]
+    avg_return = _mean(values)
+    constituent_baselines = [single_factor_baselines[name] for name in constituent_factor_names if name in single_factor_baselines]
+    valid_baselines = [item for item in constituent_baselines if item.get("avg_return_pct") is not None]
+    best_single_factor = max(valid_baselines, key=lambda item: item["avg_return_pct"]) if valid_baselines else None
+
+    beats_constituent_single_factors: Optional[bool] = None
+    avg_return_edge_vs_best_single_factor: Optional[float] = None
+    if avg_return is not None and valid_baselines:
+        beats_constituent_single_factors = all(avg_return > float(item["avg_return_pct"]) for item in valid_baselines)
+        avg_return_edge_vs_best_single_factor = _safe_diff(avg_return, best_single_factor.get("avg_return_pct") if best_single_factor else None)
+
+    verdict = "資料不足"
+    if avg_return is not None:
+        verdict = "優於單因子" if beats_constituent_single_factors else "未優於單因子"
+
+    return {
+        "combination": combination_name,
+        "label": combination_label,
+        "factor_names": constituent_factor_names,
+        "sample_count": len(values),
+        "avg_return_pct": avg_return,
+        "win_rate_pct": _win_rate(values),
+        "constituent_single_factors": constituent_baselines,
+        "best_single_factor": best_single_factor,
+        "avg_return_edge_vs_best_single_factor": avg_return_edge_vs_best_single_factor,
+        "beats_constituent_single_factors": beats_constituent_single_factors,
+        "verdict": verdict,
+    }
+
+
+def _summarize_factor_combination(item: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not item:
+        return None
+    return {
+        "combination": item["combination"],
+        "label": item["label"],
+        "factor_names": item["factor_names"],
+        "sample_count": item["sample_count"],
+        "avg_return_pct": item["avg_return_pct"],
+        "win_rate_pct": item["win_rate_pct"],
+        "avg_return_edge_vs_best_single_factor": item["avg_return_edge_vs_best_single_factor"],
+        "beats_constituent_single_factors": item["beats_constituent_single_factors"],
+        "best_single_factor": item["best_single_factor"],
+        "verdict": item["verdict"],
+    }
 
 
 def _build_hit_count_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -1105,6 +1237,146 @@ def generate_factor_analysis_report(
                 "low_group_label": (section.get("low_group") or {}).get("label"),
             }
             for section in drag_factors
+        ],
+    }
+
+
+def generate_factor_combination_analysis_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    _, lower_third_cutoff, _ = _low_position_cutoffs(trading_samples)
+
+    single_factor_baselines = {
+        "just_break_ma20": _build_positive_factor_baseline(
+            "just_break_ma20",
+            "剛跌破 MA20",
+            "剛跌破組",
+            trading_samples,
+            _is_just_break_ma20,
+        ),
+        "low_position_ma20": _build_positive_factor_baseline(
+            "low_position_ma20",
+            "低位因子",
+            "低位組",
+            trading_samples,
+            lambda sample: _is_low_position_sample(sample, lower_third_cutoff),
+        ),
+        "low_k_turn_up": _build_positive_factor_baseline(
+            "low_k_turn_up",
+            "KD 低檔翻揚",
+            "低檔翻揚組",
+            trading_samples,
+            _is_low_k_turn_up,
+        ),
+    }
+
+    combinations = {
+        "just_break_ma20_plus_low_k_turn_up": _build_factor_combination_summary(
+            "just_break_ma20_plus_low_k_turn_up",
+            "剛跌破 MA20 + KD 低檔翻揚",
+            trading_samples,
+            lambda sample: _is_just_break_ma20(sample) and _is_low_k_turn_up(sample),
+            ["just_break_ma20", "low_k_turn_up"],
+            single_factor_baselines,
+        ),
+        "just_break_ma20_plus_low_position_ma20": _build_factor_combination_summary(
+            "just_break_ma20_plus_low_position_ma20",
+            "剛跌破 MA20 + 低位因子",
+            trading_samples,
+            lambda sample: _is_just_break_ma20(sample) and _is_low_position_sample(sample, lower_third_cutoff),
+            ["just_break_ma20", "low_position_ma20"],
+            single_factor_baselines,
+        ),
+        "low_k_turn_up_plus_low_position_ma20": _build_factor_combination_summary(
+            "low_k_turn_up_plus_low_position_ma20",
+            "KD 低檔翻揚 + 低位因子",
+            trading_samples,
+            lambda sample: _is_low_k_turn_up(sample) and _is_low_position_sample(sample, lower_third_cutoff),
+            ["low_k_turn_up", "low_position_ma20"],
+            single_factor_baselines,
+        ),
+        "all_three": _build_factor_combination_summary(
+            "all_three",
+            "剛跌破 MA20 + KD 低檔翻揚 + 低位因子",
+            trading_samples,
+            lambda sample: _is_just_break_ma20(sample) and _is_low_k_turn_up(sample) and _is_low_position_sample(sample, lower_third_cutoff),
+            ["just_break_ma20", "low_k_turn_up", "low_position_ma20"],
+            single_factor_baselines,
+        ),
+    }
+
+    ranked_by_avg_return = sorted(
+        combinations.values(),
+        key=lambda item: ((item.get("avg_return_pct") if item.get("avg_return_pct") is not None else float("-inf")), item.get("sample_count") or 0),
+        reverse=True,
+    )
+    ranked_by_win_rate = sorted(
+        combinations.values(),
+        key=lambda item: ((item.get("win_rate_pct") if item.get("win_rate_pct") is not None else float("-inf")), item.get("sample_count") or 0),
+        reverse=True,
+    )
+
+    best_single_factor = max(
+        (item for item in single_factor_baselines.values() if item.get("avg_return_pct") is not None),
+        key=lambda item: item["avg_return_pct"],
+        default=None,
+    )
+    strongest_combination = next((item for item in ranked_by_avg_return if item.get("avg_return_pct") is not None), None)
+    highest_win_rate_combination = next((item for item in ranked_by_win_rate if item.get("win_rate_pct") is not None), None)
+    strongest_edge_vs_best_single = _safe_diff(
+        (strongest_combination or {}).get("avg_return_pct"),
+        (best_single_factor or {}).get("avg_return_pct"),
+    )
+
+    combinations_beating_single_factors = [
+        item for item in ranked_by_avg_return
+        if item.get("beats_constituent_single_factors") is True
+    ]
+
+    return {
+        "report_version": FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": "next_available_report",
+        "evaluated_days": evaluated_days,
+        "candidate_samples": len(trading_samples),
+        "combination_names": list(combinations.keys()),
+        "low_position_definition": {
+            "metric": "(close - ma20) / ma20",
+            "positive_group": "lower_third",
+            "lower_third_cutoff": _round_number(lower_third_cutoff, digits=6),
+        },
+        "single_factor_baselines": single_factor_baselines,
+        "combinations": combinations,
+        "ranking_by_avg_return": [
+            _summarize_factor_combination(item)
+            for item in ranked_by_avg_return
+        ],
+        "ranking_by_win_rate": [
+            _summarize_factor_combination(item)
+            for item in ranked_by_win_rate
+        ],
+        "best_single_factor": best_single_factor,
+        "strongest_combination": _summarize_factor_combination(strongest_combination),
+        "highest_win_rate_combination": _summarize_factor_combination(highest_win_rate_combination),
+        "strongest_combination_vs_best_single_factor": {
+            "avg_return_edge_pct": strongest_edge_vs_best_single,
+            "is_stronger": (
+                strongest_edge_vs_best_single is not None and strongest_edge_vs_best_single > 0
+            ),
+        },
+        "combination_superiority_confirmed": len(combinations_beating_single_factors) > 0,
+        "combinations_beating_single_factors": [
+            _summarize_factor_combination(item)
+            for item in combinations_beating_single_factors
         ],
     }
 
@@ -1279,6 +1551,10 @@ def save_factor_analysis_report(report: Dict[str, Any], base_dir: Optional[Path]
     return _save_json(_factor_analysis_path(base_dir), report)
 
 
+def save_factor_combination_analysis_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_factor_combination_analysis_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -1319,6 +1595,15 @@ def generate_factor_analysis_from_reports(base_dir: Optional[Path] = None, marke
         universe_reports_by_date=load_universe_reports_by_date(base_dir=base_dir),
     )
     return save_factor_analysis_report(report, base_dir=base_dir)
+
+
+def generate_factor_combination_analysis_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    report = generate_factor_combination_analysis_report(
+        load_priority_reports(base_dir=base_dir),
+        market_prices=market_prices,
+        universe_reports_by_date=load_universe_reports_by_date(base_dir=base_dir),
+    )
+    return save_factor_combination_analysis_report(report, base_dir=base_dir)
 
 
 def backfill_priority_validation_reports(
@@ -1380,6 +1665,7 @@ def backfill_priority_validation_reports(
 
     history_path = generate_priority_history_from_reports(base_dir=base_dir, market_prices=market_prices)
     factor_analysis_path = generate_factor_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
+    factor_combination_analysis_path = generate_factor_combination_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -1391,6 +1677,7 @@ def backfill_priority_validation_reports(
         "priority_paths": priority_paths,
         "history_path": str(history_path),
         "factor_analysis_path": str(factor_analysis_path),
+        "factor_combination_analysis_path": str(factor_combination_analysis_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

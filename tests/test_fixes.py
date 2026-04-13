@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -417,6 +417,42 @@ class TestPriorityValidation(unittest.TestCase):
             ],
         }
 
+    def make_combo_previous_universe_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": [
+                self.make_universe_stock("BBB", "Beta", 80, 102.0, 101.0, 100.0, 12.0, 0.9, "連2買", 1),
+                self.make_universe_stock("CCC", "Gamma", 75, 104.0, 103.0, 100.0, 40.0, 1.1, "連1買", 2),
+                self.make_universe_stock("DDD", "Delta", 70, 99.0, 99.5, 100.0, 18.0, 0.9, "資料不足", 3),
+                self.make_universe_stock("AAA", "Alpha", 68, 100.5, 100.2, 100.0, 35.0, 1.0, "資料不足", 4),
+            ],
+        }
+
+    def make_combo_current_universe_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": [
+                self.make_universe_stock("BBB", "Beta", 78, 95.0, 97.0, 100.0, 31.0, 0.8, "連1買", 1),
+                self.make_universe_stock("CCC", "Gamma", 74, 99.6, 101.0, 100.0, 34.0, 1.0, "連1買", 2),
+                self.make_universe_stock("DDD", "Delta", 69, 97.0, 98.5, 100.0, 22.0, 0.9, "資料不足", 3),
+                self.make_universe_stock("AAA", "Alpha", 67, 100.2, 100.0, 100.0, 38.0, 1.0, "資料不足", 4),
+            ],
+        }
+
+    def make_combo_next_universe_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": [
+                self.make_universe_stock("BBB", "Beta", 82, 100.0, 98.0, 99.5, 35.0, 1.1, "連2買", 1),
+                self.make_universe_stock("CCC", "Gamma", 73, 99.8, 101.0, 100.0, 36.0, 1.0, "連1買", 2),
+                self.make_universe_stock("DDD", "Delta", 68, 98.0, 98.0, 99.5, 25.0, 1.0, "資料不足", 3),
+                self.make_universe_stock("AAA", "Alpha", 66, 100.0, 100.0, 100.0, 37.0, 1.0, "資料不足", 4),
+            ],
+        }
+
     def test_priority_snapshot_mirrors_frontend_sorting(self):
         context_report = self.make_context_report("2026-04-10")
         universe_report = self.make_universe_report("2026-04-10")
@@ -466,6 +502,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / f"{date_a}-priority.json").exists())
             self.assertTrue((reports_dir / f"{date_b}-priority.json").exists())
             self.assertTrue((reports_dir / "priority-history.json").exists())
+            self.assertTrue((reports_dir / "factor_combination_analysis.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
@@ -536,6 +573,50 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertGreaterEqual(len(factor_analysis["factor_effect_ranking"]), 8)
         self.assertIn("positive_factors", factor_analysis)
         self.assertIn("drag_factors", factor_analysis)
+
+    def test_factor_combination_analysis_finds_strongest_combo(self):
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=self.make_combo_current_universe_report("2026-04-10"),
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_combo_current_universe_report("2026-04-10"),
+            next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        combination_analysis = generate_factor_combination_analysis_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+            },
+        )
+
+        self.assertEqual(combination_analysis["report_version"], "v15-factor-combination-analysis")
+        self.assertEqual(combination_analysis["evaluated_days"], 2)
+        self.assertIn("just_break_ma20_plus_low_position_ma20", combination_analysis["combination_names"])
+        self.assertIn("low_k_turn_up", combination_analysis["single_factor_baselines"])
+        self.assertEqual(combination_analysis["combinations"]["just_break_ma20_plus_low_position_ma20"]["sample_count"], 1)
+        self.assertAlmostEqual(
+            combination_analysis["combinations"]["just_break_ma20_plus_low_position_ma20"]["avg_return_pct"],
+            5.2632,
+            places=4,
+        )
+        self.assertTrue(combination_analysis["combination_superiority_confirmed"])
+        self.assertTrue(combination_analysis["strongest_combination_vs_best_single_factor"]["is_stronger"])
+        self.assertEqual(
+            combination_analysis["strongest_combination"]["combination"],
+            "just_break_ma20_plus_low_position_ma20",
+        )
 
 if __name__ == "__main__":
     # 執行單元測試

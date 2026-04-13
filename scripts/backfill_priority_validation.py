@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""回填 v14 排序驗證與因子分析報告。"""
+"""回填 v15 排序驗證、單因子與組合分析報告。"""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from backend.priority_validation import backfill_priority_validation_reports
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="回填 v14 排序驗證層 reports")
+    parser = argparse.ArgumentParser(description="回填 v15 排序驗證層 reports")
     parser.add_argument(
         "--refresh-context",
         action="store_true",
@@ -40,12 +40,13 @@ def main() -> int:
         auto_backfill_history=not args.skip_history_window,
     )
 
-    print("[OK] v14 回填完成")
+    print("[OK] v15 回填完成")
     print(f"   可回放日期: {len(result['available_dates'])}")
     print(f"   已可評估日期: {result['evaluated_days']}")
     print(f"   Priority 檔案: {len(result['priority_paths'])}")
     print(f"   History: {result['history_path']}")
     print(f"   Factor Analysis: {result['factor_analysis_path']}")
+    print(f"   Factor Combination Analysis: {result['factor_combination_analysis_path']}")
 
     if result.get("history_window"):
         print(f"   歷史目標日期: {len(result['history_window']['target_dates'])}")
