@@ -516,17 +516,26 @@ class TestPriorityValidation(unittest.TestCase):
                 "2026-04-10": 100.0,
                 "2026-04-11": 101.0,
             },
+            universe_reports_by_date={
+                "2026-04-10": self.make_universe_report("2026-04-10"),
+            },
         )
 
-        self.assertEqual(factor_analysis["report_version"], "v13-factor-analysis")
+        self.assertEqual(factor_analysis["report_version"], "v14-factor-analysis")
         self.assertEqual(factor_analysis["evaluated_days"], 1)
         self.assertEqual(factor_analysis["candidate_samples"], 4)
+        self.assertIn("hit_count", factor_analysis["legacy_factor_names"])
+        self.assertIn("low_position_ma20", factor_analysis["test_factor_names"])
         self.assertEqual(factor_analysis["factors"]["hit_count"]["high_group"]["factor_value"], 2)
         self.assertEqual(factor_analysis["factors"]["hit_count"]["low_group"]["factor_value"], 1)
         self.assertEqual(factor_analysis["factors"]["technical"]["high_group"]["label"], "強勢續看")
         self.assertEqual(factor_analysis["factors"]["zone"]["high_group"]["label"], "試單區優先")
+        self.assertIn("low_position_ma20", factor_analysis["factors"])
+        self.assertIn("just_break_ma20", factor_analysis["factors"])
         self.assertIn(factor_analysis["factors"]["zone"]["verdict"], ["有效", "拖累", "中性"])
-        self.assertEqual(len(factor_analysis["factor_effect_ranking"]), 3)
+        self.assertGreaterEqual(len(factor_analysis["factor_effect_ranking"]), 8)
+        self.assertIn("positive_factors", factor_analysis)
+        self.assertIn("drag_factors", factor_analysis)
 
 if __name__ == "__main__":
     # 執行單元測試

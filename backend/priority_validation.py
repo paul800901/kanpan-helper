@@ -16,7 +16,7 @@ from backend.historical_reports import MARKET_INDEX_ID, ensure_historical_report
 
 PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
-FACTOR_ANALYSIS_REPORT_VERSION = "v13-factor-analysis"
+FACTOR_ANALYSIS_REPORT_VERSION = "v14-factor-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -760,12 +760,19 @@ def _build_stability_summary(
 def _collect_trading_interval_candidates(
     priority_reports: List[Dict[str, Any]],
     market_lookup: Dict[str, Optional[float]],
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> tuple[List[Dict[str, Any]], int]:
     ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
     candidates: List[Dict[str, Any]] = []
     evaluated_days = 0
 
-    for report in ordered_reports:
+    for index, report in enumerate(ordered_reports):
+        previous_date = str(ordered_reports[index - 1].get("date") or "") if index > 0 else None
+        current_date = str(report.get("date") or "")
+        current_universe = ((universe_reports_by_date or {}).get(current_date) or {}).get("stocks") or []
+        previous_universe = ((universe_reports_by_date or {}).get(previous_date or "") or {}).get("stocks") or []
+        current_universe_lookup = {str(stock.get("symbol") or ""): stock for stock in current_universe}
+        previous_universe_lookup = {str(stock.get("symbol") or ""): stock for stock in previous_universe}
         market_return = _market_return(str(report.get("date") or ""), str(report.get("next_report_date") or ""), market_lookup)
         if market_return is None:
             continue
@@ -775,11 +782,15 @@ def _collect_trading_interval_candidates(
             return_pct = _extract_return_pct(candidate)
             if return_pct is None:
                 continue
+            symbol = str(candidate.get("symbol") or "")
             candidates.append({
                 "date": report.get("date"),
+                "previous_date": previous_date,
                 "next_report_date": report.get("next_report_date"),
                 "return_pct": return_pct,
                 "candidate": candidate,
+                "current_universe_stock": current_universe_lookup.get(symbol),
+                "previous_universe_stock": previous_universe_lookup.get(symbol),
             })
 
     return candidates, evaluated_days
@@ -825,6 +836,135 @@ def _build_factor_section(
         ),
         "verdict": _factor_verdict(spread),
     }
+
+
+def _candidate_metric(sample: Dict[str, Any], metric: str) -> Optional[float]:
+    technical_state = (sample.get("candidate") or {}).get("technical_state") or {}
+    if metric in technical_state:
+        return _as_float(technical_state.get(metric))
+
+    current_indicators = ((sample.get("current_universe_stock") or {}).get("indicators") or {})
+    return _as_float(current_indicators.get(metric))
+
+
+def _previous_metric(sample: Dict[str, Any], metric: str) -> Optional[float]:
+    previous_indicators = ((sample.get("previous_universe_stock") or {}).get("indicators") or {})
+    return _as_float(previous_indicators.get(metric))
+
+
+def _build_boolean_factor(
+    samples: List[Dict[str, Any]],
+    factor_name: str,
+    factor_label: str,
+    positive_label: str,
+    negative_label: str,
+    predicate: Callable[[Dict[str, Any]], bool],
+) -> Dict[str, Any]:
+    positive_values = [sample["return_pct"] for sample in samples if predicate(sample)]
+    negative_values = [sample["return_pct"] for sample in samples if not predicate(sample)]
+    buckets = [
+        _build_factor_bucket_summary(positive_label, True, positive_values),
+        _build_factor_bucket_summary(negative_label, False, negative_values),
+    ]
+    return _build_factor_section(factor_name, factor_label, buckets)
+
+
+def _build_low_position_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    valued_samples: List[tuple[Dict[str, Any], float]] = []
+    for sample in samples:
+        close = _candidate_metric(sample, "close")
+        ma20 = _candidate_metric(sample, "ma20")
+        if close is None or ma20 in (None, 0):
+            continue
+        gap_pct = (close - ma20) / ma20
+        valued_samples.append((sample, gap_pct))
+
+    if not valued_samples:
+        return _build_factor_section("low_position_ma20", "低位因子", [])
+
+    ordered_values = sorted(value for _, value in valued_samples)
+    first_cut = ordered_values[len(ordered_values) // 3]
+    second_cut = ordered_values[(len(ordered_values) * 2) // 3]
+
+    low_values = [sample["return_pct"] for sample, value in valued_samples if value <= first_cut]
+    mid_values = [sample["return_pct"] for sample, value in valued_samples if first_cut < value < second_cut]
+    high_values = [sample["return_pct"] for sample, value in valued_samples if value >= second_cut]
+
+    buckets = [
+        _build_factor_bucket_summary("低位組", "lower_third", low_values),
+        _build_factor_bucket_summary("中位組", "middle_third", mid_values),
+        _build_factor_bucket_summary("高位組", "upper_third", high_values),
+    ]
+    return _build_factor_section("low_position_ma20", "低位因子", buckets)
+
+
+def _build_break_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return _build_boolean_factor(
+        samples,
+        "just_break_ma20",
+        "回檔因子：剛跌破 MA20",
+        "剛跌破組",
+        "非剛跌破組",
+        lambda sample: (
+            _previous_metric(sample, "close") is not None
+            and _previous_metric(sample, "ma20") not in (None, 0)
+            and _candidate_metric(sample, "close") is not None
+            and _candidate_metric(sample, "ma20") not in (None, 0)
+            and _previous_metric(sample, "close") >= _previous_metric(sample, "ma20")
+            and _candidate_metric(sample, "close") < _candidate_metric(sample, "ma20")
+        ),
+    )
+
+
+def _build_retest_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return _build_boolean_factor(
+        samples,
+        "retest_ma20",
+        "回檔因子：剛回測 MA20",
+        "剛回測組",
+        "非剛回測組",
+        lambda sample: (
+            _previous_metric(sample, "close") is not None
+            and _previous_metric(sample, "ma20") not in (None, 0)
+            and _candidate_metric(sample, "close") is not None
+            and _candidate_metric(sample, "ma20") not in (None, 0)
+            and _previous_metric(sample, "close") > _previous_metric(sample, "ma20")
+            and _candidate_metric(sample, "close") >= _candidate_metric(sample, "ma20")
+            and abs((_candidate_metric(sample, "close") - _candidate_metric(sample, "ma20")) / _candidate_metric(sample, "ma20")) <= 0.01
+        ),
+    )
+
+
+def _build_volume_expand_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return _build_boolean_factor(
+        samples,
+        "volume_expand_after_shrink",
+        "量縮後放量",
+        "量縮後放量組",
+        "其他量能組",
+        lambda sample: (
+            _previous_metric(sample, "volume_ratio") is not None
+            and _candidate_metric(sample, "volume_ratio") is not None
+            and _previous_metric(sample, "volume_ratio") < 1
+            and _candidate_metric(sample, "volume_ratio") >= 1.2
+        ),
+    )
+
+
+def _build_low_k_turn_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return _build_boolean_factor(
+        samples,
+        "low_k_turn_up",
+        "KD 低檔翻揚",
+        "低檔翻揚組",
+        "非低檔翻揚組",
+        lambda sample: (
+            _previous_metric(sample, "k") is not None
+            and _candidate_metric(sample, "k") is not None
+            and _candidate_metric(sample, "k") < 30
+            and _candidate_metric(sample, "k") > _previous_metric(sample, "k")
+        ),
+    )
 
 
 def _build_hit_count_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -875,20 +1015,53 @@ def _build_zone_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
 def generate_factor_analysis_report(
     priority_reports: List[Dict[str, Any]],
     market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
     market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
-    trading_samples, evaluated_days = _collect_trading_interval_candidates(ordered_reports, market_lookup)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
 
     hit_count_section = _build_hit_count_factor(trading_samples)
     technical_section = _build_technical_factor(trading_samples)
     zone_section = _build_zone_factor(trading_samples)
+    low_position_section = _build_low_position_ma20_factor(trading_samples)
+    break_ma20_section = _build_break_ma20_factor(trading_samples)
+    retest_ma20_section = _build_retest_ma20_factor(trading_samples)
+    volume_expand_section = _build_volume_expand_factor(trading_samples)
+    low_k_turn_section = _build_low_k_turn_factor(trading_samples)
+
+    legacy_factors = {
+        "hit_count": hit_count_section,
+        "technical": technical_section,
+        "zone": zone_section,
+    }
+    test_factors = {
+        "low_position_ma20": low_position_section,
+        "just_break_ma20": break_ma20_section,
+        "retest_ma20": retest_ma20_section,
+        "volume_expand_after_shrink": volume_expand_section,
+        "low_k_turn_up": low_k_turn_section,
+    }
+    all_factor_sections = list(legacy_factors.values()) + list(test_factors.values())
 
     factor_effect_ranking = sorted(
-        [hit_count_section, technical_section, zone_section],
+        all_factor_sections,
         key=lambda item: item.get("spread_avg_return_pct") if item.get("spread_avg_return_pct") is not None else float("-inf"),
         reverse=True,
     )
+
+    positive_factors = [
+        section for section in factor_effect_ranking
+        if section.get("verdict") == "有效"
+    ]
+    drag_factors = [
+        section for section in factor_effect_ranking
+        if section.get("verdict") == "拖累"
+    ]
 
     return {
         "report_version": FACTOR_ANALYSIS_REPORT_VERSION,
@@ -896,10 +1069,11 @@ def generate_factor_analysis_report(
         "evaluation_horizon": "next_available_report",
         "evaluated_days": evaluated_days,
         "candidate_samples": len(trading_samples),
+        "legacy_factor_names": list(legacy_factors.keys()),
+        "test_factor_names": list(test_factors.keys()),
         "factors": {
-            "hit_count": hit_count_section,
-            "technical": technical_section,
-            "zone": zone_section,
+            **legacy_factors,
+            **test_factors,
         },
         "factor_effect_ranking": [
             {
@@ -911,6 +1085,26 @@ def generate_factor_analysis_report(
                 "low_group_label": (section.get("low_group") or {}).get("label"),
             }
             for section in factor_effect_ranking
+        ],
+        "positive_factors": [
+            {
+                "factor": section["factor"],
+                "label": section["label"],
+                "spread_avg_return_pct": section["spread_avg_return_pct"],
+                "high_group_label": (section.get("high_group") or {}).get("label"),
+                "low_group_label": (section.get("low_group") or {}).get("label"),
+            }
+            for section in positive_factors
+        ],
+        "drag_factors": [
+            {
+                "factor": section["factor"],
+                "label": section["label"],
+                "spread_avg_return_pct": section["spread_avg_return_pct"],
+                "high_group_label": (section.get("high_group") or {}).get("label"),
+                "low_group_label": (section.get("low_group") or {}).get("label"),
+            }
+            for section in drag_factors
         ],
     }
 
@@ -1099,13 +1293,31 @@ def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any
     return reports
 
 
+def load_universe_reports_by_date(base_dir: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
+    reports_dir = _reports_dir(base_dir)
+    universe_reports: Dict[str, Dict[str, Any]] = {}
+    for path in sorted(reports_dir.glob("*-universe.json")):
+        stem = path.stem
+        if not stem.endswith("-universe"):
+            continue
+        date_str = stem[:-9]
+        if not DATE_PATTERN.match(date_str):
+            continue
+        universe_reports[date_str] = _load_json(path, required=True) or {}
+    return universe_reports
+
+
 def generate_priority_history_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
     report = generate_priority_history_report(load_priority_reports(base_dir=base_dir), market_prices=market_prices)
     return save_priority_history_report(report, base_dir=base_dir)
 
 
 def generate_factor_analysis_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
-    report = generate_factor_analysis_report(load_priority_reports(base_dir=base_dir), market_prices=market_prices)
+    report = generate_factor_analysis_report(
+        load_priority_reports(base_dir=base_dir),
+        market_prices=market_prices,
+        universe_reports_by_date=load_universe_reports_by_date(base_dir=base_dir),
+    )
     return save_factor_analysis_report(report, base_dir=base_dir)
 
 

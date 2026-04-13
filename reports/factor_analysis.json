@@ -1,9 +1,21 @@
 {
-  "report_version": "v13-factor-analysis",
-  "generated_at": "2026-04-13T14:19:12.235508+08:00",
+  "report_version": "v14-factor-analysis",
+  "generated_at": "2026-04-13T14:28:37.101559+08:00",
   "evaluation_horizon": "next_available_report",
   "evaluated_days": 20,
   "candidate_samples": 359,
+  "legacy_factor_names": [
+    "hit_count",
+    "technical",
+    "zone"
+  ],
+  "test_factor_names": [
+    "low_position_ma20",
+    "just_break_ma20",
+    "retest_ma20",
+    "volume_expand_after_shrink",
+    "low_k_turn_up"
+  ],
   "factors": {
     "hit_count": {
       "factor": "hit_count",
@@ -153,9 +165,246 @@
       "spread_avg_return_pct": -0.2613,
       "spread_win_rate_pct": 8.8901,
       "verdict": "拖累"
+    },
+    "low_position_ma20": {
+      "factor": "low_position_ma20",
+      "label": "低位因子",
+      "bucket_count": 3,
+      "buckets": [
+        {
+          "label": "低位組",
+          "factor_value": "lower_third",
+          "sample_count": 120,
+          "avg_return_pct": 0.5131,
+          "win_rate_pct": 49.1667
+        },
+        {
+          "label": "中位組",
+          "factor_value": "middle_third",
+          "sample_count": 119,
+          "avg_return_pct": 0.0841,
+          "win_rate_pct": 51.2605
+        },
+        {
+          "label": "高位組",
+          "factor_value": "upper_third",
+          "sample_count": 120,
+          "avg_return_pct": 0.0665,
+          "win_rate_pct": 40.8333
+        }
+      ],
+      "high_group": {
+        "label": "低位組",
+        "factor_value": "lower_third",
+        "sample_count": 120,
+        "avg_return_pct": 0.5131,
+        "win_rate_pct": 49.1667
+      },
+      "low_group": {
+        "label": "高位組",
+        "factor_value": "upper_third",
+        "sample_count": 120,
+        "avg_return_pct": 0.0665,
+        "win_rate_pct": 40.8333
+      },
+      "spread_avg_return_pct": 0.4466,
+      "spread_win_rate_pct": 8.3334,
+      "verdict": "有效"
+    },
+    "just_break_ma20": {
+      "factor": "just_break_ma20",
+      "label": "回檔因子：剛跌破 MA20",
+      "bucket_count": 2,
+      "buckets": [
+        {
+          "label": "剛跌破組",
+          "factor_value": true,
+          "sample_count": 14,
+          "avg_return_pct": 1.1359,
+          "win_rate_pct": 50.0
+        },
+        {
+          "label": "非剛跌破組",
+          "factor_value": false,
+          "sample_count": 345,
+          "avg_return_pct": 0.1845,
+          "win_rate_pct": 46.9565
+        }
+      ],
+      "high_group": {
+        "label": "剛跌破組",
+        "factor_value": true,
+        "sample_count": 14,
+        "avg_return_pct": 1.1359,
+        "win_rate_pct": 50.0
+      },
+      "low_group": {
+        "label": "非剛跌破組",
+        "factor_value": false,
+        "sample_count": 345,
+        "avg_return_pct": 0.1845,
+        "win_rate_pct": 46.9565
+      },
+      "spread_avg_return_pct": 0.9514,
+      "spread_win_rate_pct": 3.0435,
+      "verdict": "有效"
+    },
+    "retest_ma20": {
+      "factor": "retest_ma20",
+      "label": "回檔因子：剛回測 MA20",
+      "bucket_count": 2,
+      "buckets": [
+        {
+          "label": "剛回測組",
+          "factor_value": true,
+          "sample_count": 23,
+          "avg_return_pct": 0.3498,
+          "win_rate_pct": 56.5217
+        },
+        {
+          "label": "非剛回測組",
+          "factor_value": false,
+          "sample_count": 336,
+          "avg_return_pct": 0.2129,
+          "win_rate_pct": 46.4286
+        }
+      ],
+      "high_group": {
+        "label": "剛回測組",
+        "factor_value": true,
+        "sample_count": 23,
+        "avg_return_pct": 0.3498,
+        "win_rate_pct": 56.5217
+      },
+      "low_group": {
+        "label": "非剛回測組",
+        "factor_value": false,
+        "sample_count": 336,
+        "avg_return_pct": 0.2129,
+        "win_rate_pct": 46.4286
+      },
+      "spread_avg_return_pct": 0.1369,
+      "spread_win_rate_pct": 10.0931,
+      "verdict": "有效"
+    },
+    "volume_expand_after_shrink": {
+      "factor": "volume_expand_after_shrink",
+      "label": "量縮後放量",
+      "bucket_count": 2,
+      "buckets": [
+        {
+          "label": "量縮後放量組",
+          "factor_value": true,
+          "sample_count": 33,
+          "avg_return_pct": 0.2436,
+          "win_rate_pct": 45.4545
+        },
+        {
+          "label": "其他量能組",
+          "factor_value": false,
+          "sample_count": 326,
+          "avg_return_pct": 0.2194,
+          "win_rate_pct": 47.2393
+        }
+      ],
+      "high_group": {
+        "label": "量縮後放量組",
+        "factor_value": true,
+        "sample_count": 33,
+        "avg_return_pct": 0.2436,
+        "win_rate_pct": 45.4545
+      },
+      "low_group": {
+        "label": "其他量能組",
+        "factor_value": false,
+        "sample_count": 326,
+        "avg_return_pct": 0.2194,
+        "win_rate_pct": 47.2393
+      },
+      "spread_avg_return_pct": 0.0242,
+      "spread_win_rate_pct": -1.7848,
+      "verdict": "有效"
+    },
+    "low_k_turn_up": {
+      "factor": "low_k_turn_up",
+      "label": "KD 低檔翻揚",
+      "bucket_count": 2,
+      "buckets": [
+        {
+          "label": "低檔翻揚組",
+          "factor_value": true,
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        {
+          "label": "非低檔翻揚組",
+          "factor_value": false,
+          "sample_count": 336,
+          "avg_return_pct": 0.1914,
+          "win_rate_pct": 45.8333
+        }
+      ],
+      "high_group": {
+        "label": "低檔翻揚組",
+        "factor_value": true,
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "low_group": {
+        "label": "非低檔翻揚組",
+        "factor_value": false,
+        "sample_count": 336,
+        "avg_return_pct": 0.1914,
+        "win_rate_pct": 45.8333
+      },
+      "spread_avg_return_pct": 0.4718,
+      "spread_win_rate_pct": 19.3841,
+      "verdict": "有效"
     }
   },
   "factor_effect_ranking": [
+    {
+      "factor": "just_break_ma20",
+      "label": "回檔因子：剛跌破 MA20",
+      "verdict": "有效",
+      "spread_avg_return_pct": 0.9514,
+      "high_group_label": "剛跌破組",
+      "low_group_label": "非剛跌破組"
+    },
+    {
+      "factor": "low_k_turn_up",
+      "label": "KD 低檔翻揚",
+      "verdict": "有效",
+      "spread_avg_return_pct": 0.4718,
+      "high_group_label": "低檔翻揚組",
+      "low_group_label": "非低檔翻揚組"
+    },
+    {
+      "factor": "low_position_ma20",
+      "label": "低位因子",
+      "verdict": "有效",
+      "spread_avg_return_pct": 0.4466,
+      "high_group_label": "低位組",
+      "low_group_label": "高位組"
+    },
+    {
+      "factor": "retest_ma20",
+      "label": "回檔因子：剛回測 MA20",
+      "verdict": "有效",
+      "spread_avg_return_pct": 0.1369,
+      "high_group_label": "剛回測組",
+      "low_group_label": "非剛回測組"
+    },
+    {
+      "factor": "volume_expand_after_shrink",
+      "label": "量縮後放量",
+      "verdict": "有效",
+      "spread_avg_return_pct": 0.0242,
+      "high_group_label": "量縮後放量組",
+      "low_group_label": "其他量能組"
+    },
     {
       "factor": "hit_count",
       "label": "情境命中數",
@@ -176,6 +425,66 @@
       "factor": "technical",
       "label": "技術面",
       "verdict": "拖累",
+      "spread_avg_return_pct": -0.8708,
+      "high_group_label": "強勢續看",
+      "low_group_label": "暫不考慮"
+    }
+  ],
+  "positive_factors": [
+    {
+      "factor": "just_break_ma20",
+      "label": "回檔因子：剛跌破 MA20",
+      "spread_avg_return_pct": 0.9514,
+      "high_group_label": "剛跌破組",
+      "low_group_label": "非剛跌破組"
+    },
+    {
+      "factor": "low_k_turn_up",
+      "label": "KD 低檔翻揚",
+      "spread_avg_return_pct": 0.4718,
+      "high_group_label": "低檔翻揚組",
+      "low_group_label": "非低檔翻揚組"
+    },
+    {
+      "factor": "low_position_ma20",
+      "label": "低位因子",
+      "spread_avg_return_pct": 0.4466,
+      "high_group_label": "低位組",
+      "low_group_label": "高位組"
+    },
+    {
+      "factor": "retest_ma20",
+      "label": "回檔因子：剛回測 MA20",
+      "spread_avg_return_pct": 0.1369,
+      "high_group_label": "剛回測組",
+      "low_group_label": "非剛回測組"
+    },
+    {
+      "factor": "volume_expand_after_shrink",
+      "label": "量縮後放量",
+      "spread_avg_return_pct": 0.0242,
+      "high_group_label": "量縮後放量組",
+      "low_group_label": "其他量能組"
+    }
+  ],
+  "drag_factors": [
+    {
+      "factor": "hit_count",
+      "label": "情境命中數",
+      "spread_avg_return_pct": -0.1843,
+      "high_group_label": "3",
+      "low_group_label": "1"
+    },
+    {
+      "factor": "zone",
+      "label": "區間位置",
+      "spread_avg_return_pct": -0.2613,
+      "high_group_label": "試單區優先",
+      "low_group_label": "區間外"
+    },
+    {
+      "factor": "technical",
+      "label": "技術面",
       "spread_avg_return_pct": -0.8708,
       "high_group_label": "強勢續看",
       "low_group_label": "暫不考慮"
