@@ -1,6 +1,6 @@
 {
-  "report_version": "v24-strategy-analysis",
-  "generated_at": "2026-04-13T19:27:14.511246+08:00",
+  "report_version": "v27-strategy-analysis",
+  "generated_at": "2026-04-13T21:07:27.356267+08:00",
   "evaluation_horizon": "next_available_report",
   "evaluated_days": 20,
   "candidate_samples": 359,
@@ -18,6 +18,9 @@
   "strategy_v4_names": [
     "steady_v4"
   ],
+  "strategy_v5_names": [
+    "steady_v5"
+  ],
   "strategy_experiment_names": [
     "steady_v3_volume"
   ],
@@ -28,6 +31,7 @@
     "steady_v2",
     "steady_v3",
     "steady_v4",
+    "steady_v5",
     "steady_v3_volume"
   ],
   "low_position_definition": {
@@ -217,6 +221,39 @@
       "verdict": "優於單因子"
     }
   },
+  "strategies_v5": {
+    "steady_v5": {
+      "strategy": "steady_v5",
+      "label": "穩定型 v5",
+      "style_focus": "穩定",
+      "description": "steady_v4 + 距前高偏離 <= 2.1%",
+      "selection_hint": "保留 steady_v4 的 KD 與 MA20 骨架，只加上距前高的偏離上限，避開離近期高點過遠的修復失真樣本。",
+      "family": "steady",
+      "generation": "v5",
+      "combination_source": null,
+      "factor_names": [
+        "low_k_turn_up",
+        "steady_v4_k_band",
+        "steady_v4_ma20_distance",
+        "steady_v5_pullback_limit"
+      ],
+      "sample_count": 4,
+      "hit_count": 4,
+      "avg_return_pct": 2.7002,
+      "win_rate_pct": 100.0,
+      "avg_return_edge_vs_best_single_factor": 2.037,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "優於單因子"
+    }
+  },
   "strategy_experiments": {
     "steady_v3_volume": {
       "strategy": "steady_v3_volume",
@@ -246,6 +283,312 @@
         "win_rate_pct": 65.2174
       },
       "verdict": "未優於單因子"
+    }
+  },
+  "strategy_alpha_profiles": {
+    "steady_v4": {
+      "group": "steady_v4",
+      "label": "steady_v4 alpha 組",
+      "sample_count": 5,
+      "avg_return_pct": 1.6235,
+      "avg_market_return_pct": 2.0385,
+      "avg_alpha_pct": -0.4149,
+      "win_rate_pct": 80.0,
+      "outperform_rate_pct": 40.0,
+      "samples": [
+        {
+          "symbol": "2883",
+          "name": "開發金",
+          "date": "2026-04-01",
+          "next_report_date": "2026-04-02",
+          "priority_rank": 19,
+          "hit_count": 1,
+          "next_day_return_pct": 0.5051,
+          "market_return_pct": -1.8158,
+          "alpha_pct": 2.3209,
+          "k_value": 28.66,
+          "ma20_gap_pct": -1.0989,
+          "abs_ma20_gap_pct": 1.0989,
+          "volume_ratio": 0.97,
+          "prior_pullback_pct": 2.0619,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
+          "symbol": "2327",
+          "name": "國巨",
+          "date": "2026-04-07",
+          "next_report_date": "2026-04-08",
+          "priority_rank": 16,
+          "hit_count": 2,
+          "next_day_return_pct": 6.0547,
+          "market_return_pct": 4.609,
+          "alpha_pct": 1.4457,
+          "k_value": 28.52,
+          "ma20_gap_pct": -1.4247,
+          "abs_ma20_gap_pct": 1.4247,
+          "volume_ratio": 0.55,
+          "prior_pullback_pct": 1.7893,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
+          "symbol": "5880",
+          "name": "合庫金",
+          "date": "2026-03-24",
+          "next_report_date": "2026-03-25",
+          "priority_rank": 10,
+          "hit_count": 2,
+          "next_day_return_pct": 1.9651,
+          "market_return_pct": 2.5355,
+          "alpha_pct": -0.5704,
+          "k_value": 28.44,
+          "ma20_gap_pct": -1.801,
+          "abs_ma20_gap_pct": 1.801,
+          "volume_ratio": 0.77,
+          "prior_pullback_pct": -0.2179,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        },
+        {
+          "symbol": "2882",
+          "name": "國泰金",
+          "date": "2026-03-31",
+          "next_report_date": "2026-04-01",
+          "priority_rank": 6,
+          "hit_count": 3,
+          "next_day_return_pct": 2.276,
+          "market_return_pct": 4.5766,
+          "alpha_pct": -2.3006,
+          "k_value": 29.94,
+          "ma20_gap_pct": -2.0619,
+          "abs_ma20_gap_pct": 2.0619,
+          "volume_ratio": 1.31,
+          "prior_pullback_pct": -0.4249,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        },
+        {
+          "symbol": "2363",
+          "name": "矽統",
+          "date": "2026-04-08",
+          "next_report_date": "2026-04-09",
+          "priority_rank": 24,
+          "hit_count": 1,
+          "next_day_return_pct": -2.6832,
+          "market_return_pct": 0.287,
+          "alpha_pct": -2.9702,
+          "k_value": 24.08,
+          "ma20_gap_pct": -2.0421,
+          "abs_ma20_gap_pct": 2.0421,
+          "volume_ratio": 0.98,
+          "prior_pullback_pct": 2.3231,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        }
+      ],
+      "metrics": {
+        "priority_rank": {
+          "sample_count": 5,
+          "avg_value": 15.0,
+          "min_value": 6.0,
+          "max_value": 24.0
+        },
+        "hit_count": {
+          "sample_count": 5,
+          "avg_value": 1.8,
+          "min_value": 1.0,
+          "max_value": 3.0
+        },
+        "k_value": {
+          "sample_count": 5,
+          "avg_value": 27.928,
+          "min_value": 24.08,
+          "max_value": 29.94
+        },
+        "abs_ma20_gap_pct": {
+          "sample_count": 5,
+          "avg_value": 1.6857,
+          "min_value": 1.0989,
+          "max_value": 2.0619
+        },
+        "volume_ratio": {
+          "sample_count": 5,
+          "avg_value": 0.916,
+          "min_value": 0.55,
+          "max_value": 1.31
+        },
+        "prior_pullback_pct": {
+          "sample_count": 5,
+          "avg_value": 1.1063,
+          "min_value": -0.4249,
+          "max_value": 2.3231
+        },
+        "close_above_ma20": {
+          "sample_count": 5,
+          "true_count": 0,
+          "false_count": 5,
+          "true_rate_pct": 0.0
+        },
+        "has_sharp_drop": {
+          "sample_count": 5,
+          "true_count": 0,
+          "false_count": 5,
+          "true_rate_pct": 0.0
+        }
+      }
+    },
+    "steady_v5": {
+      "group": "steady_v5",
+      "label": "steady_v5 alpha 組",
+      "sample_count": 4,
+      "avg_return_pct": 2.7002,
+      "avg_market_return_pct": 2.4763,
+      "avg_alpha_pct": 0.2239,
+      "win_rate_pct": 100.0,
+      "outperform_rate_pct": 50.0,
+      "samples": [
+        {
+          "symbol": "2883",
+          "name": "開發金",
+          "date": "2026-04-01",
+          "next_report_date": "2026-04-02",
+          "priority_rank": 19,
+          "hit_count": 1,
+          "next_day_return_pct": 0.5051,
+          "market_return_pct": -1.8158,
+          "alpha_pct": 2.3209,
+          "k_value": 28.66,
+          "ma20_gap_pct": -1.0989,
+          "abs_ma20_gap_pct": 1.0989,
+          "volume_ratio": 0.97,
+          "prior_pullback_pct": 2.0619,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
+          "symbol": "2327",
+          "name": "國巨",
+          "date": "2026-04-07",
+          "next_report_date": "2026-04-08",
+          "priority_rank": 16,
+          "hit_count": 2,
+          "next_day_return_pct": 6.0547,
+          "market_return_pct": 4.609,
+          "alpha_pct": 1.4457,
+          "k_value": 28.52,
+          "ma20_gap_pct": -1.4247,
+          "abs_ma20_gap_pct": 1.4247,
+          "volume_ratio": 0.55,
+          "prior_pullback_pct": 1.7893,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
+          "symbol": "5880",
+          "name": "合庫金",
+          "date": "2026-03-24",
+          "next_report_date": "2026-03-25",
+          "priority_rank": 10,
+          "hit_count": 2,
+          "next_day_return_pct": 1.9651,
+          "market_return_pct": 2.5355,
+          "alpha_pct": -0.5704,
+          "k_value": 28.44,
+          "ma20_gap_pct": -1.801,
+          "abs_ma20_gap_pct": 1.801,
+          "volume_ratio": 0.77,
+          "prior_pullback_pct": -0.2179,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        },
+        {
+          "symbol": "2882",
+          "name": "國泰金",
+          "date": "2026-03-31",
+          "next_report_date": "2026-04-01",
+          "priority_rank": 6,
+          "hit_count": 3,
+          "next_day_return_pct": 2.276,
+          "market_return_pct": 4.5766,
+          "alpha_pct": -2.3006,
+          "k_value": 29.94,
+          "ma20_gap_pct": -2.0619,
+          "abs_ma20_gap_pct": 2.0619,
+          "volume_ratio": 1.31,
+          "prior_pullback_pct": -0.4249,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        }
+      ],
+      "metrics": {
+        "priority_rank": {
+          "sample_count": 4,
+          "avg_value": 12.75,
+          "min_value": 6.0,
+          "max_value": 19.0
+        },
+        "hit_count": {
+          "sample_count": 4,
+          "avg_value": 2.0,
+          "min_value": 1.0,
+          "max_value": 3.0
+        },
+        "k_value": {
+          "sample_count": 4,
+          "avg_value": 28.89,
+          "min_value": 28.44,
+          "max_value": 29.94
+        },
+        "abs_ma20_gap_pct": {
+          "sample_count": 4,
+          "avg_value": 1.5966,
+          "min_value": 1.0989,
+          "max_value": 2.0619
+        },
+        "volume_ratio": {
+          "sample_count": 4,
+          "avg_value": 0.9,
+          "min_value": 0.55,
+          "max_value": 1.31
+        },
+        "prior_pullback_pct": {
+          "sample_count": 4,
+          "avg_value": 0.8021,
+          "min_value": -0.4249,
+          "max_value": 2.0619
+        },
+        "close_above_ma20": {
+          "sample_count": 4,
+          "true_count": 0,
+          "false_count": 4,
+          "true_rate_pct": 0.0
+        },
+        "has_sharp_drop": {
+          "sample_count": 4,
+          "true_count": 0,
+          "false_count": 4,
+          "true_rate_pct": 0.0
+        }
+      }
     }
   },
   "strategy_variants": {
@@ -412,6 +755,37 @@
       "avg_return_pct": 1.6235,
       "win_rate_pct": 80.0,
       "avg_return_edge_vs_best_single_factor": 0.9603,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "優於單因子"
+    },
+    "steady_v5": {
+      "strategy": "steady_v5",
+      "label": "穩定型 v5",
+      "style_focus": "穩定",
+      "description": "steady_v4 + 距前高偏離 <= 2.1%",
+      "selection_hint": "保留 steady_v4 的 KD 與 MA20 骨架，只加上距前高的偏離上限，避開離近期高點過遠的修復失真樣本。",
+      "family": "steady",
+      "generation": "v5",
+      "combination_source": null,
+      "factor_names": [
+        "low_k_turn_up",
+        "steady_v4_k_band",
+        "steady_v4_ma20_distance",
+        "steady_v5_pullback_limit"
+      ],
+      "sample_count": 4,
+      "hit_count": 4,
+      "avg_return_pct": 2.7002,
+      "win_rate_pct": 100.0,
+      "avg_return_edge_vs_best_single_factor": 2.037,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
@@ -595,6 +969,36 @@
         "sample_count": 14,
         "avg_return_pct": 1.1359,
         "win_rate_pct": 50.0
+      },
+      "verdict": "優於單因子"
+    },
+    {
+      "strategy": "steady_v5",
+      "label": "穩定型 v5",
+      "style_focus": "穩定",
+      "description": "steady_v4 + 距前高偏離 <= 2.1%",
+      "selection_hint": "保留 steady_v4 的 KD 與 MA20 骨架，只加上距前高的偏離上限，避開離近期高點過遠的修復失真樣本。",
+      "family": "steady",
+      "generation": "v5",
+      "factor_names": [
+        "low_k_turn_up",
+        "steady_v4_k_band",
+        "steady_v4_ma20_distance",
+        "steady_v5_pullback_limit"
+      ],
+      "hit_count": 4,
+      "sample_count": 4,
+      "avg_return_pct": 2.7002,
+      "win_rate_pct": 100.0,
+      "avg_return_edge_vs_best_single_factor": 2.037,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
       },
       "verdict": "優於單因子"
     },
@@ -785,6 +1189,36 @@
       "avg_return_pct": 2.1593,
       "win_rate_pct": 100.0,
       "avg_return_edge_vs_best_single_factor": 1.4961,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "優於單因子"
+    },
+    {
+      "strategy": "steady_v5",
+      "label": "穩定型 v5",
+      "style_focus": "穩定",
+      "description": "steady_v4 + 距前高偏離 <= 2.1%",
+      "selection_hint": "保留 steady_v4 的 KD 與 MA20 骨架，只加上距前高的偏離上限，避開離近期高點過遠的修復失真樣本。",
+      "family": "steady",
+      "generation": "v5",
+      "factor_names": [
+        "low_k_turn_up",
+        "steady_v4_k_band",
+        "steady_v4_ma20_distance",
+        "steady_v5_pullback_limit"
+      ],
+      "hit_count": 4,
+      "sample_count": 4,
+      "avg_return_pct": 2.7002,
+      "win_rate_pct": 100.0,
+      "avg_return_edge_vs_best_single_factor": 2.037,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
@@ -1217,6 +1651,340 @@
         },
         "verdict": "優於單因子"
       },
+      "v5": {
+        "strategy": "steady_v5",
+        "label": "穩定型 v5",
+        "style_focus": "穩定",
+        "description": "steady_v4 + 距前高偏離 <= 2.1%",
+        "selection_hint": "保留 steady_v4 的 KD 與 MA20 骨架，只加上距前高的偏離上限，避開離近期高點過遠的修復失真樣本。",
+        "family": "steady",
+        "generation": "v5",
+        "factor_names": [
+          "low_k_turn_up",
+          "steady_v4_k_band",
+          "steady_v4_ma20_distance",
+          "steady_v5_pullback_limit"
+        ],
+        "hit_count": 4,
+        "sample_count": 4,
+        "avg_return_pct": 2.7002,
+        "win_rate_pct": 100.0,
+        "avg_return_edge_vs_best_single_factor": 2.037,
+        "beats_constituent_single_factors": true,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "優於單因子"
+      },
+      "v4_alpha_profile": {
+        "group": "steady_v4",
+        "label": "steady_v4 alpha 組",
+        "sample_count": 5,
+        "avg_return_pct": 1.6235,
+        "avg_market_return_pct": 2.0385,
+        "avg_alpha_pct": -0.4149,
+        "win_rate_pct": 80.0,
+        "outperform_rate_pct": 40.0,
+        "samples": [
+          {
+            "symbol": "2883",
+            "name": "開發金",
+            "date": "2026-04-01",
+            "next_report_date": "2026-04-02",
+            "priority_rank": 19,
+            "hit_count": 1,
+            "next_day_return_pct": 0.5051,
+            "market_return_pct": -1.8158,
+            "alpha_pct": 2.3209,
+            "k_value": 28.66,
+            "ma20_gap_pct": -1.0989,
+            "abs_ma20_gap_pct": 1.0989,
+            "volume_ratio": 0.97,
+            "prior_pullback_pct": 2.0619,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
+            "symbol": "2327",
+            "name": "國巨",
+            "date": "2026-04-07",
+            "next_report_date": "2026-04-08",
+            "priority_rank": 16,
+            "hit_count": 2,
+            "next_day_return_pct": 6.0547,
+            "market_return_pct": 4.609,
+            "alpha_pct": 1.4457,
+            "k_value": 28.52,
+            "ma20_gap_pct": -1.4247,
+            "abs_ma20_gap_pct": 1.4247,
+            "volume_ratio": 0.55,
+            "prior_pullback_pct": 1.7893,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
+            "symbol": "5880",
+            "name": "合庫金",
+            "date": "2026-03-24",
+            "next_report_date": "2026-03-25",
+            "priority_rank": 10,
+            "hit_count": 2,
+            "next_day_return_pct": 1.9651,
+            "market_return_pct": 2.5355,
+            "alpha_pct": -0.5704,
+            "k_value": 28.44,
+            "ma20_gap_pct": -1.801,
+            "abs_ma20_gap_pct": 1.801,
+            "volume_ratio": 0.77,
+            "prior_pullback_pct": -0.2179,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": false,
+            "underperform_market": true
+          },
+          {
+            "symbol": "2882",
+            "name": "國泰金",
+            "date": "2026-03-31",
+            "next_report_date": "2026-04-01",
+            "priority_rank": 6,
+            "hit_count": 3,
+            "next_day_return_pct": 2.276,
+            "market_return_pct": 4.5766,
+            "alpha_pct": -2.3006,
+            "k_value": 29.94,
+            "ma20_gap_pct": -2.0619,
+            "abs_ma20_gap_pct": 2.0619,
+            "volume_ratio": 1.31,
+            "prior_pullback_pct": -0.4249,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": false,
+            "underperform_market": true
+          },
+          {
+            "symbol": "2363",
+            "name": "矽統",
+            "date": "2026-04-08",
+            "next_report_date": "2026-04-09",
+            "priority_rank": 24,
+            "hit_count": 1,
+            "next_day_return_pct": -2.6832,
+            "market_return_pct": 0.287,
+            "alpha_pct": -2.9702,
+            "k_value": 24.08,
+            "ma20_gap_pct": -2.0421,
+            "abs_ma20_gap_pct": 2.0421,
+            "volume_ratio": 0.98,
+            "prior_pullback_pct": 2.3231,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": false,
+            "underperform_market": true
+          }
+        ],
+        "metrics": {
+          "priority_rank": {
+            "sample_count": 5,
+            "avg_value": 15.0,
+            "min_value": 6.0,
+            "max_value": 24.0
+          },
+          "hit_count": {
+            "sample_count": 5,
+            "avg_value": 1.8,
+            "min_value": 1.0,
+            "max_value": 3.0
+          },
+          "k_value": {
+            "sample_count": 5,
+            "avg_value": 27.928,
+            "min_value": 24.08,
+            "max_value": 29.94
+          },
+          "abs_ma20_gap_pct": {
+            "sample_count": 5,
+            "avg_value": 1.6857,
+            "min_value": 1.0989,
+            "max_value": 2.0619
+          },
+          "volume_ratio": {
+            "sample_count": 5,
+            "avg_value": 0.916,
+            "min_value": 0.55,
+            "max_value": 1.31
+          },
+          "prior_pullback_pct": {
+            "sample_count": 5,
+            "avg_value": 1.1063,
+            "min_value": -0.4249,
+            "max_value": 2.3231
+          },
+          "close_above_ma20": {
+            "sample_count": 5,
+            "true_count": 0,
+            "false_count": 5,
+            "true_rate_pct": 0.0
+          },
+          "has_sharp_drop": {
+            "sample_count": 5,
+            "true_count": 0,
+            "false_count": 5,
+            "true_rate_pct": 0.0
+          }
+        }
+      },
+      "v5_alpha_profile": {
+        "group": "steady_v5",
+        "label": "steady_v5 alpha 組",
+        "sample_count": 4,
+        "avg_return_pct": 2.7002,
+        "avg_market_return_pct": 2.4763,
+        "avg_alpha_pct": 0.2239,
+        "win_rate_pct": 100.0,
+        "outperform_rate_pct": 50.0,
+        "samples": [
+          {
+            "symbol": "2883",
+            "name": "開發金",
+            "date": "2026-04-01",
+            "next_report_date": "2026-04-02",
+            "priority_rank": 19,
+            "hit_count": 1,
+            "next_day_return_pct": 0.5051,
+            "market_return_pct": -1.8158,
+            "alpha_pct": 2.3209,
+            "k_value": 28.66,
+            "ma20_gap_pct": -1.0989,
+            "abs_ma20_gap_pct": 1.0989,
+            "volume_ratio": 0.97,
+            "prior_pullback_pct": 2.0619,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
+            "symbol": "2327",
+            "name": "國巨",
+            "date": "2026-04-07",
+            "next_report_date": "2026-04-08",
+            "priority_rank": 16,
+            "hit_count": 2,
+            "next_day_return_pct": 6.0547,
+            "market_return_pct": 4.609,
+            "alpha_pct": 1.4457,
+            "k_value": 28.52,
+            "ma20_gap_pct": -1.4247,
+            "abs_ma20_gap_pct": 1.4247,
+            "volume_ratio": 0.55,
+            "prior_pullback_pct": 1.7893,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
+            "symbol": "5880",
+            "name": "合庫金",
+            "date": "2026-03-24",
+            "next_report_date": "2026-03-25",
+            "priority_rank": 10,
+            "hit_count": 2,
+            "next_day_return_pct": 1.9651,
+            "market_return_pct": 2.5355,
+            "alpha_pct": -0.5704,
+            "k_value": 28.44,
+            "ma20_gap_pct": -1.801,
+            "abs_ma20_gap_pct": 1.801,
+            "volume_ratio": 0.77,
+            "prior_pullback_pct": -0.2179,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": false,
+            "underperform_market": true
+          },
+          {
+            "symbol": "2882",
+            "name": "國泰金",
+            "date": "2026-03-31",
+            "next_report_date": "2026-04-01",
+            "priority_rank": 6,
+            "hit_count": 3,
+            "next_day_return_pct": 2.276,
+            "market_return_pct": 4.5766,
+            "alpha_pct": -2.3006,
+            "k_value": 29.94,
+            "ma20_gap_pct": -2.0619,
+            "abs_ma20_gap_pct": 2.0619,
+            "volume_ratio": 1.31,
+            "prior_pullback_pct": -0.4249,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": false,
+            "underperform_market": true
+          }
+        ],
+        "metrics": {
+          "priority_rank": {
+            "sample_count": 4,
+            "avg_value": 12.75,
+            "min_value": 6.0,
+            "max_value": 19.0
+          },
+          "hit_count": {
+            "sample_count": 4,
+            "avg_value": 2.0,
+            "min_value": 1.0,
+            "max_value": 3.0
+          },
+          "k_value": {
+            "sample_count": 4,
+            "avg_value": 28.89,
+            "min_value": 28.44,
+            "max_value": 29.94
+          },
+          "abs_ma20_gap_pct": {
+            "sample_count": 4,
+            "avg_value": 1.5966,
+            "min_value": 1.0989,
+            "max_value": 2.0619
+          },
+          "volume_ratio": {
+            "sample_count": 4,
+            "avg_value": 0.9,
+            "min_value": 0.55,
+            "max_value": 1.31
+          },
+          "prior_pullback_pct": {
+            "sample_count": 4,
+            "avg_value": 0.8021,
+            "min_value": -0.4249,
+            "max_value": 2.0619
+          },
+          "close_above_ma20": {
+            "sample_count": 4,
+            "true_count": 0,
+            "false_count": 4,
+            "true_rate_pct": 0.0
+          },
+          "has_sharp_drop": {
+            "sample_count": 4,
+            "true_count": 0,
+            "false_count": 4,
+            "true_rate_pct": 0.0
+          }
+        }
+      },
       "optional_tests": {
         "kd_plus_low_position": {
           "strategy": "steady",
@@ -1300,23 +2068,38 @@
       "v4_avg_return_close_to_v2": true,
       "v4_win_rate_stable": true,
       "meets_v24_goal": true,
+      "hit_count_delta_v5_vs_v4": -1,
+      "avg_return_delta_v5_vs_v4": 1.0767,
+      "avg_market_return_delta_v5_vs_v4": 0.4378,
+      "avg_alpha_delta_v5_vs_v4": 0.6388,
+      "win_rate_delta_v5_vs_v4": 20.0,
+      "outperform_rate_delta_v5_vs_v4": 10.0,
+      "v5_hit_share_vs_v4": 0.8,
+      "v5_hit_share_vs_v4_pct": 80.0,
+      "v5_hit_count_reasonable": true,
+      "v5_win_rate_drop_pct": -20.0,
+      "v5_win_rate_not_collapsed": true,
+      "v5_alpha_positive": true,
+      "meets_v27_goal": true,
       "best_core_by_avg_return": {
-        "strategy": "steady_v2",
-        "label": "穩定型 v2",
+        "strategy": "steady_v5",
+        "label": "穩定型 v5",
         "style_focus": "穩定",
-        "description": "MA20_v2 + KD 低檔翻揚",
-        "selection_hint": "保留 KD 低檔翻揚，但把 MA20 改成區間條件，優先提升可用樣本。",
+        "description": "steady_v4 + 距前高偏離 <= 2.1%",
+        "selection_hint": "保留 steady_v4 的 KD 與 MA20 骨架，只加上距前高的偏離上限，避開離近期高點過遠的修復失真樣本。",
         "family": "steady",
-        "generation": "v2",
+        "generation": "v5",
         "factor_names": [
-          "ma20_v2",
-          "low_k_turn_up"
+          "low_k_turn_up",
+          "steady_v4_k_band",
+          "steady_v4_ma20_distance",
+          "steady_v5_pullback_limit"
         ],
         "hit_count": 4,
         "sample_count": 4,
-        "avg_return_pct": 2.1593,
+        "avg_return_pct": 2.7002,
         "win_rate_pct": 100.0,
-        "avg_return_edge_vs_best_single_factor": 1.4961,
+        "avg_return_edge_vs_best_single_factor": 2.037,
         "beats_constituent_single_factors": true,
         "best_single_factor": {
           "factor": "low_k_turn_up",
@@ -1467,7 +2250,8 @@
         },
         "verdict": "未優於單因子"
       },
-      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 4->5、平均報酬 2.1593%->1.6235%、勝率 100.0%->80.0%。"
+      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 4->5、平均報酬 2.1593%->1.6235%、勝率 100.0%->80.0%。",
+      "v5_summary": "steady_v5 只在 steady_v4 上加入回落深度限制，命中數 5->4、平均報酬 1.6235%->2.7002%、平均市場報酬 2.0385%->2.4763%、平均 alpha -0.4149%->0.2239%、勝率 80.0%->100.0%。"
     }
   },
   "v2_summary": {
@@ -1598,6 +2382,26 @@
       "close_return_ratio_threshold": 0.7,
       "meets_v24_goal": true,
       "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 4->5、平均報酬 2.1593%->1.6235%、勝率 100.0%->80.0%。"
+    }
+  },
+  "v27_summary": {
+    "steady_alpha_repair": {
+      "target_strategy": "steady_v5",
+      "base_strategy": "steady_v4",
+      "comparison_variant_names": [
+        "steady_v4",
+        "steady_v5"
+      ],
+      "pullback_abs_limit_pct": 2.1,
+      "min_hit_share_vs_v4": 0.75,
+      "max_win_rate_drop_pct": 10.0,
+      "meets_v27_goal": true,
+      "goal_checks": {
+        "alpha_positive": true,
+        "win_rate_not_collapsed": true,
+        "hit_count_reasonable": true
+      },
+      "summary": "steady_v5 只在 steady_v4 上加入回落深度限制，命中數 5->4、平均報酬 1.6235%->2.7002%、平均市場報酬 2.0385%->2.4763%、平均 alpha -0.4149%->0.2239%、勝率 80.0%->100.0%。"
     }
   }
 }

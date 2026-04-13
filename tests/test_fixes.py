@@ -695,7 +695,7 @@ class TestPriorityValidation(unittest.TestCase):
             },
         )
 
-        self.assertEqual(strategy_analysis["report_version"], "v24-strategy-analysis")
+        self.assertEqual(strategy_analysis["report_version"], "v27-strategy-analysis")
         self.assertEqual(strategy_analysis["strategies"]["sniper"]["label"], "狙擊型")
         self.assertEqual(strategy_analysis["strategies"]["steady"]["label"], "穩定型")
         self.assertEqual(
@@ -712,12 +712,15 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertIn("steady_v2", strategy_analysis["strategy_v2_names"])
         self.assertIn("steady_v3", strategy_analysis["strategy_v3_names"])
         self.assertIn("steady_v4", strategy_analysis["strategy_v4_names"])
+        self.assertIn("steady_v5", strategy_analysis["strategy_v5_names"])
         self.assertIn("steady_v3_volume", strategy_analysis["strategy_experiment_names"])
         self.assertEqual(strategy_analysis["strategies_v2"]["sniper_v2"]["generation"], "v2")
         self.assertEqual(strategy_analysis["strategies_v2"]["steady_v2"]["generation"], "v2")
         self.assertEqual(strategy_analysis["strategies_v3"]["steady_v3"]["generation"], "v3")
         self.assertEqual(strategy_analysis["strategies_v4"]["steady_v4"]["generation"], "v4")
+        self.assertEqual(strategy_analysis["strategies_v5"]["steady_v5"]["generation"], "v5")
         self.assertEqual(strategy_analysis["strategies_v4"]["steady_v4"]["factor_names"], ["low_k_turn_up", "steady_v4_k_band", "steady_v4_ma20_distance"])
+        self.assertEqual(strategy_analysis["strategies_v5"]["steady_v5"]["factor_names"], ["low_k_turn_up", "steady_v4_k_band", "steady_v4_ma20_distance", "steady_v5_pullback_limit"])
         self.assertEqual(strategy_analysis["v24_summary"]["steady_rebuild"]["k_band"]["min"], 24.0)
         self.assertEqual(strategy_analysis["v24_summary"]["steady_rebuild"]["k_band"]["max"], 30.0)
         self.assertEqual(strategy_analysis["v24_summary"]["steady_rebuild"]["ma20_distance_pct_lt"], 2.08)
@@ -728,6 +731,7 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v2"]["strategy"], "steady_v2")
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v3"]["strategy"], "steady_v3")
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v4"]["strategy"], "steady_v4")
+        self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v5"]["strategy"], "steady_v5")
         self.assertEqual(
             strategy_analysis["strategy_variant_comparison"]["steady"]["optional_tests"]["kd_plus_low_position"]["strategy"],
             "steady",
@@ -739,14 +743,103 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertTrue(strategy_analysis["strategy_variant_comparison"]["sniper"]["v2_avg_return_positive"])
         self.assertTrue(strategy_analysis["strategy_variant_comparison"]["steady"]["v3_hit_count_recovered"])
         self.assertIn("v4_hit_count_gt_v2", strategy_analysis["strategy_variant_comparison"]["steady"])
+        self.assertIn("v5_alpha_profile", strategy_analysis["strategy_variant_comparison"]["steady"])
         self.assertIn("steady_rebuild", strategy_analysis["v24_summary"])
         self.assertEqual(strategy_analysis["v24_summary"]["steady_rebuild"]["target_strategy"], "steady_v4")
+        self.assertIn("steady_alpha_repair", strategy_analysis["v27_summary"])
+        self.assertEqual(strategy_analysis["v27_summary"]["steady_alpha_repair"]["target_strategy"], "steady_v5")
         self.assertIn("steady_rewrite", strategy_analysis["v22_summary"])
         self.assertEqual(strategy_analysis["v22_summary"]["steady_rewrite"]["target_strategy"], "steady_v3")
         self.assertIn("families_with_more_hits", strategy_analysis["v2_summary"])
         self.assertIn("sniper", strategy_analysis["v2_summary"]["families_with_more_hits"])
         self.assertIn("sniper", strategy_analysis["v2_summary"]["families_with_positive_avg_return"])
         self.assertTrue(strategy_analysis["strategy_variant_comparison"]["sniper"]["meets_v19_goal"])
+
+    def test_strategy_analysis_v27_repair_turns_steady_v5_alpha_positive(self):
+        previous_universe = self.make_combo_previous_universe_report("2026-04-09")
+        current_universe = self.make_combo_current_universe_report("2026-04-10")
+        next_universe = self.make_combo_next_universe_report("2026-04-11")
+
+        for stock in previous_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 100.0
+                stock["indicators"]["k"] = 12.0
+            if stock["symbol"] == "CCC":
+                stock["indicators"]["close"] = 101.0
+                stock["indicators"]["k"] = 20.0
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 102.5
+                stock["indicators"]["k"] = 18.0
+            if stock["symbol"] == "AAA":
+                stock["indicators"]["close"] = 100.8
+                stock["indicators"]["k"] = 22.0
+
+        for stock in current_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 98.5
+                stock["indicators"]["k"] = 25.0
+                stock["indicators"]["volume_ratio"] = 1.3
+            if stock["symbol"] == "CCC":
+                stock["indicators"]["close"] = 99.8
+                stock["indicators"]["k"] = 26.0
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 99.5
+                stock["indicators"]["k"] = 24.0
+                stock["indicators"]["volume_ratio"] = 0.7
+            if stock["symbol"] == "AAA":
+                stock["indicators"]["close"] = 100.2
+                stock["indicators"]["k"] = 27.0
+
+        for stock in next_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["close"] = 100.0
+            if stock["symbol"] == "CCC":
+                stock["indicators"]["close"] = 100.8
+            if stock["symbol"] == "DDD":
+                stock["indicators"]["close"] = 98.0
+            if stock["symbol"] == "AAA":
+                stock["indicators"]["close"] = 101.2
+
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            previous_universe,
+            next_universe_report=current_universe,
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            current_universe,
+            next_universe_report=next_universe,
+            next_date="2026-04-11",
+        )
+
+        strategy_analysis = generate_strategy_analysis_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": previous_universe,
+                "2026-04-10": current_universe,
+            },
+        )
+
+        steady_comparison = strategy_analysis["strategy_variant_comparison"]["steady"]
+        self.assertEqual(strategy_analysis["strategies_v4"]["steady_v4"]["hit_count"], 4)
+        self.assertEqual(strategy_analysis["strategies_v5"]["steady_v5"]["hit_count"], 3)
+        self.assertLess(steady_comparison["v4_alpha_profile"]["avg_alpha_pct"], 0)
+        self.assertGreater(steady_comparison["v5_alpha_profile"]["avg_alpha_pct"], 0)
+        self.assertEqual(
+            [item["symbol"] for item in steady_comparison["v5_alpha_profile"]["samples"]],
+            ["BBB", "CCC", "AAA"],
+        )
+        self.assertTrue(steady_comparison["v5_hit_count_reasonable"])
+        self.assertTrue(steady_comparison["v5_win_rate_not_collapsed"])
+        self.assertTrue(steady_comparison["v5_alpha_positive"])
+        self.assertTrue(steady_comparison["meets_v27_goal"])
+        self.assertTrue(strategy_analysis["v27_summary"]["steady_alpha_repair"]["meets_v27_goal"])
 
 
     def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):

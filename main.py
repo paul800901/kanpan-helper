@@ -188,8 +188,8 @@ def run_pipeline(
     print(f"[OK] Universe 報告已生成: {universe_path}")
     print(f"   包含 {universe_report['total_stocks']} 檔股票")
 
-    # Step 7: 產生 context / priority / factor 驗證層（v9 + v26）
-    print("\n[Step 7] 產生 Context、Priority 與 steady v4 alpha 拆解報告")
+    # Step 7: 產生 context / priority / factor 驗證層（v9 + v27）
+    print("\n[Step 7] 產生 Context、Priority 與 steady v5 alpha 修正報告")
     print("-" * 40)
 
     validation_result = backfill_priority_validation_reports(target_date=report_date)
@@ -217,7 +217,7 @@ def run_pipeline(
     if factor_combination_analysis_path:
         print(f"[OK] 因子組合分析已就緒: {factor_combination_analysis_path}")
     if strategy_analysis_path:
-        print(f"[OK] 策略重組分析已就緒: {strategy_analysis_path}")
+        print(f"[OK] 策略重組分析（含 steady_v5）已就緒: {strategy_analysis_path}")
     if signal_density_path:
         print(f"[OK] 訊號密度分析已就緒: {signal_density_path}")
     if steady_v2_blockers_path:
@@ -235,7 +235,7 @@ def run_pipeline(
     if validation_result.get("history_window"):
         generated_days = len(validation_result["history_window"].get("generated") or [])
         target_days = len(validation_result["history_window"].get("target_dates") or [])
-        print(f"[OK] v26 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
+        print(f"[OK] v27 歷史樣本視窗: {target_days} 天目標，這次新補 {generated_days} 天")
 
     if validation_result.get("skipped"):
         print(f"[INFO] 有 {len(validation_result['skipped'])} 個歷史日期因缺資料而略過")
