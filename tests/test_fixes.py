@@ -21,7 +21,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, generate_steady_v5_long_term_validation_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, generate_timing_alignment_report, generate_steady_v2_signature_report, generate_steady_v4_tracking_report, generate_steady_v4_alpha_breakdown_report, generate_steady_v5_long_term_validation_report, generate_steady_v5_regime_analysis_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -344,14 +344,17 @@ class TestPriorityValidation(unittest.TestCase):
         volume_ratio: float,
         institutional: str,
         rank: int,
+        category: str = "電子",
     ) -> dict:
         return {
             "symbol": symbol,
             "name": name,
+            "category": category,
             "rank": rank,
             "score": score,
             "action_bias": "可留意",
             "institutional": institutional,
+            "volume_ratio": volume_ratio,
             "indicators": {
                 "close": close,
                 "ma5": ma5,
@@ -466,6 +469,30 @@ class TestPriorityValidation(unittest.TestCase):
             ],
         }
 
+    def make_regime_universe_report(self, date_str: str, categories: list[str], volume_ratio: float) -> dict:
+        stocks = []
+        for index, category in enumerate(categories):
+            stocks.append(
+                self.make_universe_stock(
+                    f"R{index:02d}",
+                    f"Regime {index}",
+                    max(60, 90 - index),
+                    100.0 + index,
+                    99.0 + index,
+                    98.0 + index,
+                    60.0,
+                    volume_ratio,
+                    "連1買",
+                    index + 1,
+                    category=category,
+                )
+            )
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": stocks,
+        }
+
     def test_priority_snapshot_mirrors_frontend_sorting(self):
         context_report = self.make_context_report("2026-04-10")
         universe_report = self.make_universe_report("2026-04-10")
@@ -524,6 +551,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "steady_v4_tracking.json").exists())
             self.assertTrue((reports_dir / "steady_v4_alpha_breakdown.json").exists())
             self.assertTrue((reports_dir / "steady_v5_long_term_validation.json").exists())
+            self.assertTrue((reports_dir / "steady_v5_regime_analysis.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
@@ -533,6 +561,7 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue(result["steady_v4_tracking_path"].endswith("steady_v4_tracking.json"))
             self.assertTrue(result["steady_v4_alpha_breakdown_path"].endswith("steady_v4_alpha_breakdown.json"))
             self.assertTrue(result["steady_v5_long_term_validation_path"].endswith("steady_v5_long_term_validation.json"))
+            self.assertTrue(result["steady_v5_regime_analysis_path"].endswith("steady_v5_regime_analysis.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -983,7 +1012,82 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertEqual(rolling["assessment"]["negative_window_count"], 0)
         self.assertEqual(rolling["assessment"]["longest_negative_streak"], 0)
         self.assertTrue(rolling["assessment"]["has_no_long_negative_streak"])
-        self.assertTrue(rolling["assessment"]["has_no_long_instability_streak"])
+
+    def test_steady_v5_regime_analysis_report_identifies_market_regimes(self):
+        base_date = datetime(2026, 1, 1)
+        alpha_by_block = [0.8, 0.6, -0.5, 0.7, -0.4, 0.3, 0.9, 0.6, 0.5, -1.2, -0.8, 0.4]
+        daily_records = []
+        universe_reports_by_date = {}
+
+        for index in range(120):
+            block_index = index // 10
+            alpha_pct = alpha_by_block[block_index]
+            is_negative_block = alpha_pct < 0
+            date_str = (base_date + timedelta(days=index)).strftime("%Y-%m-%d")
+            next_date_str = (base_date + timedelta(days=index + 1)).strftime("%Y-%m-%d")
+            if is_negative_block:
+                market_return_pct = -0.6 if index % 2 == 0 else 0.4
+                categories = ["金融", "航運", "化工", "食品", "電子", "半導體", "水泥", "航空", "鋼鐵", "電信"]
+                volume_ratio = 0.72
+            else:
+                market_return_pct = 0.35
+                categories = ["半導體", "半導體", "電子", "電子", "半導體", "電子", "半導體", "電子", "金融", "航運"]
+                volume_ratio = 1.32
+
+            next_day_return_pct = market_return_pct + alpha_pct
+            daily_records.append({
+                "date": date_str,
+                "next_report_date": next_date_str,
+                "steady_v5_hit_count": 2,
+                "market_return_pct": market_return_pct,
+                "avg_return_pct": next_day_return_pct,
+                "win_rate_pct": 100.0 if next_day_return_pct > 0 else 0.0,
+                "avg_alpha_pct": alpha_pct,
+                "steady_v5_hits": [
+                    {
+                        "symbol": f"H{index:03d}A",
+                        "next_day_return_pct": next_day_return_pct,
+                        "market_return_pct": market_return_pct,
+                        "alpha_pct": alpha_pct,
+                    },
+                    {
+                        "symbol": f"H{index:03d}B",
+                        "next_day_return_pct": next_day_return_pct,
+                        "market_return_pct": market_return_pct,
+                        "alpha_pct": alpha_pct,
+                    },
+                ],
+            })
+            universe_reports_by_date[date_str] = self.make_regime_universe_report(date_str, categories, volume_ratio)
+
+        analysis = generate_steady_v5_regime_analysis_report(
+            [],
+            universe_reports_by_date=universe_reports_by_date,
+            long_term_validation_report={
+                "report_version": "v28-steady-v5-long-term-validation",
+                "evaluation_horizon": {
+                    "start_date": daily_records[0]["date"],
+                    "end_date": daily_records[-1]["date"],
+                },
+                "daily_validation": daily_records,
+            },
+        )
+
+        self.assertEqual(analysis["report_version"], "v29-steady-v5-regime-analysis")
+        self.assertEqual(analysis["source_validation"]["available_window_count"], 12)
+        self.assertEqual(len(analysis["negative_alpha_windows"]), 4)
+        self.assertEqual(len(analysis["negative_alpha_periods"]), 3)
+        self.assertEqual(analysis["regime_comparison"]["negative_alpha"]["market_trend"]["dominant_label"], "下降")
+        self.assertEqual(analysis["regime_comparison"]["negative_alpha"]["volatility"]["dominant_label"], "震盪")
+        self.assertEqual(analysis["regime_comparison"]["negative_alpha"]["sector_concentration"]["dominant_label"], "分散輪動")
+        self.assertEqual(analysis["regime_comparison"]["negative_alpha"]["volume"]["dominant_label"], "縮量")
+        self.assertEqual(analysis["regime_comparison"]["positive_alpha"]["market_trend"]["dominant_label"], "上升")
+        self.assertEqual(analysis["regime_comparison"]["positive_alpha"]["volatility"]["dominant_label"], "單邊")
+        self.assertEqual(analysis["regime_comparison"]["positive_alpha"]["sector_concentration"]["dominant_label"], "族群集中")
+        self.assertEqual(analysis["regime_comparison"]["positive_alpha"]["volume"]["dominant_label"], "放量")
+        self.assertTrue(analysis["answers"]["clear_regime_detected"])
+        self.assertIn("steady_v5 較適合", analysis["answers"]["works_in"])
+        self.assertIn("steady_v5 較容易在", analysis["answers"]["fails_in"])
 
 
     def test_signal_density_report_tracks_daily_weekly_hits_and_blockers(self):

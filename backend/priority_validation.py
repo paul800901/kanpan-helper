@@ -1,7 +1,8 @@
-"""v28 排序驗證層：每日 priority 快照、單因子、組合、策略、訊號密度與長期驗證分析。"""
+"""v29 排序驗證層：每日 priority 快照、單因子、組合、策略、訊號密度、長期驗證與 regime 分析。"""
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 import json
 import re
@@ -27,6 +28,7 @@ STEADY_V2_SIGNATURE_REPORT_VERSION = "v23-steady-v2-signature"
 STEADY_V4_TRACKING_REPORT_VERSION = "v25-steady-v4-tracking"
 STEADY_V4_ALPHA_BREAKDOWN_REPORT_VERSION = "v26-steady-v4-alpha-breakdown"
 STEADY_V5_LONG_TERM_VALIDATION_REPORT_VERSION = "v28-steady-v5-long-term-validation"
+STEADY_V5_REGIME_ANALYSIS_REPORT_VERSION = "v29-steady-v5-regime-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -49,6 +51,11 @@ STEADY_V5_LONG_TERM_SEGMENT_DAYS = 30
 STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS = 10
 STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS = 10
 STEADY_V5_LONG_TERM_MAX_NEGATIVE_ROLLING_STREAK = 2
+STEADY_V5_REGIME_ANALYSIS_WINDOW_DAYS = max(STEADY_V5_LONG_TERM_WINDOW_DAYS)
+STEADY_V5_REGIME_DIRECTIONAL_EFFICIENCY_THRESHOLD_PCT = 60.0
+STEADY_V5_REGIME_FRONT_SAMPLE_SIZE = 10
+STEADY_V5_REGIME_CONCENTRATION_SHARE_PCT = 50.0
+STEADY_V5_REGIME_VOLUME_EXPANSION_RATIO = 1.0
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -438,6 +445,10 @@ def _steady_v4_alpha_breakdown_path(base_dir: Optional[Path] = None) -> Path:
 
 def _steady_v5_long_term_validation_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "steady_v5_long_term_validation.json"
+
+
+def _steady_v5_regime_analysis_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "steady_v5_regime_analysis.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -4477,6 +4488,510 @@ def generate_steady_v5_long_term_validation_report(
     }
 
 
+def _compound_return_pct(values: Iterable[Optional[float]]) -> Optional[float]:
+    growth = 1.0
+    count = 0
+    for raw_value in values:
+        value = _as_float(raw_value)
+        if value is None:
+            continue
+        growth *= 1 + (value / 100)
+        count += 1
+    if count == 0:
+        return None
+    return _round_number((growth - 1) * 100)
+
+
+def _label_alpha_regime(avg_alpha_pct: Optional[float]) -> Optional[str]:
+    value = _as_float(avg_alpha_pct)
+    if value is None:
+        return None
+    if value > 0:
+        return "positive"
+    if value < 0:
+        return "negative"
+    return "flat"
+
+
+def _build_steady_v5_regime_market_snapshot(records: List[Dict[str, Any]]) -> Dict[str, Any]:
+    market_returns: List[float] = []
+    for record in records:
+        value = _as_float(record.get("market_return_pct"))
+        if value is not None:
+            market_returns.append(value)
+
+    net_market_return_pct = _compound_return_pct(market_returns)
+    abs_sum = sum(abs(value) for value in market_returns)
+    directional_efficiency_pct = (
+        _round_number((abs(net_market_return_pct) / abs_sum) * 100)
+        if net_market_return_pct is not None and abs_sum > 0
+        else None
+    )
+    market_trend = None
+    if net_market_return_pct is not None:
+        if net_market_return_pct > 0:
+            market_trend = "上升"
+        elif net_market_return_pct < 0:
+            market_trend = "下降"
+        else:
+            market_trend = "持平"
+    volatility_regime = None
+    if directional_efficiency_pct is not None:
+        if directional_efficiency_pct >= STEADY_V5_REGIME_DIRECTIONAL_EFFICIENCY_THRESHOLD_PCT:
+            volatility_regime = "單邊"
+        else:
+            volatility_regime = "震盪"
+
+    return {
+        "market_trend": market_trend,
+        "net_market_return_pct": net_market_return_pct,
+        "positive_day_count": sum(1 for value in market_returns if value > 0),
+        "negative_day_count": sum(1 for value in market_returns if value < 0),
+        "avg_abs_daily_market_return_pct": _mean(abs(value) for value in market_returns),
+        "directional_efficiency_pct": directional_efficiency_pct,
+        "volatility_regime": volatility_regime,
+    }
+
+
+def _build_steady_v5_regime_flow_snapshot(
+    records: List[Dict[str, Any]],
+    universe_reports_by_date: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    category_counter: Counter[str] = Counter()
+    volume_ratios: List[float] = []
+    front_sample_count = 0
+    analyzed_dates: List[str] = []
+    missing_universe_dates: List[str] = []
+
+    for record in records:
+        date_str = str(record.get("date") or "")
+        if not date_str:
+            continue
+        universe_report = universe_reports_by_date.get(date_str) or {}
+        front_stocks = list(universe_report.get("stocks") or [])[:STEADY_V5_REGIME_FRONT_SAMPLE_SIZE]
+        if not front_stocks:
+            missing_universe_dates.append(date_str)
+            continue
+        analyzed_dates.append(date_str)
+        front_sample_count += len(front_stocks)
+        for stock in front_stocks:
+            category = str(stock.get("category") or "其他").strip() or "其他"
+            category_counter[category] += 1
+            volume_ratio = _as_float(stock.get("volume_ratio"))
+            if volume_ratio is None:
+                volume_ratio = _as_float((stock.get("indicators") or {}).get("volume_ratio"))
+            if volume_ratio is not None:
+                volume_ratios.append(volume_ratio)
+
+    top_categories = [label for label, _ in category_counter.most_common(2)]
+    top_two_share_pct = (
+        _round_number((sum(count for _, count in category_counter.most_common(2)) / front_sample_count) * 100)
+        if front_sample_count
+        else None
+    )
+    sector_concentration = None
+    if top_two_share_pct is not None:
+        sector_concentration = (
+            "族群集中"
+            if top_two_share_pct >= STEADY_V5_REGIME_CONCENTRATION_SHARE_PCT
+            else "分散輪動"
+        )
+    avg_front_volume_ratio = _mean(volume_ratios)
+    volume_regime = None
+    if avg_front_volume_ratio is not None:
+        volume_regime = (
+            "放量"
+            if avg_front_volume_ratio >= STEADY_V5_REGIME_VOLUME_EXPANSION_RATIO
+            else "縮量"
+        )
+
+    return {
+        "front_sample_count": front_sample_count,
+        "analyzed_dates": analyzed_dates,
+        "missing_universe_dates": missing_universe_dates,
+        "category_counter": dict(category_counter),
+        "top_categories": top_categories,
+        "top_two_category_share_pct": top_two_share_pct,
+        "sector_concentration": sector_concentration,
+        "avg_front_volume_ratio": avg_front_volume_ratio,
+        "volume_regime": volume_regime,
+    }
+
+
+def _build_steady_v5_regime_window_record(
+    window_index: int,
+    records: List[Dict[str, Any]],
+    universe_reports_by_date: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    metrics = _compute_steady_v5_long_term_metrics(records)
+    market_snapshot = _build_steady_v5_regime_market_snapshot(records)
+    flow_snapshot = _build_steady_v5_regime_flow_snapshot(records, universe_reports_by_date)
+    avg_alpha_pct = _as_float(metrics.get("avg_alpha_pct"))
+    avg_return_pct = _as_float(metrics.get("avg_return_pct"))
+    win_rate_pct = _as_float(metrics.get("win_rate_pct"))
+    alpha_regime = _label_alpha_regime(avg_alpha_pct)
+    alpha_label = {
+        "positive": "正 alpha",
+        "negative": "負 alpha",
+        "flat": "零 alpha",
+    }.get(alpha_regime, "未定")
+    categories = "、".join(flow_snapshot.get("top_categories") or [])
+    category_text = f"，主軸偏 {categories}" if categories else ""
+    summary = (
+        f"第 {window_index} 個 10 天區段（{records[0].get('date')} 至 {records[-1].get('date')}）屬於 {alpha_label}，"
+        f"平均 alpha {_metric_text(avg_alpha_pct, '%')}、平均隔日報酬 {_metric_text(avg_return_pct, '%')}、"
+        f"勝率 {_metric_text(win_rate_pct, '%')}；大盤{market_snapshot.get('market_trend') or '資料不足'} / "
+        f"{market_snapshot.get('volatility_regime') or '資料不足'}，"
+        f"前段樣本{flow_snapshot.get('sector_concentration') or '資料不足'}、"
+        f"量能{flow_snapshot.get('volume_regime') or '資料不足'}{category_text}。"
+    )
+
+    return {
+        "window_index": window_index,
+        "start_date": records[0].get("date") if records else None,
+        "end_date": records[-1].get("date") if records else None,
+        "observed_days": len(records),
+        "hit_days": metrics.get("hit_days"),
+        "total_hits": metrics.get("total_hits"),
+        "avg_return_pct": avg_return_pct,
+        "win_rate_pct": win_rate_pct,
+        "avg_alpha_pct": avg_alpha_pct,
+        "has_not_broken": metrics.get("has_not_broken"),
+        "alpha_regime": alpha_regime,
+        "market_regime": market_snapshot,
+        "flow_regime": flow_snapshot,
+        "summary": summary,
+    }
+
+
+def _build_steady_v5_regime_dimension_breakdown(
+    windows: List[Dict[str, Any]],
+    value_getter: Callable[[Dict[str, Any]], Optional[str]],
+) -> Dict[str, Any]:
+    counter: Counter[str] = Counter()
+    for window in windows:
+        value = value_getter(window)
+        if value:
+            counter[value] += 1
+
+    sample_count = sum(counter.values())
+    dominant_label = counter.most_common(1)[0][0] if counter else None
+    dominant_share_pct = (
+        _round_number((counter[dominant_label] / sample_count) * 100)
+        if dominant_label and sample_count
+        else None
+    )
+    return {
+        "sample_count": sample_count,
+        "counts": dict(counter),
+        "dominant_label": dominant_label,
+        "dominant_share_pct": dominant_share_pct,
+    }
+
+
+def _build_steady_v5_regime_group_summary(group_name: str, windows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    market_trend = _build_steady_v5_regime_dimension_breakdown(
+        windows,
+        lambda item: str(((item.get("market_regime") or {}).get("market_trend") or "")).strip() or None,
+    )
+    volatility = _build_steady_v5_regime_dimension_breakdown(
+        windows,
+        lambda item: str(((item.get("market_regime") or {}).get("volatility_regime") or "")).strip() or None,
+    )
+    sector_concentration = _build_steady_v5_regime_dimension_breakdown(
+        windows,
+        lambda item: str(((item.get("flow_regime") or {}).get("sector_concentration") or "")).strip() or None,
+    )
+    volume = _build_steady_v5_regime_dimension_breakdown(
+        windows,
+        lambda item: str(((item.get("flow_regime") or {}).get("volume_regime") or "")).strip() or None,
+    )
+    category_counter: Counter[str] = Counter()
+    for window in windows:
+        for category in (window.get("flow_regime") or {}).get("top_categories") or []:
+            category_counter[str(category)] += 1
+    dominant_categories = [label for label, _ in category_counter.most_common(3)]
+
+    if not windows:
+        summary = f"目前沒有可用的 {group_name} 區段可做 regime 分析。"
+    else:
+        summary = (
+            f"{group_name} 區段共 {len(windows)} 段，主要出現在大盤"
+            f"{market_trend.get('dominant_label') or '資料不足'}、"
+            f"{volatility.get('dominant_label') or '資料不足'}、"
+            f"{sector_concentration.get('dominant_label') or '資料不足'}、"
+            f"{volume.get('dominant_label') or '資料不足'}的環境。"
+        )
+
+    return {
+        "window_count": len(windows),
+        "avg_alpha_pct": _mean(
+            _as_float(window.get("avg_alpha_pct"))
+            for window in windows
+            if _as_float(window.get("avg_alpha_pct")) is not None
+        ),
+        "avg_return_pct": _mean(
+            _as_float(window.get("avg_return_pct"))
+            for window in windows
+            if _as_float(window.get("avg_return_pct")) is not None
+        ),
+        "avg_win_rate_pct": _mean(
+            _as_float(window.get("win_rate_pct"))
+            for window in windows
+            if _as_float(window.get("win_rate_pct")) is not None
+        ),
+        "market_trend": market_trend,
+        "volatility": volatility,
+        "sector_concentration": sector_concentration,
+        "volume": volume,
+        "dominant_categories": dominant_categories,
+        "summary": summary,
+    }
+
+
+def _build_steady_v5_regime_periods(alpha_regime: str, windows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    periods: List[Dict[str, Any]] = []
+    current_windows: List[Dict[str, Any]] = []
+    previous_index: Optional[int] = None
+
+    def flush_period() -> None:
+        if not current_windows:
+            return
+        group_summary = _build_steady_v5_regime_group_summary(
+            "負 alpha" if alpha_regime == "negative" else "正 alpha",
+            current_windows,
+        )
+        periods.append({
+            "period_index": len(periods) + 1,
+            "alpha_regime": alpha_regime,
+            "start_date": current_windows[0].get("start_date"),
+            "end_date": current_windows[-1].get("end_date"),
+            "window_indices": [window.get("window_index") for window in current_windows],
+            "window_count": len(current_windows),
+            "avg_alpha_pct": group_summary.get("avg_alpha_pct"),
+            "avg_return_pct": group_summary.get("avg_return_pct"),
+            "avg_win_rate_pct": group_summary.get("avg_win_rate_pct"),
+            "market_trend": ((group_summary.get("market_trend") or {}).get("dominant_label")),
+            "volatility": ((group_summary.get("volatility") or {}).get("dominant_label")),
+            "sector_concentration": ((group_summary.get("sector_concentration") or {}).get("dominant_label")),
+            "volume": ((group_summary.get("volume") or {}).get("dominant_label")),
+            "dominant_categories": group_summary.get("dominant_categories") or [],
+            "summary": (
+                f"{current_windows[0].get('start_date')} 至 {current_windows[-1].get('end_date')} 共有 {len(current_windows)} 段"
+                f"{'負' if alpha_regime == 'negative' else '正'} alpha rolling 區段，"
+                f"主要是大盤{((group_summary.get('market_trend') or {}).get('dominant_label') or '資料不足')}、"
+                f"{((group_summary.get('volatility') or {}).get('dominant_label') or '資料不足')}、"
+                f"{((group_summary.get('sector_concentration') or {}).get('dominant_label') or '資料不足')}、"
+                f"{((group_summary.get('volume') or {}).get('dominant_label') or '資料不足')}。"
+            ),
+        })
+
+    for window in windows:
+        current_index = int(window.get("window_index") or 0)
+        if not current_windows:
+            current_windows.append(window)
+            previous_index = current_index
+            continue
+        if previous_index is not None and current_index == previous_index + 1:
+            current_windows.append(window)
+            previous_index = current_index
+            continue
+        flush_period()
+        current_windows = [window]
+        previous_index = current_index
+
+    flush_period()
+    return periods
+
+
+def _format_steady_v5_regime_phrase(summary: Dict[str, Any]) -> str:
+    if not summary.get("window_count"):
+        return "資料不足"
+    parts = []
+    trend = ((summary.get("market_trend") or {}).get("dominant_label"))
+    volatility = ((summary.get("volatility") or {}).get("dominant_label"))
+    sector = ((summary.get("sector_concentration") or {}).get("dominant_label"))
+    volume = ((summary.get("volume") or {}).get("dominant_label"))
+    categories = summary.get("dominant_categories") or []
+    if trend:
+        parts.append(f"大盤{trend}")
+    if volatility:
+        parts.append(volatility)
+    if sector:
+        parts.append(sector)
+    if volume:
+        parts.append(volume)
+    if categories:
+        parts.append(f"主軸偏{'、'.join(categories[:2])}")
+    return "、".join(parts) if parts else "資料不足"
+
+
+def _build_steady_v5_regime_takeaways(
+    negative_summary: Dict[str, Any],
+    positive_summary: Dict[str, Any],
+) -> Dict[str, Any]:
+    differing_dimensions = []
+    for key, label in [
+        ("market_trend", "市場趨勢"),
+        ("volatility", "波動型態"),
+        ("sector_concentration", "類股集中度"),
+        ("volume", "量能"),
+    ]:
+        negative_label = ((negative_summary.get(key) or {}).get("dominant_label"))
+        positive_label = ((positive_summary.get(key) or {}).get("dominant_label"))
+        if negative_label and positive_label and negative_label != positive_label:
+            differing_dimensions.append({
+                "dimension": label,
+                "positive_alpha": positive_label,
+                "negative_alpha": negative_label,
+            })
+
+    if not negative_summary.get("window_count"):
+        works_in = f"目前 rolling 視窗以 {_format_steady_v5_regime_phrase(positive_summary)} 為主。"
+        fails_in = "目前尚未觀察到負 alpha rolling 區段。"
+        clear_regime_detected = None
+        summary = "目前 rolling 視窗沒有負 alpha 區段，暫時只能描述 steady_v5 已經適用的市場環境。"
+    elif not positive_summary.get("window_count"):
+        works_in = "目前尚未觀察到正 alpha rolling 區段。"
+        fails_in = f"steady_v5 較容易在 {_format_steady_v5_regime_phrase(negative_summary)} 的市場出現負 alpha。"
+        clear_regime_detected = None
+        summary = "目前 rolling 視窗沒有正 alpha 對照樣本，先記錄負 alpha regime，暫無法完成正反對比。"
+    else:
+        works_in = f"steady_v5 較適合 {_format_steady_v5_regime_phrase(positive_summary)} 的市場。"
+        fails_in = f"steady_v5 較容易在 {_format_steady_v5_regime_phrase(negative_summary)} 的市場變成負 alpha。"
+        clear_regime_detected = len(differing_dimensions) >= 2
+        if clear_regime_detected:
+            summary = f"steady_v5 有明確 regime：{works_in}；{fails_in}"
+        else:
+            summary = f"steady_v5 有部分 regime 差異：{works_in}；但負 alpha 樣本仍不是單一市場型態。"
+
+    return {
+        "works_in": works_in,
+        "fails_in": fails_in,
+        "clear_regime_detected": clear_regime_detected,
+        "differing_dimensions": differing_dimensions,
+        "summary": summary,
+    }
+
+
+def generate_steady_v5_regime_analysis_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    strategy_analysis_report: Optional[Dict[str, Any]] = None,
+    long_term_validation_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    universe_lookup = universe_reports_by_date or {}
+    if long_term_validation_report is None:
+        long_term_validation_report = generate_steady_v5_long_term_validation_report(
+            priority_reports,
+            market_prices=market_prices,
+            universe_reports_by_date=universe_lookup,
+            strategy_analysis_report=strategy_analysis_report,
+        )
+
+    daily_validation = list(long_term_validation_report.get("daily_validation") or [])
+    observed_records = _steady_v5_long_term_window_records(
+        STEADY_V5_REGIME_ANALYSIS_WINDOW_DAYS,
+        daily_validation,
+    )
+    analyzed_windows: List[Dict[str, Any]] = []
+    available_window_count = 0
+
+    if len(observed_records) >= STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS:
+        for window_index, end_index in enumerate(
+            range(
+                STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+                len(observed_records) + 1,
+                STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+            ),
+            start=1,
+        ):
+            available_window_count += 1
+            start_index = end_index - STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS
+            records = observed_records[start_index:end_index]
+            metrics = _compute_steady_v5_long_term_metrics(records)
+            if int(metrics.get("total_hits") or 0) == 0:
+                continue
+            analyzed_windows.append(
+                _build_steady_v5_regime_window_record(
+                    window_index,
+                    records,
+                    universe_lookup,
+                )
+            )
+
+    negative_alpha_windows = [window for window in analyzed_windows if window.get("alpha_regime") == "negative"]
+    positive_alpha_windows = [window for window in analyzed_windows if window.get("alpha_regime") == "positive"]
+    negative_alpha_periods = _build_steady_v5_regime_periods("negative", negative_alpha_windows)
+    positive_alpha_periods = _build_steady_v5_regime_periods("positive", positive_alpha_windows)
+    negative_summary = _build_steady_v5_regime_group_summary("負 alpha", negative_alpha_windows)
+    positive_summary = _build_steady_v5_regime_group_summary("正 alpha", positive_alpha_windows)
+    answers = _build_steady_v5_regime_takeaways(negative_summary, positive_summary)
+    definition = STRATEGY_V5_DEFINITIONS["steady_v5"]
+
+    return {
+        "report_version": STEADY_V5_REGIME_ANALYSIS_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": long_term_validation_report.get("evaluation_horizon"),
+        "analysis_target": {
+            "strategy": "steady_v5",
+            "base_strategy": "steady_v4",
+            "family": "steady",
+            "generation": "v5",
+            "description": definition["description"],
+            "selection_hint": definition["selection_hint"],
+            "factor_names": list(definition.get("factor_names") or []),
+        },
+        "source_validation": {
+            "source_report_version": long_term_validation_report.get("report_version"),
+            "source_window_days": STEADY_V5_REGIME_ANALYSIS_WINDOW_DAYS,
+            "rolling_window_days": STEADY_V5_LONG_TERM_ROLLING_WINDOW_DAYS,
+            "step_days": STEADY_V5_LONG_TERM_ROLLING_STEP_DAYS,
+            "available_window_count": available_window_count,
+            "analyzed_window_count": len(analyzed_windows),
+            "negative_window_count": len(negative_alpha_windows),
+            "positive_window_count": len(positive_alpha_windows),
+        },
+        "assessment_rules": {
+            "negative_alpha_window": {
+                "description": "10 天 rolling 視窗平均 alpha < 0 視為 steady_v5 在該區段失效。",
+            },
+            "positive_alpha_window": {
+                "description": "10 天 rolling 視窗平均 alpha > 0 視為 steady_v5 在該區段有效。",
+            },
+            "market_trend": {
+                "description": "以區段內大盤逐日報酬複利後的累積報酬判斷；累積報酬 > 0 為上升，< 0 為下降。",
+            },
+            "volatility": {
+                "directional_efficiency_threshold_pct": STEADY_V5_REGIME_DIRECTIONAL_EFFICIENCY_THRESHOLD_PCT,
+                "description": "方向效率 = abs(區段累積大盤報酬) / sum(abs(每日大盤報酬))；>= 60% 視為單邊，否則視為震盪。",
+            },
+            "sector_concentration": {
+                "front_sample_size": STEADY_V5_REGIME_FRONT_SAMPLE_SIZE,
+                "top_two_category_share_threshold_pct": STEADY_V5_REGIME_CONCENTRATION_SHARE_PCT,
+                "description": "用每個交易日 universe 前 10 名股票聚合後的類別分布判斷；前兩大類別合計占比 >= 50% 視為族群集中。",
+            },
+            "volume": {
+                "front_sample_size": STEADY_V5_REGIME_FRONT_SAMPLE_SIZE,
+                "avg_volume_ratio_threshold": STEADY_V5_REGIME_VOLUME_EXPANSION_RATIO,
+                "description": "用每個交易日 universe 前 10 名股票的平均 volume_ratio 聚合；平均量比 >= 1 視為放量，否則視為縮量。",
+            },
+        },
+        "negative_alpha_periods": negative_alpha_periods,
+        "positive_alpha_periods": positive_alpha_periods,
+        "negative_alpha_windows": negative_alpha_windows,
+        "positive_alpha_windows": positive_alpha_windows,
+        "regime_comparison": {
+            "negative_alpha": negative_summary,
+            "positive_alpha": positive_summary,
+            "differing_dimensions": answers.get("differing_dimensions") or [],
+        },
+        "answers": answers,
+        "summary": answers.get("summary"),
+    }
+
+
 def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not ranked_items:
         return []
@@ -5517,6 +6032,10 @@ def save_steady_v5_long_term_validation_report(report: Dict[str, Any], base_dir:
     return _save_json(_steady_v5_long_term_validation_path(base_dir), report)
 
 
+def save_steady_v5_regime_analysis_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_steady_v5_regime_analysis_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -5690,6 +6209,30 @@ def generate_steady_v5_long_term_validation_from_reports(base_dir: Optional[Path
     return save_steady_v5_long_term_validation_report(report, base_dir=base_dir)
 
 
+def generate_steady_v5_regime_analysis_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    strategy_report = generate_strategy_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    long_term_validation_report = generate_steady_v5_long_term_validation_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+    )
+    report = generate_steady_v5_regime_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+        long_term_validation_report=long_term_validation_report,
+    )
+    return save_steady_v5_regime_analysis_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -5758,6 +6301,7 @@ def backfill_priority_validation_reports(
     steady_v4_tracking_path = generate_steady_v4_tracking_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v4_alpha_breakdown_path = generate_steady_v4_alpha_breakdown_from_reports(base_dir=base_dir, market_prices=market_prices)
     steady_v5_long_term_validation_path = generate_steady_v5_long_term_validation_from_reports(base_dir=base_dir, market_prices=market_prices)
+    steady_v5_regime_analysis_path = generate_steady_v5_regime_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -5778,6 +6322,7 @@ def backfill_priority_validation_reports(
         "steady_v4_tracking_path": str(steady_v4_tracking_path),
         "steady_v4_alpha_breakdown_path": str(steady_v4_alpha_breakdown_path),
         "steady_v5_long_term_validation_path": str(steady_v5_long_term_validation_path),
+        "steady_v5_regime_analysis_path": str(steady_v5_regime_analysis_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,
