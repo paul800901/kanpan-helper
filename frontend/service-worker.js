@@ -3,12 +3,12 @@
  * 快取靜態資源，支援離線瀏覽
  */
 
-const CACHE_NAME = 'kanpan-helper-v5-cachefix';
+const CACHE_NAME = 'kanpan-helper-v30';
 const STATIC_ASSETS = [
     './',
     './index.html',
     './style.css',
-    './app.js?v=20260412-cachefix',
+    './app.js?v=20260414-v30',
     './manifest.json',
     './test.html',
     './sample/2026-04-08-lite.json'
