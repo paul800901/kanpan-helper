@@ -1,4 +1,4 @@
-"""v19 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
+"""v20 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ FACTOR_ANALYSIS_REPORT_VERSION = "v18-factor-analysis"
 FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
 STRATEGY_ANALYSIS_REPORT_VERSION = "v19-strategy-analysis"
 SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
+STEADY_V2_BLOCKER_REPORT_VERSION = "v20-steady-v2-blockers"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
@@ -42,6 +43,18 @@ CONDITION_DEFINITIONS = {
     },
 }
 CONDITION_ORDER = {name: index for index, name in enumerate(CONDITION_DEFINITIONS.keys())}
+
+STEADY_V2_BLOCKER_CONDITION_DEFINITIONS = {
+    "ma20_v2": {
+        "label": "MA20_v2 條件",
+        "description": "接近 MA20 區間 / 最近 3 日內跌破",
+    },
+    "kd_low_turn_up": CONDITION_DEFINITIONS["kd_low_turn_up"],
+    "low_position": CONDITION_DEFINITIONS["low_position"],
+}
+STEADY_V2_BLOCKER_CONDITION_ORDER = {
+    name: index for index, name in enumerate(STEADY_V2_BLOCKER_CONDITION_DEFINITIONS.keys())
+}
 
 STRATEGY_DEFINITIONS = {
     "sniper": {
@@ -206,6 +219,10 @@ def _strategy_analysis_path(base_dir: Optional[Path] = None) -> Path:
 
 def _signal_density_path(base_dir: Optional[Path] = None) -> Path:
     return _reports_dir(base_dir) / "signal_density.json"
+
+
+def _steady_v2_blockers_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "steady_v2_blockers.json"
 
 
 def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
@@ -1511,15 +1528,237 @@ def _build_signal_condition_summary(condition_name: str, pass_count: int, candid
     }
 
 
-def _rank_signal_condition_summaries(items: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _build_named_condition_summary(
+    condition_name: str,
+    pass_count: int,
+    candidate_count: int,
+    definitions: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    definition = definitions.get(condition_name) or {}
+    fail_count = max(candidate_count - int(pass_count), 0)
+    pass_rate = _round_number((pass_count / candidate_count) * 100) if candidate_count else None
+    fail_rate = _round_number((fail_count / candidate_count) * 100) if candidate_count else None
+    return {
+        "condition": condition_name,
+        "label": definition.get("label") or condition_name,
+        "description": definition.get("description") or condition_name,
+        "candidate_count": candidate_count,
+        "pass_count": int(pass_count),
+        "fail_count": fail_count,
+        "pass_rate_pct": pass_rate,
+        "block_rate_pct": fail_rate,
+    }
+
+
+def _rank_signal_condition_summaries(
+    items: Iterable[Dict[str, Any]],
+    order_lookup: Optional[Dict[str, int]] = None,
+) -> List[Dict[str, Any]]:
+    order_map = order_lookup or CONDITION_ORDER
     return sorted(
         list(items),
         key=lambda item: (
             item.get("pass_rate_pct") if item.get("pass_rate_pct") is not None else float("inf"),
             item.get("pass_count") if item.get("pass_count") is not None else float("inf"),
-            CONDITION_ORDER.get(str(item.get("condition") or ""), 999),
+            order_map.get(str(item.get("condition") or ""), 999),
         ),
     )
+
+
+def _build_condition_intersection_summary(
+    condition_names: List[str],
+    flags_by_sample: List[Dict[str, bool]],
+    condition_summaries: Dict[str, Dict[str, Any]],
+    definitions: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    candidate_count = len(flags_by_sample)
+    pass_count = sum(
+        1 for flags in flags_by_sample
+        if all(flags.get(condition_name) for condition_name in condition_names)
+    )
+    fail_count = max(candidate_count - pass_count, 0)
+    within_condition_pass_rates = {}
+    for condition_name in condition_names:
+        base_pass_count = int((condition_summaries.get(condition_name) or {}).get("pass_count") or 0)
+        within_condition_pass_rates[condition_name] = (
+            _round_number((pass_count / base_pass_count) * 100)
+            if base_pass_count else None
+        )
+
+    return {
+        "intersection": "__".join(condition_names),
+        "condition_names": list(condition_names),
+        "labels": [definitions.get(name, {}).get("label") or name for name in condition_names],
+        "candidate_count": candidate_count,
+        "pass_count": pass_count,
+        "fail_count": fail_count,
+        "overall_pass_rate_pct": _round_number((pass_count / candidate_count) * 100) if candidate_count else None,
+        "block_rate_pct": _round_number((fail_count / candidate_count) * 100) if candidate_count else None,
+        "within_condition_pass_rates": within_condition_pass_rates,
+    }
+
+
+def _build_steady_v2_condition_flags(sample: Dict[str, Any], lower_third_cutoff: Optional[float]) -> Dict[str, bool]:
+    return {
+        "ma20_v2": _is_ma20_v2(sample),
+        "kd_low_turn_up": _is_low_k_turn_up(sample),
+        "low_position": _is_low_position_sample(sample, lower_third_cutoff),
+    }
+
+
+def generate_steady_v2_blockers_report(
+    priority_reports: List[Dict[str, Any]],
+    market_prices: Optional[Any] = None,
+    universe_reports_by_date: Optional[Dict[str, Dict[str, Any]]] = None,
+    strategy_analysis_report: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    strategy_report = strategy_analysis_report or generate_strategy_analysis_report(
+        ordered_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    market_lookup = _normalize_market_prices(market_prices) if market_prices is not None else _fetch_market_price_lookup(ordered_reports)
+    trading_samples, evaluated_days = _collect_trading_interval_candidates(
+        ordered_reports,
+        market_lookup,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+
+    low_position_definition = strategy_report.get("low_position_definition") or {}
+    lower_third_cutoff = _as_float(low_position_definition.get("lower_third_cutoff"))
+    flags_by_sample = [
+        _build_steady_v2_condition_flags(sample, lower_third_cutoff)
+        for sample in trading_samples
+    ]
+    pass_counts = {
+        condition_name: sum(1 for flags in flags_by_sample if flags.get(condition_name))
+        for condition_name in STEADY_V2_BLOCKER_CONDITION_DEFINITIONS.keys()
+    }
+    condition_summaries = {
+        condition_name: _build_named_condition_summary(
+            condition_name,
+            pass_count,
+            len(trading_samples),
+            STEADY_V2_BLOCKER_CONDITION_DEFINITIONS,
+        )
+        for condition_name, pass_count in pass_counts.items()
+    }
+    ranked_conditions = _rank_signal_condition_summaries(
+        condition_summaries.values(),
+        order_lookup=STEADY_V2_BLOCKER_CONDITION_ORDER,
+    )
+    strictest_conditions = _co_strictest_conditions(ranked_conditions)
+    overall_strictest_condition = strictest_conditions[0] if strictest_conditions else (ranked_conditions[0] if ranked_conditions else None)
+
+    pairwise_intersections = {
+        "ma20_v2__kd_low_turn_up": _build_condition_intersection_summary(
+            ["ma20_v2", "kd_low_turn_up"],
+            flags_by_sample,
+            condition_summaries,
+            STEADY_V2_BLOCKER_CONDITION_DEFINITIONS,
+        ),
+        "ma20_v2__low_position": _build_condition_intersection_summary(
+            ["ma20_v2", "low_position"],
+            flags_by_sample,
+            condition_summaries,
+            STEADY_V2_BLOCKER_CONDITION_DEFINITIONS,
+        ),
+        "kd_low_turn_up__low_position": _build_condition_intersection_summary(
+            ["kd_low_turn_up", "low_position"],
+            flags_by_sample,
+            condition_summaries,
+            STEADY_V2_BLOCKER_CONDITION_DEFINITIONS,
+        ),
+    }
+    all_three_intersection = _build_condition_intersection_summary(
+        ["ma20_v2", "kd_low_turn_up", "low_position"],
+        flags_by_sample,
+        condition_summaries,
+        STEADY_V2_BLOCKER_CONDITION_DEFINITIONS,
+    )
+
+    condition_breakdown = {
+        condition_name: {
+            **summary,
+            "intersections": {
+                other_condition: pairwise_intersections["__".join(sorted([condition_name, other_condition], key=lambda item: STEADY_V2_BLOCKER_CONDITION_ORDER[item]))]
+                for other_condition in STEADY_V2_BLOCKER_CONDITION_DEFINITIONS.keys()
+                if other_condition != condition_name
+            },
+            "all_conditions": all_three_intersection,
+        }
+        for condition_name, summary in condition_summaries.items()
+    }
+
+    strategy_snapshot = ((strategy_report.get("strategy_variant_comparison") or {}).get("steady") or {})
+    kd_base_count = int((condition_summaries.get("kd_low_turn_up") or {}).get("pass_count") or 0)
+    old_steady_hit_count = int((((strategy_snapshot.get("v1") or {}).get("hit_count")) or 0))
+    new_steady_hit_count = int((((strategy_snapshot.get("v2") or {}).get("hit_count")) or 0))
+    low_position_on_kd = int((pairwise_intersections["kd_low_turn_up__low_position"].get("pass_count") or 0))
+    ma20_v2_on_kd = int((pairwise_intersections["ma20_v2__kd_low_turn_up"].get("pass_count") or 0))
+    lost_from_v1 = max(old_steady_hit_count - new_steady_hit_count, 0)
+    transition_bottleneck_condition = (
+        condition_summaries.get("ma20_v2")
+        if ma20_v2_on_kd <= low_position_on_kd
+        else condition_summaries.get("low_position")
+    )
+
+    summary = (
+        f"steady_v2 的主要 bottleneck 是 {transition_bottleneck_condition['label']}："
+        f"在 KD 條件通過的 {kd_base_count} 個樣本裡，"
+        f"低位條件可保留 {low_position_on_kd} 個，但 MA20_v2 只保留 {ma20_v2_on_kd} 個，"
+        f"因此 steady 從 {old_steady_hit_count} 檔降到 {new_steady_hit_count} 檔。"
+    ) if transition_bottleneck_condition and kd_base_count else "資料不足，無法判定 steady_v2 bottleneck。"
+
+    return {
+        "report_version": STEADY_V2_BLOCKER_REPORT_VERSION,
+        "generated_at": get_taiwan_now().isoformat(),
+        "evaluation_horizon": strategy_report.get("evaluation_horizon"),
+        "evaluated_days": evaluated_days,
+        "candidate_samples": len(trading_samples),
+        "strategy_target": {
+            "family": "steady",
+            "v1_strategy": "steady",
+            "v2_strategy": "steady_v2",
+            "v2_condition_names": ["ma20_v2", "kd_low_turn_up"],
+            "comparison_condition_names": ["ma20_v2", "kd_low_turn_up", "low_position"],
+        },
+        "low_position_definition": low_position_definition,
+        "condition_names": list(STEADY_V2_BLOCKER_CONDITION_DEFINITIONS.keys()),
+        "condition_definitions": STEADY_V2_BLOCKER_CONDITION_DEFINITIONS,
+        "conditions": condition_summaries,
+        "condition_breakdown": condition_breakdown,
+        "ranking_by_strictness": ranked_conditions,
+        "pairwise_intersections": pairwise_intersections,
+        "all_three_intersection": all_three_intersection,
+        "strategy_variant_snapshot": strategy_snapshot,
+        "bottleneck_summary": {
+            "overall_strictest_condition": overall_strictest_condition,
+            "overall_strictest_conditions": strictest_conditions,
+            "steady_v2_required_condition_intersection": pairwise_intersections["ma20_v2__kd_low_turn_up"],
+            "transition_from_v1_to_v2": {
+                "shared_base_condition": condition_summaries.get("kd_low_turn_up"),
+                "old_secondary_condition_on_shared_base": {
+                    "condition": "low_position",
+                    "label": STEADY_V2_BLOCKER_CONDITION_DEFINITIONS["low_position"]["label"],
+                    "pass_count": low_position_on_kd,
+                    "pass_rate_within_shared_base_pct": _round_number((low_position_on_kd / kd_base_count) * 100) if kd_base_count else None,
+                },
+                "new_secondary_condition_on_shared_base": {
+                    "condition": "ma20_v2",
+                    "label": STEADY_V2_BLOCKER_CONDITION_DEFINITIONS["ma20_v2"]["label"],
+                    "pass_count": ma20_v2_on_kd,
+                    "pass_rate_within_shared_base_pct": _round_number((ma20_v2_on_kd / kd_base_count) * 100) if kd_base_count else None,
+                },
+                "lost_hit_count_vs_v1": lost_from_v1,
+                "lost_share_vs_v1_pct": _round_number((lost_from_v1 / old_steady_hit_count) * 100) if old_steady_hit_count else None,
+                "blocked_share_on_shared_base_pct": _round_number((lost_from_v1 / kd_base_count) * 100) if kd_base_count else None,
+                "bottleneck_condition": transition_bottleneck_condition,
+            },
+            "summary": summary,
+        },
+    }
 
 
 def _co_strictest_conditions(ranked_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -2407,6 +2646,10 @@ def save_signal_density_report(report: Dict[str, Any], base_dir: Optional[Path] 
     return _save_json(_signal_density_path(base_dir), report)
 
 
+def save_steady_v2_blockers_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_steady_v2_blockers_path(base_dir), report)
+
+
 def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     reports_dir = _reports_dir(base_dir)
     reports: List[Dict[str, Any]] = []
@@ -2484,6 +2727,23 @@ def generate_signal_density_from_reports(base_dir: Optional[Path] = None, market
     return save_signal_density_report(report, base_dir=base_dir)
 
 
+def generate_steady_v2_blockers_from_reports(base_dir: Optional[Path] = None, market_prices: Optional[Any] = None) -> Path:
+    priority_reports = load_priority_reports(base_dir=base_dir)
+    universe_reports_by_date = load_universe_reports_by_date(base_dir=base_dir)
+    strategy_report = generate_strategy_analysis_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+    )
+    report = generate_steady_v2_blockers_report(
+        priority_reports,
+        market_prices=market_prices,
+        universe_reports_by_date=universe_reports_by_date,
+        strategy_analysis_report=strategy_report,
+    )
+    return save_steady_v2_blockers_report(report, base_dir=base_dir)
+
+
 def backfill_priority_validation_reports(
     base_dir: Optional[Path] = None,
     refresh_context: bool = False,
@@ -2546,6 +2806,7 @@ def backfill_priority_validation_reports(
     factor_combination_analysis_path = generate_factor_combination_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     strategy_analysis_path = generate_strategy_analysis_from_reports(base_dir=base_dir, market_prices=market_prices)
     signal_density_path = generate_signal_density_from_reports(base_dir=base_dir, market_prices=market_prices)
+    steady_v2_blockers_path = generate_steady_v2_blockers_from_reports(base_dir=base_dir, market_prices=market_prices)
     history_report = _load_json(Path(history_path), required=True) or {}
     evaluated_days = (((history_report.get("stats") or {}).get("validation_readiness") or {}).get("evaluated_days"))
     current_date = target_date or (available_dates[-1] if available_dates else None)
@@ -2560,6 +2821,7 @@ def backfill_priority_validation_reports(
         "factor_combination_analysis_path": str(factor_combination_analysis_path),
         "strategy_analysis_path": str(strategy_analysis_path),
         "signal_density_path": str(signal_density_path),
+        "steady_v2_blockers_path": str(steady_v2_blockers_path),
         "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
         "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
         "history_window": history_window,

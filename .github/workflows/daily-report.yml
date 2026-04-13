@@ -126,6 +126,10 @@ jobs:
             echo "Error: 訊號密度分析生成失敗，找不到 reports/signal_density.json"
             exit 1
           fi
+          if [ ! -f "reports/steady_v2_blockers.json" ]; then
+            echo "Error: steady_v2 阻塞分析生成失敗，找不到 reports/steady_v2_blockers.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
@@ -138,6 +142,7 @@ jobs:
           python -m json.tool reports/factor_combination_analysis.json > /dev/null
           python -m json.tool reports/strategy_analysis.json > /dev/null
           python -m json.tool reports/signal_density.json > /dev/null
+          python -m json.tool reports/steady_v2_blockers.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports

@@ -20,7 +20,7 @@ from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
-from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, backfill_priority_validation_reports
+from backend.priority_validation import generate_priority_snapshot, generate_priority_history_report, generate_factor_analysis_report, generate_factor_combination_analysis_report, generate_strategy_analysis_report, generate_signal_density_report, generate_steady_v2_blockers_report, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -505,9 +505,11 @@ class TestPriorityValidation(unittest.TestCase):
             self.assertTrue((reports_dir / "factor_combination_analysis.json").exists())
             self.assertTrue((reports_dir / "strategy_analysis.json").exists())
             self.assertTrue((reports_dir / "signal_density.json").exists())
+            self.assertTrue((reports_dir / "steady_v2_blockers.json").exists())
             self.assertEqual(result["available_dates"], [date_a, date_b])
             self.assertTrue(result["strategy_analysis_path"].endswith("strategy_analysis.json"))
             self.assertTrue(result["signal_density_path"].endswith("signal_density.json"))
+            self.assertTrue(result["steady_v2_blockers_path"].endswith("steady_v2_blockers.json"))
 
             history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["stats"]["snapshot_count"], 2)
@@ -734,6 +736,51 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertEqual(signal_density["weekly_hit_counts"][0]["strategy_hits"]["steady"], 1)
         self.assertEqual(signal_density["overall_condition_density"]["strictest_condition"]["condition"], "kd_low_turn_up")
         self.assertEqual(signal_density["latest_day_summary"]["strictest_condition"]["condition"], "kd_low_turn_up")
+
+    def test_steady_v2_blockers_report_finds_bottleneck(self):
+        report_a = generate_priority_snapshot(
+            self.make_context_report("2026-04-09"),
+            self.make_combo_previous_universe_report("2026-04-09"),
+            next_universe_report=self.make_combo_current_universe_report("2026-04-10"),
+            next_date="2026-04-10",
+        )
+        report_b = generate_priority_snapshot(
+            self.make_context_report("2026-04-10"),
+            self.make_combo_current_universe_report("2026-04-10"),
+            next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
+            next_date="2026-04-11",
+        )
+
+        blockers = generate_steady_v2_blockers_report(
+            [report_a, report_b],
+            market_prices={
+                "2026-04-09": 100.0,
+                "2026-04-10": 101.0,
+                "2026-04-11": 102.0,
+            },
+            universe_reports_by_date={
+                "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
+                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+            },
+        )
+
+        self.assertEqual(blockers["report_version"], "v20-steady-v2-blockers")
+        self.assertEqual(blockers["strategy_target"]["v2_strategy"], "steady_v2")
+        self.assertIn("ma20_v2", blockers["condition_names"])
+        self.assertEqual(blockers["bottleneck_summary"]["overall_strictest_condition"]["condition"], "kd_low_turn_up")
+        self.assertEqual(
+            blockers["bottleneck_summary"]["transition_from_v1_to_v2"]["bottleneck_condition"]["condition"],
+            "ma20_v2",
+        )
+        self.assertEqual(blockers["strategy_variant_snapshot"]["v2"]["strategy"], "steady_v2")
+        self.assertGreater(
+            blockers["conditions"]["ma20_v2"]["pass_rate_pct"],
+            blockers["conditions"]["kd_low_turn_up"]["pass_rate_pct"],
+        )
+        self.assertGreater(
+            blockers["pairwise_intersections"]["kd_low_turn_up__low_position"]["pass_count"],
+            blockers["pairwise_intersections"]["ma20_v2__kd_low_turn_up"]["pass_count"],
+        )
 
 if __name__ == "__main__":
     # 執行單元測試
