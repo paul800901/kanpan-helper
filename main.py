@@ -22,6 +22,7 @@ from backend.fetch_data import fetch_all_stocks, load_cached_data
 from backend.calc_indicators import calculate_all_indicators, StockIndicators
 from backend.ranking import rank_stocks, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled, generate_universe_report, save_universe_report, save_report, validate_report_consistency
+from backend.priority_validation import backfill_priority_validation_reports
 from backend.report_index import atomic_update_index
 
 
@@ -66,7 +67,7 @@ def run_pipeline(
     use_cache: bool = False,
     date_str: Optional[str] = None,
     symbols: Optional[List[str]] = None
-) -> Tuple[str, str, Optional[str], str]:
+) -> Tuple[str, str, Optional[str], str, Optional[str], Optional[str], Optional[str]]:
     """
     執行完整分析流程
     
@@ -76,7 +77,7 @@ def run_pipeline(
         symbols: 指定股票列表
         
     Returns:
-        (完整報告路徑, 精簡報告路徑, AI報告路徑或None)
+        (完整報告路徑, 精簡報告路徑, AI報告路徑或None, universe, context, priority, history)
     """
     print("=" * 60)
     print("Kanpan Helper - 每日股票分析")
@@ -187,8 +188,27 @@ def run_pipeline(
     print(f"[OK] Universe 報告已生成: {universe_path}")
     print(f"   包含 {universe_report['total_stocks']} 檔股票")
 
+    # Step 7: 產生 context / priority 驗證層（v9 + v11）
+    print("\n[Step 7] 產生 Context 與 Priority 驗證報告")
+    print("-" * 40)
+
+    validation_result = backfill_priority_validation_reports(target_date=report_date)
+    context_path = validation_result.get("current_context_path")
+    priority_path = validation_result.get("current_priority_path")
+    history_path = validation_result.get("history_path")
+
+    if context_path:
+        print(f"[OK] Context 報告已就緒: {context_path}")
+    if priority_path:
+        print(f"[OK] Priority 快照已就緒: {priority_path}")
+    if history_path:
+        print(f"[OK] Priority 歷史統計已就緒: {history_path}")
+
+    if validation_result.get("skipped"):
+        print(f"[INFO] 有 {len(validation_result['skipped'])} 個歷史日期因缺資料而略過")
+
     # 最終一次更新 index.json（確保 has_universe=True）
-    print("\n[Step 6 結尾] 更新索引 (has_universe=True)")
+    print("\n[Step 8] 更新索引 (has_universe=True)")
     try:
         atomic_update_index(report_date, has_lite=True, has_full=True, has_universe=True)
         print(f"[OK] 索引已更新，has_universe=True")
@@ -210,7 +230,7 @@ def run_pipeline(
     print("流程完成！")
     print("=" * 60)
     
-    return full_path, lite_path, ai_path, universe_path
+    return full_path, lite_path, ai_path, universe_path, context_path, priority_path, history_path
 
 
 def main():
@@ -263,7 +283,7 @@ def main():
         test_symbols = ["2330", "2317", "2454"]
     
     try:
-        full_path, lite_path, ai_path, universe_path = run_pipeline(
+        full_path, lite_path, ai_path, universe_path, context_path, priority_path, history_path = run_pipeline(
             use_cache=args.use_cache,
             date_str=args.date,
             symbols=test_symbols
@@ -274,6 +294,12 @@ def main():
         if ai_path:
             print(f"   AI版: {os.path.abspath(ai_path)}")
         print(f"   Universe: {os.path.abspath(universe_path)}")
+        if context_path:
+            print(f"   Context: {os.path.abspath(context_path)}")
+        if priority_path:
+            print(f"   Priority: {os.path.abspath(priority_path)}")
+        if history_path:
+            print(f"   Priority History: {os.path.abspath(history_path)}")
         
     except KeyboardInterrupt:
         print("\n\n使用者中斷")

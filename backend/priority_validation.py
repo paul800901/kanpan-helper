@@ -1,0 +1,791 @@
+"""v11 排序驗證層：每日 priority 快照與歷史統計。"""
+
+from __future__ import annotations
+
+import json
+import re
+from functools import cmp_to_key
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional
+
+from backend.config import get_taiwan_now, get_today_str
+from backend.context_cards import generate_context_report_from_files
+
+
+PRIORITY_REPORT_VERSION = "v11-priority-validation"
+HISTORY_REPORT_VERSION = "v11-priority-history"
+SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
+DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+FINAL_ADVICE_PRIORITY = {
+    "暫不考慮": 1,
+    "暫不進場": 2,
+    "先觀望": 3,
+    "可留意": 4,
+    "可偏多觀察": 5,
+    "強勢續看": 6,
+}
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _reports_dir(base_dir: Optional[Path] = None) -> Path:
+    root = base_dir or _repo_root()
+    return root / "reports"
+
+
+def _load_json(path: Path, required: bool = True) -> Optional[Dict[str, Any]]:
+    if not path.exists():
+        if required:
+            raise FileNotFoundError(f"找不到檔案：{path}")
+        return None
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _save_json(path: Path, payload: Dict[str, Any]) -> Path:
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+    return path
+
+
+def _as_float(value: Any) -> Optional[float]:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _round_number(value: Optional[float], digits: int = 4) -> Optional[float]:
+    if value is None:
+        return None
+    return round(value, digits)
+
+
+def _mean(values: Iterable[float]) -> Optional[float]:
+    items = [float(value) for value in values]
+    if not items:
+        return None
+    return _round_number(sum(items) / len(items))
+
+
+def _win_rate(values: Iterable[float]) -> Optional[float]:
+    items = [float(value) for value in values]
+    if not items:
+        return None
+    wins = sum(1 for value in items if value > 0)
+    return _round_number((wins / len(items)) * 100)
+
+
+def _priority_report_path(date_str: str, base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / f"{date_str}-priority.json"
+
+
+def _priority_history_path(base_dir: Optional[Path] = None) -> Path:
+    return _reports_dir(base_dir) / "priority-history.json"
+
+
+def _iter_daily_report_dates(reports_dir: Path) -> List[str]:
+    dates = [path.stem for path in reports_dir.glob("*.json") if DATE_PATTERN.match(path.stem)]
+    return sorted(dates)
+
+
+def _available_priority_dates(reports_dir: Path) -> List[str]:
+    dates: List[str] = []
+    for date_str in _iter_daily_report_dates(reports_dir):
+        if (reports_dir / f"{date_str}-universe.json").exists() and (reports_dir / f"{date_str}-context.json").exists():
+            dates.append(date_str)
+    return dates
+
+
+def to_num(value: Any) -> Optional[float]:
+    return _as_float(value)
+
+
+def is_consecutive_institutional_buy(label: Any) -> bool:
+    if not label:
+        return False
+    text = str(label)
+    return "連" in text and "買" in text
+
+
+def is_close_to_ma5(close: Optional[float], ma5: Optional[float]) -> bool:
+    if close is None or ma5 is None or ma5 == 0:
+        return False
+    return abs(close - ma5) / abs(ma5) <= 0.01
+
+
+def get_ma20_diff(close: Optional[float], ma20: Optional[float]) -> Optional[float]:
+    if close is None or ma20 is None or ma20 == 0:
+        return None
+    return (close - ma20) / ma20
+
+
+def downgrade_bullish_summary(summary: Dict[str, str]) -> Dict[str, str]:
+    if summary.get("advice") == "強勢續看":
+        return {
+            "advice": "可偏多觀察",
+            "reason": "結構仍偏多，但量能或過熱需要再確認",
+            "risk": "縮量或高檔過熱時，續攻失敗容易回檔",
+        }
+    if summary.get("advice") == "可偏多觀察":
+        return {
+            "advice": "先觀望",
+            "reason": "偏多條件存在，但量能或過熱需要先消化",
+            "risk": "追價後若量縮或高檔反轉，容易回落",
+        }
+    return summary
+
+
+def get_advice_priority(advice: Optional[str]) -> int:
+    return FINAL_ADVICE_PRIORITY.get(str(advice or ""), 0)
+
+
+def is_avoid_advice(advice: Optional[str]) -> bool:
+    return advice in {"暫不考慮", "暫不進場"}
+
+
+def get_decision_summary(stock: Dict[str, Any]) -> Dict[str, str]:
+    indicators = stock.get("indicators") or {}
+    signals = stock.get("signals") or {}
+
+    score = to_num(stock.get("score"))
+    close = to_num(indicators.get("close"))
+    ma5 = to_num(indicators.get("ma5"))
+    ma20 = to_num(indicators.get("ma20"))
+    k_value = to_num(indicators.get("k"))
+    volume_ratio = to_num(indicators.get("volume_ratio"))
+    institutional = str(
+        signals.get("institutional")
+        or stock.get("institutional")
+        or stock.get("institution_trend")
+        or ""
+    ).strip()
+
+    ma20_diff = get_ma20_diff(close, ma20)
+    is_weak_below_ma20 = score is not None and score < 60 and close is not None and ma20 is not None and close < ma20
+    has_bullish_penalty = (volume_ratio is not None and volume_ratio < 1) or (k_value is not None and k_value >= 80)
+
+    if score is not None and score < 50:
+        return {
+            "advice": "暫不考慮",
+            "reason": "分數過低且結構偏弱",
+            "risk": "下跌延續或反彈失敗",
+        }
+
+    matches: List[Dict[str, Any]] = []
+
+    if score is not None and close is not None and ma20 is not None and score >= 80 and close > ma20:
+        matches.append({
+            "advice": "強勢續看",
+            "reason": "評分高且結構偏強",
+            "risk": "短線過熱時不宜追價",
+            "priority": 5,
+        })
+
+    if close is not None and ma20 is not None and close > ma20 and is_consecutive_institutional_buy(institutional):
+        matches.append({
+            "advice": "可偏多觀察",
+            "reason": "價格站上中期結構且法人偏多",
+            "risk": "短線若爆量不續攻，容易追高回檔",
+            "priority": 4,
+        })
+
+    if not is_weak_below_ma20 and close is not None and ma20 is not None and k_value is not None and close < ma20 and k_value < 30:
+        matches.append({
+            "advice": "可留意",
+            "reason": "低檔區出現反彈訊號",
+            "risk": "尚未站回中期結構，反彈可能失敗",
+            "priority": 3,
+        })
+
+    if not is_weak_below_ma20 and (
+        (ma20_diff is not None and ma20_diff < 0 and ma20_diff > -0.01)
+        or (close is not None and ma5 is not None and volume_ratio is not None and is_close_to_ma5(close, ma5) and volume_ratio < 1)
+    ):
+        matches.append({
+            "advice": "先觀望",
+            "reason": "貼近中期結構，先觀察是否重新站穩"
+            if ma20_diff is not None and ma20_diff < 0 and ma20_diff > -0.01
+            else "短線位置不差，但量能不足",
+            "risk": "若無法站回中期結構，容易再度轉弱"
+            if ma20_diff is not None and ma20_diff < 0 and ma20_diff > -0.01
+            else "缺乏續航，容易震盪",
+            "priority": 2,
+        })
+
+    if is_weak_below_ma20 or (ma20_diff is not None and ma20_diff <= -0.01):
+        matches.append({
+            "advice": "暫不進場",
+            "reason": "分數偏低且仍在中期壓力下方" if is_weak_below_ma20 else "仍在中期壓力下方",
+            "risk": "弱勢延續時，反彈容易失敗" if is_weak_below_ma20 else "容易出現反彈後再回落",
+            "priority": 1,
+        })
+
+    matches.sort(key=lambda item: item["priority"], reverse=True)
+
+    summary = matches[0] if matches else {
+        "advice": "先觀望",
+        "reason": "條件不足，方向不明",
+        "risk": "短線震盪或反覆",
+    }
+
+    if has_bullish_penalty and summary["advice"] in {"強勢續看", "可偏多觀察"}:
+        summary = downgrade_bullish_summary(summary)
+
+    return {
+        "advice": str(summary["advice"]),
+        "reason": str(summary["reason"]),
+        "risk": str(summary["risk"]),
+    }
+
+
+def get_zone_flags(stock: Dict[str, Any], summary: Optional[Dict[str, str]] = None) -> Dict[str, bool]:
+    indicators = stock.get("indicators") or {}
+    score = to_num(stock.get("score"))
+    close = to_num(indicators.get("close"))
+    ma5 = to_num(indicators.get("ma5"))
+    ma20 = to_num(indicators.get("ma20"))
+    advice = (summary or get_decision_summary(stock)).get("advice") or "先觀望"
+    is_weak_below_ma20 = score is not None and score < 60 and close is not None and ma20 is not None and close < ma20
+
+    pilot_low = ma5 * 0.98 if ma5 is not None else None
+    pilot_high = ma5 * 1.02 if ma5 is not None else None
+    in_pilot_zone = close is not None and pilot_low is not None and pilot_high is not None and pilot_low <= close <= pilot_high
+
+    in_observe_zone = False
+    if not is_avoid_advice(advice) and close is not None and ma5 is not None and close < ma5:
+        in_observe_zone = abs(close - ma5) / abs(ma5) <= 0.01
+
+    return {
+        "in_pilot_zone": in_pilot_zone,
+        "in_observe_zone": in_observe_zone,
+        "is_weak_blocked": is_weak_below_ma20,
+    }
+
+
+def get_zone_priority(zone_flags: Optional[Dict[str, bool]]) -> int:
+    if zone_flags and zone_flags.get("in_pilot_zone"):
+        return 2
+    if zone_flags and zone_flags.get("in_observe_zone"):
+        return 1
+    return 0
+
+
+def get_zone_priority_label(zone_flags: Optional[Dict[str, bool]]) -> str:
+    if zone_flags and zone_flags.get("in_pilot_zone"):
+        return "試單區優先"
+    if zone_flags and zone_flags.get("in_observe_zone"):
+        return "觀察區次優先"
+    return "區間外"
+
+
+def build_technical_map(report: Optional[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    stocks = list((report or {}).get("stocks") or [])
+    technical_map: Dict[str, Dict[str, Any]] = {}
+
+    for stock in stocks:
+        symbol = str(stock.get("symbol") or "").strip()
+        if not symbol:
+            continue
+        summary = get_decision_summary(stock)
+        technical_map[symbol] = {
+            "symbol": symbol,
+            "name": str(stock.get("name") or symbol),
+            "stock": stock,
+            "summary": summary,
+            "zone_flags": get_zone_flags(stock, summary),
+        }
+
+    return technical_map
+
+
+def compare_candidate_items(left: Dict[str, Any], right: Dict[str, Any], technical_map: Dict[str, Dict[str, Any]]) -> int:
+    event_diff = int(right["hit_count"]) - int(left["hit_count"])
+    if event_diff != 0:
+        return event_diff
+
+    left_technical = technical_map.get(left["symbol"])
+    right_technical = technical_map.get(right["symbol"])
+
+    advice_diff = get_advice_priority((right_technical or {}).get("summary", {}).get("advice")) - get_advice_priority((left_technical or {}).get("summary", {}).get("advice"))
+    if advice_diff != 0:
+        return advice_diff
+
+    zone_diff = get_zone_priority((right_technical or {}).get("zone_flags")) - get_zone_priority((left_technical or {}).get("zone_flags"))
+    if zone_diff != 0:
+        return zone_diff
+
+    return int(left["first_seen_order"]) - int(right["first_seen_order"])
+
+
+def build_priority_explanation(item: Dict[str, Any], technical: Optional[Dict[str, Any]]) -> str:
+    advice = ((technical or {}).get("summary") or {}).get("advice") or "技術資料不足"
+    zone = get_zone_priority_label((technical or {}).get("zone_flags"))
+    return f"{item['hit_count']} 情境 > {advice} > {zone}"
+
+
+def _theme_label(context_report: Dict[str, Any], theme_id: str) -> str:
+    taxonomy = ((context_report.get("trace_catalog") or {}).get("theme_taxonomy") or {})
+    return ((taxonomy.get(theme_id) or {}).get("label")) or theme_id
+
+
+def _event_label(event_map: Dict[str, str], event_id: str) -> str:
+    return event_map.get(event_id, event_id)
+
+
+def _build_candidate_entries(context_report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    cards = list(context_report.get("cards") or [])
+    event_map: Dict[str, str] = {}
+    entries: Dict[str, Dict[str, Any]] = {}
+    first_seen_order = 0
+
+    for card in cards:
+        trace = card.get("trace") or {}
+        event_id = str(trace.get("event") or "")
+        if event_id:
+            event_map[event_id] = str(card.get("title") or event_id)
+
+        for candidate in card.get("candidate_stocks") or []:
+            symbol = str(candidate.get("symbol") or "").strip()
+            if not symbol:
+                continue
+
+            theme_id = str(candidate.get("from_theme") or "").strip()
+            trace_event = str(candidate.get("trace_event") or event_id).strip()
+            reason = str(candidate.get("reason") or "").strip()
+            existing = entries.get(symbol)
+
+            if not existing:
+                entries[symbol] = {
+                    "symbol": symbol,
+                    "primary_theme": theme_id,
+                    "themes": [theme_id] if theme_id else [],
+                    "events": [trace_event] if trace_event else [],
+                    "reasons": [reason] if reason else [],
+                    "first_seen_order": first_seen_order,
+                }
+                first_seen_order += 1
+                continue
+
+            if theme_id and theme_id not in existing["themes"]:
+                existing["themes"].append(theme_id)
+            if trace_event and trace_event not in existing["events"]:
+                existing["events"].append(trace_event)
+            if reason and reason not in existing["reasons"]:
+                existing["reasons"].append(reason)
+
+    for entry in entries.values():
+        entry["hit_count"] = len(entry["events"])
+        entry["event_labels"] = [_event_label(event_map, event_id) for event_id in entry["events"]]
+        entry["theme_labels"] = [_theme_label(context_report, theme_id) for theme_id in entry["themes"]]
+        entry["primary_theme_label"] = _theme_label(context_report, entry["primary_theme"]) if entry["primary_theme"] else ""
+
+    return list(entries.values())
+
+
+def _build_next_lookup(next_universe_report: Optional[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    if not next_universe_report:
+        return {}
+    lookup: Dict[str, Dict[str, Any]] = {}
+    for stock in next_universe_report.get("stocks") or []:
+        symbol = str(stock.get("symbol") or "").strip()
+        if symbol:
+            lookup[symbol] = stock
+    return lookup
+
+
+def _build_next_validation(
+    symbol: str,
+    current_close: Optional[float],
+    next_lookup: Dict[str, Dict[str, Any]],
+    next_date: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    if not next_date:
+        return None
+
+    next_stock = next_lookup.get(symbol)
+    if not next_stock:
+        return {
+            "next_report_date": next_date,
+            "found": False,
+        }
+
+    next_close = to_num((next_stock.get("indicators") or {}).get("close"))
+    return_pct: Optional[float] = None
+    if current_close is not None and current_close != 0 and next_close is not None:
+        return_pct = _round_number(((next_close - current_close) / current_close) * 100)
+
+    return {
+        "next_report_date": next_date,
+        "found": True,
+        "current_close": current_close,
+        "next_close": next_close,
+        "return_pct": return_pct,
+        "next_rank": next_stock.get("rank"),
+        "next_score": next_stock.get("score"),
+        "next_action_bias": next_stock.get("action_bias"),
+    }
+
+
+def _extract_return_pct(candidate: Dict[str, Any]) -> Optional[float]:
+    validation = candidate.get("next_report_validation") or {}
+    if not validation or not validation.get("found"):
+        return None
+    return _as_float(validation.get("return_pct"))
+
+
+def _build_snapshot_evaluation(candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    evaluated_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates) if value is not None]
+    top3_returns = [value for value in (_extract_return_pct(candidate) for candidate in candidates if int(candidate.get("priority_rank") or 0) <= 3) if value is not None]
+
+    return {
+        "evaluated_candidate_count": len(evaluated_returns),
+        "top3_evaluated_count": len(top3_returns),
+        "all_avg_return_pct": _mean(evaluated_returns),
+        "top3_avg_return_pct": _mean(top3_returns),
+        "all_win_rate_pct": _win_rate(evaluated_returns),
+        "top3_win_rate_pct": _win_rate(top3_returns),
+    }
+
+
+def generate_priority_snapshot(
+    context_report: Dict[str, Any],
+    universe_report: Dict[str, Any],
+    next_universe_report: Optional[Dict[str, Any]] = None,
+    next_date: Optional[str] = None,
+) -> Dict[str, Any]:
+    date_str = str(context_report.get("date") or universe_report.get("date") or get_today_str())
+    generated_at = get_taiwan_now().isoformat()
+    next_report_date = next_date or (str(next_universe_report.get("date")) if next_universe_report else None)
+
+    technical_map = build_technical_map(universe_report)
+    next_lookup = _build_next_lookup(next_universe_report)
+    entries = sorted(
+        _build_candidate_entries(context_report),
+        key=cmp_to_key(lambda left, right: compare_candidate_items(left, right, technical_map)),
+    )
+
+    candidates: List[Dict[str, Any]] = []
+    for index, item in enumerate(entries, start=1):
+        technical = technical_map.get(item["symbol"])
+        stock = (technical or {}).get("stock") or {}
+        indicators = stock.get("indicators") or {}
+        summary = (technical or {}).get("summary") or {
+            "advice": "技術資料不足",
+            "reason": "缺少主報表技術欄位，無法判讀。",
+            "risk": "缺少技術資料時，不宜直接比較。",
+        }
+        zone_flags = (technical or {}).get("zone_flags") or {
+            "in_pilot_zone": False,
+            "in_observe_zone": False,
+            "is_weak_blocked": False,
+        }
+
+        current_close = to_num(indicators.get("close"))
+        advice = str(summary.get("advice") or "技術資料不足")
+        technical_state = {
+            "score": to_num(stock.get("score")),
+            "close": current_close,
+            "ma5": to_num(indicators.get("ma5")),
+            "ma20": to_num(indicators.get("ma20")),
+            "k": to_num(indicators.get("k")),
+            "volume_ratio": to_num(indicators.get("volume_ratio")),
+            "institutional": str(stock.get("institutional") or ((stock.get("signals") or {}).get("institutional") or "")).strip(),
+            "advice": advice,
+            "advice_priority": get_advice_priority(advice),
+            "reason": str(summary.get("reason") or ""),
+            "risk": str(summary.get("risk") or ""),
+            "zone_label": get_zone_priority_label(zone_flags),
+            "zone_priority": get_zone_priority(zone_flags),
+            "in_pilot_zone": bool(zone_flags.get("in_pilot_zone")),
+            "in_observe_zone": bool(zone_flags.get("in_observe_zone")),
+            "is_weak_blocked": bool(zone_flags.get("is_weak_blocked")),
+        }
+
+        candidate = {
+            "priority_rank": index,
+            "symbol": item["symbol"],
+            "name": (technical or {}).get("name") or item["symbol"],
+            "primary_theme": item["primary_theme"],
+            "primary_theme_label": item.get("primary_theme_label") or item["primary_theme"],
+            "themes": item["themes"],
+            "theme_labels": item.get("theme_labels") or item["themes"],
+            "events": item["events"],
+            "event_labels": item.get("event_labels") or item["events"],
+            "hit_count": int(item["hit_count"]),
+            "first_seen_order": int(item["first_seen_order"]),
+            "reasons": item.get("reasons") or [],
+            "technical_state": technical_state,
+            "priority_explanation": build_priority_explanation(item, technical),
+            "next_report_validation": _build_next_validation(item["symbol"], current_close, next_lookup, next_report_date),
+        }
+        candidates.append(candidate)
+
+    evaluation = _build_snapshot_evaluation(candidates)
+
+    return {
+        "report_version": PRIORITY_REPORT_VERSION,
+        "date": date_str,
+        "generated_at": generated_at,
+        "evaluation_horizon": "next_available_report",
+        "next_report_date": next_report_date,
+        "sort_rule": {
+            "description": SORT_RULE_DESCRIPTION,
+            "keys": [
+                "hit_count desc",
+                "advice_priority desc",
+                "zone_priority desc",
+                "first_seen_order asc",
+            ],
+        },
+        "source_reports": {
+            "context": f"{date_str}-context.json",
+            "universe": f"{date_str}-universe.json",
+            "next_universe": f"{next_report_date}-universe.json" if next_report_date else None,
+        },
+        "candidate_count": len(candidates),
+        "top3_symbols": [candidate["symbol"] for candidate in candidates[:3]],
+        "evaluation": evaluation,
+        "candidates": candidates,
+    }
+
+
+def save_priority_snapshot(report: Dict[str, Any], date_str: Optional[str] = None, base_dir: Optional[Path] = None) -> Path:
+    target_date = date_str or str(report.get("date") or get_today_str())
+    return _save_json(_priority_report_path(target_date, base_dir), report)
+
+
+def ensure_context_report(date_str: str, base_dir: Optional[Path] = None, refresh: bool = False) -> Path:
+    path = _reports_dir(base_dir) / f"{date_str}-context.json"
+    if refresh or not path.exists():
+        return generate_context_report_from_files(date_str, base_dir=base_dir)
+    return path
+
+
+def generate_priority_snapshot_from_files(
+    date_str: str,
+    base_dir: Optional[Path] = None,
+    next_date: Optional[str] = None,
+    refresh_context: bool = False,
+) -> Path:
+    reports_dir = _reports_dir(base_dir)
+    ensure_context_report(date_str, base_dir=base_dir, refresh=refresh_context)
+
+    context_report = _load_json(reports_dir / f"{date_str}-context.json", required=True)
+    universe_report = _load_json(reports_dir / f"{date_str}-universe.json", required=True)
+
+    if next_date is None:
+        dates = _available_priority_dates(reports_dir)
+        if date_str in dates:
+            current_index = dates.index(date_str)
+            if current_index + 1 < len(dates):
+                next_date = dates[current_index + 1]
+
+    next_universe_report = None
+    if next_date:
+        next_universe_report = _load_json(reports_dir / f"{next_date}-universe.json", required=False)
+
+    report = generate_priority_snapshot(
+        context_report,
+        universe_report,
+        next_universe_report=next_universe_report,
+        next_date=next_date,
+    )
+    return save_priority_snapshot(report, date_str=date_str, base_dir=base_dir)
+
+
+def _build_bucket_stats(
+    candidates: List[Dict[str, Any]],
+    bucket_key: Callable[[Dict[str, Any]], Any],
+    order_key: Optional[Callable[[Any], Any]] = None,
+    reverse: bool = False,
+    label_key: str = "bucket",
+) -> List[Dict[str, Any]]:
+    grouped: Dict[Any, List[float]] = {}
+    for candidate in candidates:
+        return_pct = _extract_return_pct(candidate)
+        if return_pct is None:
+            continue
+        key = bucket_key(candidate)
+        grouped.setdefault(key, []).append(return_pct)
+
+    if order_key:
+        ordered_keys = sorted(grouped.keys(), key=order_key, reverse=reverse)
+    else:
+        ordered_keys = sorted(grouped.keys(), reverse=reverse)
+
+    stats: List[Dict[str, Any]] = []
+    for key in ordered_keys:
+        values = grouped[key]
+        stats.append({
+            label_key: key,
+            "sample_count": len(values),
+            "avg_return_pct": _mean(values),
+            "win_rate_pct": _win_rate(values),
+        })
+    return stats
+
+
+def generate_priority_history_report(priority_reports: List[Dict[str, Any]]) -> Dict[str, Any]:
+    generated_at = get_taiwan_now().isoformat()
+    ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
+    replay_days: List[Dict[str, Any]] = []
+    all_candidates: List[Dict[str, Any]] = []
+
+    for report in ordered_reports:
+        candidates = list(report.get("candidates") or [])
+        evaluation = report.get("evaluation") or {}
+        replay_days.append({
+            "date": report.get("date"),
+            "priority_file": f"{report.get('date')}-priority.json",
+            "candidate_count": report.get("candidate_count", len(candidates)),
+            "top3_symbols": report.get("top3_symbols") or [],
+            "next_report_date": report.get("next_report_date"),
+            "top3_avg_return_pct": evaluation.get("top3_avg_return_pct"),
+            "all_avg_return_pct": evaluation.get("all_avg_return_pct"),
+        })
+        all_candidates.extend(candidates)
+
+    evaluated_candidates = [candidate for candidate in all_candidates if _extract_return_pct(candidate) is not None]
+    top3_candidates = [candidate for candidate in evaluated_candidates if int(candidate.get("priority_rank") or 0) <= 3]
+    all_returns = [_extract_return_pct(candidate) for candidate in evaluated_candidates]
+    top3_returns = [_extract_return_pct(candidate) for candidate in top3_candidates]
+
+    advice_stats = _build_bucket_stats(
+        evaluated_candidates,
+        bucket_key=lambda candidate: (candidate.get("technical_state") or {}).get("advice") or "技術資料不足",
+        order_key=lambda advice: get_advice_priority(str(advice)),
+        reverse=True,
+        label_key="advice",
+    )
+
+    pilot_zone_stats = _build_bucket_stats(
+        evaluated_candidates,
+        bucket_key=lambda candidate: "位於試單區" if (candidate.get("technical_state") or {}).get("in_pilot_zone") else "未在試單區",
+        order_key=lambda label: 1 if label == "位於試單區" else 0,
+        reverse=True,
+    )
+
+    weak_block_stats = _build_bucket_stats(
+        evaluated_candidates,
+        bucket_key=lambda candidate: "弱股封鎖" if (candidate.get("technical_state") or {}).get("is_weak_blocked") else "非弱股",
+        order_key=lambda label: 1 if label == "非弱股" else 0,
+        reverse=True,
+    )
+
+    hit_count_stats = _build_bucket_stats(
+        evaluated_candidates,
+        bucket_key=lambda candidate: int(candidate.get("hit_count") or 0),
+        order_key=lambda value: int(value),
+        reverse=True,
+        label_key="hit_count",
+    )
+
+    return {
+        "report_version": HISTORY_REPORT_VERSION,
+        "generated_at": generated_at,
+        "evaluation_horizon": "next_available_report",
+        "available_dates": [report.get("date") for report in ordered_reports],
+        "replay_days": replay_days,
+        "stats": {
+            "snapshot_count": len(ordered_reports),
+            "evaluated_snapshot_count": sum(1 for day in replay_days if day.get("all_avg_return_pct") is not None),
+            "candidate_samples": len(all_candidates),
+            "evaluated_candidate_samples": len(evaluated_candidates),
+            "top3_vs_all": {
+                "top3_sample_count": len(top3_candidates),
+                "all_candidate_sample_count": len(evaluated_candidates),
+                "top3_avg_return_pct": _mean([value for value in top3_returns if value is not None]),
+                "all_candidates_avg_return_pct": _mean([value for value in all_returns if value is not None]),
+                "top3_win_rate_pct": _win_rate([value for value in top3_returns if value is not None]),
+                "all_candidates_win_rate_pct": _win_rate([value for value in all_returns if value is not None]),
+            },
+            "hit_count_effect": hit_count_stats,
+            "advice_effect": advice_stats,
+            "pilot_zone_effect": pilot_zone_stats,
+            "weak_block_filter_effect": weak_block_stats,
+        },
+    }
+
+
+def save_priority_history_report(report: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    return _save_json(_priority_history_path(base_dir), report)
+
+
+def load_priority_reports(base_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
+    reports_dir = _reports_dir(base_dir)
+    reports: List[Dict[str, Any]] = []
+    for path in sorted(reports_dir.glob("*-priority.json")):
+        stem = path.stem
+        if not stem.endswith("-priority"):
+            continue
+        date_str = stem[:-9]
+        if not DATE_PATTERN.match(date_str):
+            continue
+        reports.append(_load_json(path, required=True) or {})
+    return reports
+
+
+def generate_priority_history_from_reports(base_dir: Optional[Path] = None) -> Path:
+    report = generate_priority_history_report(load_priority_reports(base_dir=base_dir))
+    return save_priority_history_report(report, base_dir=base_dir)
+
+
+def backfill_priority_validation_reports(
+    base_dir: Optional[Path] = None,
+    refresh_context: bool = False,
+    target_date: Optional[str] = None,
+) -> Dict[str, Any]:
+    reports_dir = _reports_dir(base_dir)
+    ensured_context_paths: List[str] = []
+    priority_paths: List[str] = []
+    skipped: List[Dict[str, str]] = []
+
+    for date_str in _iter_daily_report_dates(reports_dir):
+        if not (reports_dir / f"{date_str}-universe.json").exists():
+            skipped.append({
+                "date": date_str,
+                "reason": "缺少 universe 報告，無法回放完整排序。",
+            })
+            continue
+        try:
+            path = ensure_context_report(date_str, base_dir=base_dir, refresh=refresh_context)
+            ensured_context_paths.append(str(path))
+        except FileNotFoundError as exc:
+            skipped.append({
+                "date": date_str,
+                "reason": str(exc),
+            })
+
+    available_dates = _available_priority_dates(reports_dir)
+    for index, date_str in enumerate(available_dates):
+        next_date = available_dates[index + 1] if index + 1 < len(available_dates) else None
+        try:
+            path = generate_priority_snapshot_from_files(
+                date_str,
+                base_dir=base_dir,
+                next_date=next_date,
+                refresh_context=False,
+            )
+            priority_paths.append(str(path))
+        except FileNotFoundError as exc:
+            skipped.append({
+                "date": date_str,
+                "reason": str(exc),
+            })
+
+    history_path = generate_priority_history_from_reports(base_dir=base_dir)
+    current_date = target_date or (available_dates[-1] if available_dates else None)
+
+    return {
+        "available_dates": available_dates,
+        "ensured_context_paths": ensured_context_paths,
+        "priority_paths": priority_paths,
+        "history_path": str(history_path),
+        "current_context_path": str(reports_dir / f"{current_date}-context.json") if current_date else None,
+        "current_priority_path": str(_priority_report_path(current_date, base_dir)) if current_date else None,
+        "skipped": skipped,
+    }

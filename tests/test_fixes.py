@@ -11,12 +11,16 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import unittest
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from backend.config import get_today_str, get_taiwan_now, TAIWAN_TZ
 from backend.calc_indicators import StockIndicators, calculate_indicators
 from backend.ranking import score_stock, evaluate_institutional, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, generate_universe_report, validate_report_consistency
+from backend.priority_validation import generate_priority_snapshot, backfill_priority_validation_reports
 
 
 class TestTaiwanTimezone(unittest.TestCase):
@@ -324,6 +328,145 @@ class TestReportConsistency(unittest.TestCase):
             validate_report_consistency(full_report, lite_report, universe_report)
 
 
+class TestPriorityValidation(unittest.TestCase):
+    """測試 v11 排序驗證層。"""
+
+    def make_universe_stock(
+        self,
+        symbol: str,
+        name: str,
+        score: int,
+        close: float,
+        ma5: float,
+        ma20: float,
+        k_value: float,
+        volume_ratio: float,
+        institutional: str,
+        rank: int,
+    ) -> dict:
+        return {
+            "symbol": symbol,
+            "name": name,
+            "rank": rank,
+            "score": score,
+            "action_bias": "可留意",
+            "institutional": institutional,
+            "indicators": {
+                "close": close,
+                "ma5": ma5,
+                "ma20": ma20,
+                "k": k_value,
+                "volume_ratio": volume_ratio,
+            },
+        }
+
+    def make_context_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v9-context",
+            "date": date_str,
+            "trace_catalog": {
+                "theme_taxonomy": {
+                    "theme_a": {"label": "主題 A"},
+                    "theme_b": {"label": "主題 B"},
+                    "theme_c": {"label": "主題 C"},
+                }
+            },
+            "cards": [
+                {
+                    "title": "卡片一",
+                    "trace": {"event": "event_1"},
+                    "candidate_stocks": [
+                        {"symbol": "BBB", "from_theme": "theme_a", "trace_event": "event_1", "reason": "第一張卡出現"},
+                        {"symbol": "CCC", "from_theme": "theme_a", "trace_event": "event_1", "reason": "第一張卡出現"},
+                        {"symbol": "AAA", "from_theme": "theme_a", "trace_event": "event_1", "reason": "第一張卡出現"},
+                        {"symbol": "DDD", "from_theme": "theme_a", "trace_event": "event_1", "reason": "第一張卡出現"},
+                    ],
+                },
+                {
+                    "title": "卡片二",
+                    "trace": {"event": "event_2"},
+                    "candidate_stocks": [
+                        {"symbol": "BBB", "from_theme": "theme_b", "trace_event": "event_2", "reason": "第二張卡再出現"},
+                        {"symbol": "CCC", "from_theme": "theme_b", "trace_event": "event_2", "reason": "第二張卡再出現"},
+                    ],
+                },
+            ],
+        }
+
+    def make_universe_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": [
+                self.make_universe_stock("BBB", "Beta", 85, 100.0, 100.5, 95.0, 70.0, 1.2, "連2買", 1),
+                self.make_universe_stock("CCC", "Gamma", 85, 110.0, 100.0, 95.0, 70.0, 1.2, "連2買", 2),
+                self.make_universe_stock("DDD", "Delta", 65, 99.0, 100.0, 100.0, 25.0, 0.8, "資料不足", 3),
+                self.make_universe_stock("AAA", "Alpha", 45, 90.0, 95.0, 100.0, 20.0, 0.9, "連1賣", 4),
+            ],
+        }
+
+    def make_next_universe_report(self, date_str: str) -> dict:
+        return {
+            "report_version": "v1-universe",
+            "date": date_str,
+            "stocks": [
+                self.make_universe_stock("BBB", "Beta", 86, 103.0, 101.0, 96.0, 72.0, 1.1, "連3買", 1),
+                self.make_universe_stock("CCC", "Gamma", 84, 109.0, 101.0, 96.0, 68.0, 1.1, "連2買", 2),
+                self.make_universe_stock("DDD", "Delta", 68, 104.94, 100.5, 100.5, 28.0, 1.0, "資料不足", 3),
+                self.make_universe_stock("AAA", "Alpha", 42, 85.0, 94.0, 99.0, 18.0, 0.8, "連2賣", 4),
+            ],
+        }
+
+    def test_priority_snapshot_mirrors_frontend_sorting(self):
+        context_report = self.make_context_report("2026-04-10")
+        universe_report = self.make_universe_report("2026-04-10")
+        next_universe_report = self.make_next_universe_report("2026-04-11")
+
+        report = generate_priority_snapshot(
+            context_report,
+            universe_report,
+            next_universe_report=next_universe_report,
+            next_date="2026-04-11",
+        )
+
+        ordered_symbols = [candidate["symbol"] for candidate in report["candidates"]]
+        self.assertEqual(ordered_symbols, ["BBB", "CCC", "DDD", "AAA"])
+        self.assertEqual(report["candidates"][0]["technical_state"]["advice"], "強勢續看")
+        self.assertTrue(report["candidates"][0]["technical_state"]["in_pilot_zone"])
+        self.assertAlmostEqual(report["evaluation"]["top3_avg_return_pct"], 2.697, places=3)
+        self.assertAlmostEqual(report["evaluation"]["all_avg_return_pct"], 0.6338, places=4)
+
+    def test_backfill_generates_priority_history(self):
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            reports_dir = root / "reports"
+            reports_dir.mkdir(parents=True, exist_ok=True)
+
+            date_a = "2026-04-10"
+            date_b = "2026-04-11"
+
+            (reports_dir / f"{date_a}.json").write_text(json.dumps({"date": date_a}, ensure_ascii=False), encoding="utf-8")
+            (reports_dir / f"{date_b}.json").write_text(json.dumps({"date": date_b}, ensure_ascii=False), encoding="utf-8")
+            (reports_dir / f"{date_a}-context.json").write_text(json.dumps(self.make_context_report(date_a), ensure_ascii=False), encoding="utf-8")
+            (reports_dir / f"{date_b}-context.json").write_text(json.dumps(self.make_context_report(date_b), ensure_ascii=False), encoding="utf-8")
+            (reports_dir / f"{date_a}-universe.json").write_text(json.dumps(self.make_universe_report(date_a), ensure_ascii=False), encoding="utf-8")
+            (reports_dir / f"{date_b}-universe.json").write_text(json.dumps(self.make_next_universe_report(date_b), ensure_ascii=False), encoding="utf-8")
+
+            result = backfill_priority_validation_reports(base_dir=root, target_date=date_b)
+
+            self.assertTrue((reports_dir / f"{date_a}-priority.json").exists())
+            self.assertTrue((reports_dir / f"{date_b}-priority.json").exists())
+            self.assertTrue((reports_dir / "priority-history.json").exists())
+            self.assertEqual(result["available_dates"], [date_a, date_b])
+
+            history = json.loads((reports_dir / "priority-history.json").read_text(encoding="utf-8"))
+            self.assertEqual(history["stats"]["snapshot_count"], 2)
+            self.assertEqual(history["stats"]["evaluated_snapshot_count"], 1)
+            self.assertEqual(history["replay_days"][0]["date"], date_a)
+            self.assertEqual(history["replay_days"][0]["next_report_date"], date_b)
+            self.assertEqual(history["stats"]["hit_count_effect"][0]["hit_count"], 2)
+            self.assertEqual(history["stats"]["top3_vs_all"]["top3_sample_count"], 3)
+
 if __name__ == "__main__":
     # 執行單元測試
     print("=" * 60)
@@ -339,6 +482,7 @@ if __name__ == "__main__":
     suite.addTests(loader.loadTestsFromTestCase(TestVolumeRatio))
     suite.addTests(loader.loadTestsFromTestCase(TestInstitutionalScoring))
     suite.addTests(loader.loadTestsFromTestCase(TestReportConsistency))
+    suite.addTests(loader.loadTestsFromTestCase(TestPriorityValidation))
     
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

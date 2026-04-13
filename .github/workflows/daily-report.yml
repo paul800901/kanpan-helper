@@ -98,11 +98,26 @@ jobs:
             echo "Error: Universe 報告生成失敗，找不到 reports/${TODAY}-universe.json"
             exit 1
           fi
+          if [ ! -f "reports/${TODAY}-context.json" ]; then
+            echo "Error: Context 報告生成失敗，找不到 reports/${TODAY}-context.json"
+            exit 1
+          fi
+          if [ ! -f "reports/${TODAY}-priority.json" ]; then
+            echo "Error: Priority 驗證快照生成失敗，找不到 reports/${TODAY}-priority.json"
+            exit 1
+          fi
+          if [ ! -f "reports/priority-history.json" ]; then
+            echo "Error: Priority 歷史統計生成失敗，找不到 reports/priority-history.json"
+            exit 1
+          fi
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
           python -m json.tool reports/${TODAY}-ai.json > /dev/null
           python -m json.tool reports/${TODAY}-universe.json > /dev/null
+          python -m json.tool reports/${TODAY}-context.json > /dev/null
+          python -m json.tool reports/${TODAY}-priority.json > /dev/null
+          python -m json.tool reports/priority-history.json > /dev/null
           echo "✓ 所有報告生成並驗證成功"
       
       - name: Commit and push reports
