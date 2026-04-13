@@ -1,4 +1,4 @@
-"""v16 排序驗證層：每日 priority 快照、單因子、組合與策略分析。"""
+"""v18 排序驗證層：每日 priority 快照、單因子、組合、策略與訊號密度分析。"""
 
 from __future__ import annotations
 
@@ -17,13 +17,15 @@ from backend.historical_reports import MARKET_INDEX_ID, ensure_historical_report
 
 PRIORITY_REPORT_VERSION = "v12-priority-validation"
 HISTORY_REPORT_VERSION = "v12-priority-history"
-FACTOR_ANALYSIS_REPORT_VERSION = "v14-factor-analysis"
+FACTOR_ANALYSIS_REPORT_VERSION = "v18-factor-analysis"
 FACTOR_COMBINATION_ANALYSIS_REPORT_VERSION = "v15-factor-combination-analysis"
 STRATEGY_ANALYSIS_REPORT_VERSION = "v16-strategy-analysis"
 SIGNAL_DENSITY_REPORT_VERSION = "v17-signal-density-analysis"
 SORT_RULE_DESCRIPTION = "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。"
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EVALUATED_DAYS = 20
+MA20_V2_BAND_PCT = 0.02
+MA20_V2_RECENT_BREAK_LOOKBACK = 3
 
 CONDITION_DEFINITIONS = {
     "ma20_break": {
@@ -816,14 +818,25 @@ def _collect_trading_interval_candidates(
     ordered_reports = sorted(priority_reports, key=lambda item: str(item.get("date") or ""))
     candidates: List[Dict[str, Any]] = []
     evaluated_days = 0
+    universe_lookup_by_date = {
+        str(report.get("date") or ""): {
+            str(stock.get("symbol") or ""): stock
+            for stock in ((((universe_reports_by_date or {}).get(str(report.get("date") or "")) or {}).get("stocks") or []))
+        }
+        for report in ordered_reports
+        if str(report.get("date") or "")
+    }
 
     for index, report in enumerate(ordered_reports):
         previous_date = str(ordered_reports[index - 1].get("date") or "") if index > 0 else None
         current_date = str(report.get("date") or "")
-        current_universe = ((universe_reports_by_date or {}).get(current_date) or {}).get("stocks") or []
-        previous_universe = ((universe_reports_by_date or {}).get(previous_date or "") or {}).get("stocks") or []
-        current_universe_lookup = {str(stock.get("symbol") or ""): stock for stock in current_universe}
-        previous_universe_lookup = {str(stock.get("symbol") or ""): stock for stock in previous_universe}
+        current_universe_lookup = universe_lookup_by_date.get(current_date, {})
+        previous_universe_lookup = universe_lookup_by_date.get(previous_date or "", {})
+        recent_dates = [
+            str(ordered_reports[lookback_index].get("date") or "")
+            for lookback_index in range(max(0, index - (MA20_V2_RECENT_BREAK_LOOKBACK - 1)), index + 1)
+            if str(ordered_reports[lookback_index].get("date") or "")
+        ]
         market_return = _market_return(str(report.get("date") or ""), str(report.get("next_report_date") or ""), market_lookup)
         if market_return is None:
             continue
@@ -842,6 +855,13 @@ def _collect_trading_interval_candidates(
                 "candidate": candidate,
                 "current_universe_stock": current_universe_lookup.get(symbol),
                 "previous_universe_stock": previous_universe_lookup.get(symbol),
+                "recent_universe_history": [
+                    {
+                        "date": history_date,
+                        "stock": (universe_lookup_by_date.get(history_date) or {}).get(symbol),
+                    }
+                    for history_date in recent_dates
+                ],
             })
 
     return candidates, evaluated_days
@@ -971,6 +991,57 @@ def _is_just_break_ma20(sample: Dict[str, Any]) -> bool:
     )
 
 
+def _recent_ma20_history(sample: Dict[str, Any]) -> List[Dict[str, float]]:
+    history_entries = list(sample.get("recent_universe_history") or [])
+    if not history_entries:
+        history_entries = [
+            {
+                "date": sample.get("previous_date"),
+                "stock": sample.get("previous_universe_stock"),
+            },
+            {
+                "date": sample.get("date"),
+                "stock": sample.get("current_universe_stock"),
+            },
+        ]
+
+    history: List[Dict[str, float]] = []
+    for entry in history_entries:
+        indicators = ((entry.get("stock") or {}).get("indicators") or {})
+        close = _as_float(indicators.get("close"))
+        ma20 = _as_float(indicators.get("ma20"))
+        if close is None or ma20 in (None, 0):
+            continue
+        history.append({
+            "close": close,
+            "ma20": ma20,
+        })
+    return history
+
+
+def _is_near_ma20_band(sample: Dict[str, Any]) -> bool:
+    gap_pct = _ma20_gap_pct(sample)
+    if gap_pct is None:
+        return False
+    return abs(gap_pct) <= MA20_V2_BAND_PCT
+
+
+def _has_recent_ma20_break(sample: Dict[str, Any]) -> bool:
+    history = _recent_ma20_history(sample)
+    if len(history) < 2:
+        return False
+
+    recent_history = history[-MA20_V2_RECENT_BREAK_LOOKBACK:]
+    return any(
+        previous_state["close"] >= previous_state["ma20"] and current_state["close"] < current_state["ma20"]
+        for previous_state, current_state in zip(recent_history, recent_history[1:])
+    )
+
+
+def _is_ma20_v2(sample: Dict[str, Any]) -> bool:
+    return _is_near_ma20_band(sample) or _has_recent_ma20_break(sample)
+
+
 def _is_retest_ma20(sample: Dict[str, Any]) -> bool:
     previous_close = _previous_metric(sample, "close")
     previous_ma20 = _previous_metric(sample, "ma20")
@@ -1038,6 +1109,17 @@ def _build_break_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
     )
 
 
+def _build_ma20_v2_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return _build_boolean_factor(
+        samples,
+        "ma20_v2",
+        "回檔因子：接近 MA20 區間",
+        "接近 MA20 / 3 日內跌破組",
+        "非 MA20_v2 組",
+        _is_ma20_v2,
+    )
+
+
 def _build_retest_ma20_factor(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
     return _build_boolean_factor(
         samples,
@@ -1086,6 +1168,77 @@ def _build_positive_factor_baseline(
         "sample_count": len(values),
         "avg_return_pct": _mean(values),
         "win_rate_pct": _win_rate(values),
+    }
+
+
+def _build_factor_variant_summary(
+    factor_name: str,
+    factor_label: str,
+    positive_group_label: str,
+    samples: List[Dict[str, Any]],
+    predicate: Callable[[Dict[str, Any]], bool],
+) -> Dict[str, Any]:
+    values = [sample["return_pct"] for sample in samples if predicate(sample)]
+    total_samples = len(samples)
+    sample_count = len(values)
+    return {
+        "factor": factor_name,
+        "label": factor_label,
+        "positive_group_label": positive_group_label,
+        "sample_count": sample_count,
+        "total_sample_count": total_samples,
+        "pass_rate_pct": _round_number((sample_count / total_samples) * 100) if total_samples else None,
+        "avg_return_pct": _mean(values),
+        "win_rate_pct": _win_rate(values),
+    }
+
+
+def _build_ma20_variant_comparison(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    old_ma20 = _build_factor_variant_summary(
+        "just_break_ma20",
+        "舊 MA20：剛跌破 MA20",
+        "剛跌破組",
+        samples,
+        _is_just_break_ma20,
+    )
+    ma20_v2 = _build_factor_variant_summary(
+        "ma20_v2",
+        "新 MA20：接近 MA20 區間",
+        "接近 MA20 / 3 日內跌破組",
+        samples,
+        _is_ma20_v2,
+    )
+
+    pass_rate_over_10 = bool((ma20_v2.get("pass_rate_pct") or 0) > 10)
+    positive_avg_return = bool((ma20_v2.get("avg_return_pct") or 0) > 0)
+    if pass_rate_over_10 and positive_avg_return:
+        verdict = "達標"
+    elif pass_rate_over_10:
+        verdict = "通過率達標，但報酬未維持正向"
+    elif positive_avg_return:
+        verdict = "報酬維持正向，但通過率未達標"
+    else:
+        verdict = "未達標"
+
+    return {
+        "definition": {
+            "metric": "close 相對 MA20 的距離",
+            "band_pct": _round_number(MA20_V2_BAND_PCT * 100, digits=2),
+            "recent_break_lookback_days": MA20_V2_RECENT_BREAK_LOOKBACK,
+            "logic": "close 在 MA20 ±2% 內，或最近 3 個交易日內出現由上往下跌破 MA20。",
+        },
+        "variants": {
+            "just_break_ma20": old_ma20,
+            "ma20_v2": ma20_v2,
+        },
+        "pass_rate_lift_pct": _safe_diff(ma20_v2.get("pass_rate_pct"), old_ma20.get("pass_rate_pct")),
+        "avg_return_lift_pct": _safe_diff(ma20_v2.get("avg_return_pct"), old_ma20.get("avg_return_pct")),
+        "win_rate_lift_pct": _safe_diff(ma20_v2.get("win_rate_pct"), old_ma20.get("win_rate_pct")),
+        "requirements": {
+            "pass_rate_over_10_pct": pass_rate_over_10,
+            "positive_avg_return": positive_avg_return,
+        },
+        "verdict": verdict,
     }
 
 
@@ -1503,9 +1656,11 @@ def generate_factor_analysis_report(
     zone_section = _build_zone_factor(trading_samples)
     low_position_section = _build_low_position_ma20_factor(trading_samples)
     break_ma20_section = _build_break_ma20_factor(trading_samples)
+    ma20_v2_section = _build_ma20_v2_factor(trading_samples)
     retest_ma20_section = _build_retest_ma20_factor(trading_samples)
     volume_expand_section = _build_volume_expand_factor(trading_samples)
     low_k_turn_section = _build_low_k_turn_factor(trading_samples)
+    ma20_variant_comparison = _build_ma20_variant_comparison(trading_samples)
 
     legacy_factors = {
         "hit_count": hit_count_section,
@@ -1515,6 +1670,7 @@ def generate_factor_analysis_report(
     test_factors = {
         "low_position_ma20": low_position_section,
         "just_break_ma20": break_ma20_section,
+        "ma20_v2": ma20_v2_section,
         "retest_ma20": retest_ma20_section,
         "volume_expand_after_shrink": volume_expand_section,
         "low_k_turn_up": low_k_turn_section,
@@ -1544,6 +1700,7 @@ def generate_factor_analysis_report(
         "candidate_samples": len(trading_samples),
         "legacy_factor_names": list(legacy_factors.keys()),
         "test_factor_names": list(test_factors.keys()),
+        "ma20_variant_comparison": ma20_variant_comparison,
         "factors": {
             **legacy_factors,
             **test_factors,

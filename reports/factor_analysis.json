@@ -1,6 +1,6 @@
 {
-  "report_version": "v14-factor-analysis",
-  "generated_at": "2026-04-13T15:34:12.424838+08:00",
+  "report_version": "v18-factor-analysis",
+  "generated_at": "2026-04-13T16:25:55.995642+08:00",
   "evaluation_horizon": "next_available_report",
   "evaluated_days": 20,
   "candidate_samples": 359,
@@ -12,10 +12,49 @@
   "test_factor_names": [
     "low_position_ma20",
     "just_break_ma20",
+    "ma20_v2",
     "retest_ma20",
     "volume_expand_after_shrink",
     "low_k_turn_up"
   ],
+  "ma20_variant_comparison": {
+    "definition": {
+      "metric": "close 相對 MA20 的距離",
+      "band_pct": 2.0,
+      "recent_break_lookback_days": 3,
+      "logic": "close 在 MA20 ±2% 內，或最近 3 個交易日內出現由上往下跌破 MA20。"
+    },
+    "variants": {
+      "just_break_ma20": {
+        "factor": "just_break_ma20",
+        "label": "舊 MA20：剛跌破 MA20",
+        "positive_group_label": "剛跌破組",
+        "sample_count": 14,
+        "total_sample_count": 359,
+        "pass_rate_pct": 3.8997,
+        "avg_return_pct": 1.1359,
+        "win_rate_pct": 50.0
+      },
+      "ma20_v2": {
+        "factor": "ma20_v2",
+        "label": "新 MA20：接近 MA20 區間",
+        "positive_group_label": "接近 MA20 / 3 日內跌破組",
+        "sample_count": 164,
+        "total_sample_count": 359,
+        "pass_rate_pct": 45.6825,
+        "avg_return_pct": 0.0601,
+        "win_rate_pct": 46.9512
+      }
+    },
+    "pass_rate_lift_pct": 41.7828,
+    "avg_return_lift_pct": -1.0758,
+    "win_rate_lift_pct": -3.0488,
+    "requirements": {
+      "pass_rate_over_10_pct": true,
+      "positive_avg_return": true
+    },
+    "verdict": "達標"
+  },
   "factors": {
     "hit_count": {
       "factor": "hit_count",
@@ -249,6 +288,44 @@
       "spread_win_rate_pct": 3.0435,
       "verdict": "有效"
     },
+    "ma20_v2": {
+      "factor": "ma20_v2",
+      "label": "回檔因子：接近 MA20 區間",
+      "bucket_count": 2,
+      "buckets": [
+        {
+          "label": "接近 MA20 / 3 日內跌破組",
+          "factor_value": true,
+          "sample_count": 164,
+          "avg_return_pct": 0.0601,
+          "win_rate_pct": 46.9512
+        },
+        {
+          "label": "非 MA20_v2 組",
+          "factor_value": false,
+          "sample_count": 195,
+          "avg_return_pct": 0.3575,
+          "win_rate_pct": 47.1795
+        }
+      ],
+      "high_group": {
+        "label": "接近 MA20 / 3 日內跌破組",
+        "factor_value": true,
+        "sample_count": 164,
+        "avg_return_pct": 0.0601,
+        "win_rate_pct": 46.9512
+      },
+      "low_group": {
+        "label": "非 MA20_v2 組",
+        "factor_value": false,
+        "sample_count": 195,
+        "avg_return_pct": 0.3575,
+        "win_rate_pct": 47.1795
+      },
+      "spread_avg_return_pct": -0.2974,
+      "spread_win_rate_pct": -0.2283,
+      "verdict": "拖累"
+    },
     "retest_ma20": {
       "factor": "retest_ma20",
       "label": "回檔因子：剛回測 MA20",
@@ -422,6 +499,14 @@
       "low_group_label": "區間外"
     },
     {
+      "factor": "ma20_v2",
+      "label": "回檔因子：接近 MA20 區間",
+      "verdict": "拖累",
+      "spread_avg_return_pct": -0.2974,
+      "high_group_label": "接近 MA20 / 3 日內跌破組",
+      "low_group_label": "非 MA20_v2 組"
+    },
+    {
       "factor": "technical",
       "label": "技術面",
       "verdict": "拖累",
@@ -481,6 +566,13 @@
       "spread_avg_return_pct": -0.2613,
       "high_group_label": "試單區優先",
       "low_group_label": "區間外"
+    },
+    {
+      "factor": "ma20_v2",
+      "label": "回檔因子：接近 MA20 區間",
+      "spread_avg_return_pct": -0.2974,
+      "high_group_label": "接近 MA20 / 3 日內跌破組",
+      "low_group_label": "非 MA20_v2 組"
     },
     {
       "factor": "technical",
