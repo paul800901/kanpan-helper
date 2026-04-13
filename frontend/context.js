@@ -266,7 +266,7 @@ function formatGapThreshold(value) {
 
 function validateStrategyAnalysisReport(report) {
     if (!report || typeof report !== 'object') return false;
-    if (!['v16-strategy-analysis', 'v19-strategy-analysis'].includes(report.report_version)) return false;
+    if (!['v16-strategy-analysis', 'v19-strategy-analysis', 'v22-strategy-analysis'].includes(report.report_version)) return false;
     if (!report.strategies || typeof report.strategies !== 'object') return false;
     return Boolean(report.strategies.sniper && report.strategies.steady);
 }

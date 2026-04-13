@@ -645,15 +645,21 @@ class TestPriorityValidation(unittest.TestCase):
         )
 
     def test_strategy_analysis_splits_sniper_and_steady(self):
+        current_universe = self.make_combo_current_universe_report("2026-04-10")
+        for stock in current_universe["stocks"]:
+            if stock["symbol"] == "BBB":
+                stock["indicators"]["k"] = 25.0
+                stock["indicators"]["volume_ratio"] = 1.3
+
         report_a = generate_priority_snapshot(
             self.make_context_report("2026-04-09"),
             self.make_combo_previous_universe_report("2026-04-09"),
-            next_universe_report=self.make_combo_current_universe_report("2026-04-10"),
+            next_universe_report=current_universe,
             next_date="2026-04-10",
         )
         report_b = generate_priority_snapshot(
             self.make_context_report("2026-04-10"),
-            self.make_combo_current_universe_report("2026-04-10"),
+            current_universe,
             next_universe_report=self.make_combo_next_universe_report("2026-04-11"),
             next_date="2026-04-11",
         )
@@ -667,7 +673,7 @@ class TestPriorityValidation(unittest.TestCase):
             },
             universe_reports_by_date={
                 "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
-                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+                "2026-04-10": current_universe,
             },
         )
         strategy_analysis = generate_strategy_analysis_report(
@@ -679,11 +685,11 @@ class TestPriorityValidation(unittest.TestCase):
             },
             universe_reports_by_date={
                 "2026-04-09": self.make_combo_previous_universe_report("2026-04-09"),
-                "2026-04-10": self.make_combo_current_universe_report("2026-04-10"),
+                "2026-04-10": current_universe,
             },
         )
 
-        self.assertEqual(strategy_analysis["report_version"], "v19-strategy-analysis")
+        self.assertEqual(strategy_analysis["report_version"], "v22-strategy-analysis")
         self.assertEqual(strategy_analysis["strategies"]["sniper"]["label"], "狙擊型")
         self.assertEqual(strategy_analysis["strategies"]["steady"]["label"], "穩定型")
         self.assertEqual(
@@ -698,13 +704,29 @@ class TestPriorityValidation(unittest.TestCase):
         self.assertEqual(strategy_analysis["style_choice"]["steady"]["strategy"], "steady")
         self.assertIn("sniper_v2", strategy_analysis["strategy_v2_names"])
         self.assertIn("steady_v2", strategy_analysis["strategy_v2_names"])
+        self.assertIn("steady_v3", strategy_analysis["strategy_v3_names"])
+        self.assertIn("steady_v3_volume", strategy_analysis["strategy_experiment_names"])
         self.assertEqual(strategy_analysis["strategies_v2"]["sniper_v2"]["generation"], "v2")
         self.assertEqual(strategy_analysis["strategies_v2"]["steady_v2"]["generation"], "v2")
+        self.assertEqual(strategy_analysis["strategies_v3"]["steady_v3"]["generation"], "v3")
+        self.assertEqual(strategy_analysis["strategies_v3"]["steady_v3"]["best_single_factor"]["factor"], "low_k_turn_up")
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["sniper"]["v1"]["strategy"], "sniper")
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["sniper"]["v2"]["strategy"], "sniper_v2")
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v1"]["strategy"], "steady")
         self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v2"]["strategy"], "steady_v2")
+        self.assertEqual(strategy_analysis["strategy_variant_comparison"]["steady"]["v3"]["strategy"], "steady_v3")
+        self.assertEqual(
+            strategy_analysis["strategy_variant_comparison"]["steady"]["optional_tests"]["kd_plus_low_position"]["strategy"],
+            "steady",
+        )
+        self.assertEqual(
+            strategy_analysis["strategy_variant_comparison"]["steady"]["optional_tests"]["kd_plus_volume_expand"]["strategy"],
+            "steady_v3_volume",
+        )
         self.assertTrue(strategy_analysis["strategy_variant_comparison"]["sniper"]["v2_avg_return_positive"])
+        self.assertTrue(strategy_analysis["strategy_variant_comparison"]["steady"]["v3_hit_count_recovered"])
+        self.assertIn("steady_rewrite", strategy_analysis["v22_summary"])
+        self.assertEqual(strategy_analysis["v22_summary"]["steady_rewrite"]["target_strategy"], "steady_v3")
         self.assertIn("families_with_more_hits", strategy_analysis["v2_summary"])
         self.assertIn("sniper", strategy_analysis["v2_summary"]["families_with_more_hits"])
         self.assertIn("sniper", strategy_analysis["v2_summary"]["families_with_positive_avg_return"])

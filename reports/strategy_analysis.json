@@ -1,6 +1,6 @@
 {
-  "report_version": "v19-strategy-analysis",
-  "generated_at": "2026-04-13T17:16:44.680064+08:00",
+  "report_version": "v22-strategy-analysis",
+  "generated_at": "2026-04-13T18:23:06.228703+08:00",
   "evaluation_horizon": "next_available_report",
   "evaluated_days": 20,
   "candidate_samples": 359,
@@ -12,11 +12,19 @@
     "sniper_v2",
     "steady_v2"
   ],
+  "strategy_v3_names": [
+    "steady_v3"
+  ],
+  "strategy_experiment_names": [
+    "steady_v3_volume"
+  ],
   "strategy_variant_names": [
     "sniper",
     "steady",
     "sniper_v2",
-    "steady_v2"
+    "steady_v2",
+    "steady_v3",
+    "steady_v3_volume"
   ],
   "low_position_definition": {
     "metric": "(close - ma20) / ma20",
@@ -143,6 +151,67 @@
       "verdict": "優於單因子"
     }
   },
+  "strategies_v3": {
+    "steady_v3": {
+      "strategy": "steady_v3",
+      "label": "穩定型 v3",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚",
+      "selection_hint": "以 KD 低檔翻揚直接進場，不再等待 MA20 對齊，用來驗證 v21 的結論。",
+      "family": "steady",
+      "generation": "v3",
+      "combination_source": null,
+      "factor_names": [
+        "low_k_turn_up"
+      ],
+      "sample_count": 23,
+      "hit_count": 23,
+      "avg_return_pct": 0.6632,
+      "win_rate_pct": 65.2174,
+      "avg_return_edge_vs_best_single_factor": 0.0,
+      "beats_constituent_single_factors": null,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "單因子基準"
+    }
+  },
+  "strategy_experiments": {
+    "steady_v3_volume": {
+      "strategy": "steady_v3_volume",
+      "label": "穩定型 v3 + 量能",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 量縮後放量",
+      "selection_hint": "在 KD 核心上加上量縮後放量，測試是否能在不碰 MA20 的前提下改善品質。",
+      "family": "steady",
+      "generation": "v3-test",
+      "combination_source": null,
+      "factor_names": [
+        "low_k_turn_up",
+        "volume_expand_after_shrink"
+      ],
+      "sample_count": 2,
+      "hit_count": 2,
+      "avg_return_pct": 0.1396,
+      "win_rate_pct": 50.0,
+      "avg_return_edge_vs_best_single_factor": -0.5236,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
+    }
+  },
   "strategy_variants": {
     "sniper": {
       "strategy": "sniper",
@@ -259,6 +328,63 @@
         "win_rate_pct": 65.2174
       },
       "verdict": "優於單因子"
+    },
+    "steady_v3": {
+      "strategy": "steady_v3",
+      "label": "穩定型 v3",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚",
+      "selection_hint": "以 KD 低檔翻揚直接進場，不再等待 MA20 對齊，用來驗證 v21 的結論。",
+      "family": "steady",
+      "generation": "v3",
+      "combination_source": null,
+      "factor_names": [
+        "low_k_turn_up"
+      ],
+      "sample_count": 23,
+      "hit_count": 23,
+      "avg_return_pct": 0.6632,
+      "win_rate_pct": 65.2174,
+      "avg_return_edge_vs_best_single_factor": 0.0,
+      "beats_constituent_single_factors": null,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "單因子基準"
+    },
+    "steady_v3_volume": {
+      "strategy": "steady_v3_volume",
+      "label": "穩定型 v3 + 量能",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 量縮後放量",
+      "selection_hint": "在 KD 核心上加上量縮後放量，測試是否能在不碰 MA20 的前提下改善品質。",
+      "family": "steady",
+      "generation": "v3-test",
+      "combination_source": null,
+      "factor_names": [
+        "low_k_turn_up",
+        "volume_expand_after_shrink"
+      ],
+      "sample_count": 2,
+      "hit_count": 2,
+      "avg_return_pct": 0.1396,
+      "win_rate_pct": 50.0,
+      "avg_return_edge_vs_best_single_factor": -0.5236,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
     }
   },
   "ranking_by_avg_return": [
@@ -435,6 +561,33 @@
       "verdict": "優於單因子"
     },
     {
+      "strategy": "steady_v3",
+      "label": "穩定型 v3",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚",
+      "selection_hint": "以 KD 低檔翻揚直接進場，不再等待 MA20 對齊，用來驗證 v21 的結論。",
+      "family": "steady",
+      "generation": "v3",
+      "factor_names": [
+        "low_k_turn_up"
+      ],
+      "hit_count": 23,
+      "sample_count": 23,
+      "avg_return_pct": 0.6632,
+      "win_rate_pct": 65.2174,
+      "avg_return_edge_vs_best_single_factor": 0.0,
+      "beats_constituent_single_factors": null,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "單因子基準"
+    },
+    {
       "strategy": "steady",
       "label": "穩定型",
       "style_focus": "穩定",
@@ -489,6 +642,34 @@
         "win_rate_pct": 49.5798
       },
       "verdict": "未優於單因子"
+    },
+    {
+      "strategy": "steady_v3_volume",
+      "label": "穩定型 v3 + 量能",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 量縮後放量",
+      "selection_hint": "在 KD 核心上加上量縮後放量，測試是否能在不碰 MA20 的前提下改善品質。",
+      "family": "steady",
+      "generation": "v3-test",
+      "factor_names": [
+        "low_k_turn_up",
+        "volume_expand_after_shrink"
+      ],
+      "hit_count": 2,
+      "sample_count": 2,
+      "avg_return_pct": 0.1396,
+      "win_rate_pct": 50.0,
+      "avg_return_edge_vs_best_single_factor": -0.5236,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
     }
   ],
   "variant_ranking_by_win_rate": [
@@ -521,6 +702,33 @@
       "verdict": "優於單因子"
     },
     {
+      "strategy": "steady_v3",
+      "label": "穩定型 v3",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚",
+      "selection_hint": "以 KD 低檔翻揚直接進場，不再等待 MA20 對齊，用來驗證 v21 的結論。",
+      "family": "steady",
+      "generation": "v3",
+      "factor_names": [
+        "low_k_turn_up"
+      ],
+      "hit_count": 23,
+      "sample_count": 23,
+      "avg_return_pct": 0.6632,
+      "win_rate_pct": 65.2174,
+      "avg_return_edge_vs_best_single_factor": 0.0,
+      "beats_constituent_single_factors": null,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "單因子基準"
+    },
+    {
       "strategy": "steady",
       "label": "穩定型",
       "style_focus": "穩定",
@@ -537,6 +745,34 @@
       "avg_return_pct": 0.5167,
       "win_rate_pct": 61.1111,
       "avg_return_edge_vs_best_single_factor": -0.1465,
+      "beats_constituent_single_factors": false,
+      "best_single_factor": {
+        "factor": "low_k_turn_up",
+        "label": "KD 低檔翻揚",
+        "positive_group_label": "低檔翻揚組",
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174
+      },
+      "verdict": "未優於單因子"
+    },
+    {
+      "strategy": "steady_v3_volume",
+      "label": "穩定型 v3 + 量能",
+      "style_focus": "穩定",
+      "description": "KD 低檔翻揚 + 量縮後放量",
+      "selection_hint": "在 KD 核心上加上量縮後放量，測試是否能在不碰 MA20 的前提下改善品質。",
+      "family": "steady",
+      "generation": "v3-test",
+      "factor_names": [
+        "low_k_turn_up",
+        "volume_expand_after_shrink"
+      ],
+      "hit_count": 2,
+      "sample_count": 2,
+      "avg_return_pct": 0.1396,
+      "win_rate_pct": 50.0,
+      "avg_return_edge_vs_best_single_factor": -0.5236,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_k_turn_up",
@@ -800,7 +1036,274 @@
       "win_rate_delta_pct": 38.8889,
       "v2_hit_count_increase": false,
       "v2_avg_return_positive": true,
-      "meets_v19_goal": false
+      "meets_v19_goal": false,
+      "v3": {
+        "strategy": "steady_v3",
+        "label": "穩定型 v3",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚",
+        "selection_hint": "以 KD 低檔翻揚直接進場，不再等待 MA20 對齊，用來驗證 v21 的結論。",
+        "family": "steady",
+        "generation": "v3",
+        "factor_names": [
+          "low_k_turn_up"
+        ],
+        "hit_count": 23,
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174,
+        "avg_return_edge_vs_best_single_factor": 0.0,
+        "beats_constituent_single_factors": null,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "單因子基準"
+      },
+      "optional_tests": {
+        "kd_plus_low_position": {
+          "strategy": "steady",
+          "label": "穩定型",
+          "style_focus": "穩定",
+          "description": "KD 低檔翻揚 + 低位因子",
+          "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+          "family": "steady",
+          "generation": "v1",
+          "factor_names": [
+            "low_k_turn_up",
+            "low_position_ma20"
+          ],
+          "hit_count": 18,
+          "sample_count": 18,
+          "avg_return_pct": 0.5167,
+          "win_rate_pct": 61.1111,
+          "avg_return_edge_vs_best_single_factor": -0.1465,
+          "beats_constituent_single_factors": false,
+          "best_single_factor": {
+            "factor": "low_k_turn_up",
+            "label": "KD 低檔翻揚",
+            "positive_group_label": "低檔翻揚組",
+            "sample_count": 23,
+            "avg_return_pct": 0.6632,
+            "win_rate_pct": 65.2174
+          },
+          "verdict": "未優於單因子"
+        },
+        "kd_plus_volume_expand": {
+          "strategy": "steady_v3_volume",
+          "label": "穩定型 v3 + 量能",
+          "style_focus": "穩定",
+          "description": "KD 低檔翻揚 + 量縮後放量",
+          "selection_hint": "在 KD 核心上加上量縮後放量，測試是否能在不碰 MA20 的前提下改善品質。",
+          "family": "steady",
+          "generation": "v3-test",
+          "factor_names": [
+            "low_k_turn_up",
+            "volume_expand_after_shrink"
+          ],
+          "hit_count": 2,
+          "sample_count": 2,
+          "avg_return_pct": 0.1396,
+          "win_rate_pct": 50.0,
+          "avg_return_edge_vs_best_single_factor": -0.5236,
+          "beats_constituent_single_factors": false,
+          "best_single_factor": {
+            "factor": "low_k_turn_up",
+            "label": "KD 低檔翻揚",
+            "positive_group_label": "低檔翻揚組",
+            "sample_count": 23,
+            "avg_return_pct": 0.6632,
+            "win_rate_pct": 65.2174
+          },
+          "verdict": "未優於單因子"
+        }
+      },
+      "optional_test_names": [
+        "kd_plus_low_position",
+        "kd_plus_volume_expand"
+      ],
+      "hit_count_delta_v3_vs_v2": 19,
+      "hit_count_delta_v3_vs_v1": 5,
+      "hit_count_recovery_share_vs_v1_pct": 127.7778,
+      "avg_return_delta_v3_vs_v2": -1.4961,
+      "win_rate_delta_v3_vs_v2": -34.7826,
+      "v3_hit_count_recovered": true,
+      "v3_hit_count_reaches_v1": true,
+      "v3_avg_return_gt_v2": false,
+      "v3_win_rate_ge_v2": false,
+      "meets_v22_goal": false,
+      "best_core_by_avg_return": {
+        "strategy": "steady_v2",
+        "label": "穩定型 v2",
+        "style_focus": "穩定",
+        "description": "MA20_v2 + KD 低檔翻揚",
+        "selection_hint": "保留 KD 低檔翻揚，但把 MA20 改成區間條件，優先提升可用樣本。",
+        "family": "steady",
+        "generation": "v2",
+        "factor_names": [
+          "ma20_v2",
+          "low_k_turn_up"
+        ],
+        "hit_count": 4,
+        "sample_count": 4,
+        "avg_return_pct": 2.1593,
+        "win_rate_pct": 100.0,
+        "avg_return_edge_vs_best_single_factor": 1.4961,
+        "beats_constituent_single_factors": true,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "優於單因子"
+      },
+      "best_core_by_hit_count": {
+        "strategy": "steady_v3",
+        "label": "穩定型 v3",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚",
+        "selection_hint": "以 KD 低檔翻揚直接進場，不再等待 MA20 對齊，用來驗證 v21 的結論。",
+        "family": "steady",
+        "generation": "v3",
+        "factor_names": [
+          "low_k_turn_up"
+        ],
+        "hit_count": 23,
+        "sample_count": 23,
+        "avg_return_pct": 0.6632,
+        "win_rate_pct": 65.2174,
+        "avg_return_edge_vs_best_single_factor": 0.0,
+        "beats_constituent_single_factors": null,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "單因子基準"
+      },
+      "best_core_by_win_rate": {
+        "strategy": "steady_v2",
+        "label": "穩定型 v2",
+        "style_focus": "穩定",
+        "description": "MA20_v2 + KD 低檔翻揚",
+        "selection_hint": "保留 KD 低檔翻揚，但把 MA20 改成區間條件，優先提升可用樣本。",
+        "family": "steady",
+        "generation": "v2",
+        "factor_names": [
+          "ma20_v2",
+          "low_k_turn_up"
+        ],
+        "hit_count": 4,
+        "sample_count": 4,
+        "avg_return_pct": 2.1593,
+        "win_rate_pct": 100.0,
+        "avg_return_edge_vs_best_single_factor": 1.4961,
+        "beats_constituent_single_factors": true,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "優於單因子"
+      },
+      "best_optional_test_by_avg_return": {
+        "strategy": "steady",
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "family": "steady",
+        "generation": "v1",
+        "factor_names": [
+          "low_k_turn_up",
+          "low_position_ma20"
+        ],
+        "hit_count": 18,
+        "sample_count": 18,
+        "avg_return_pct": 0.5167,
+        "win_rate_pct": 61.1111,
+        "avg_return_edge_vs_best_single_factor": -0.1465,
+        "beats_constituent_single_factors": false,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "未優於單因子"
+      },
+      "best_optional_test_by_hit_count": {
+        "strategy": "steady",
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "family": "steady",
+        "generation": "v1",
+        "factor_names": [
+          "low_k_turn_up",
+          "low_position_ma20"
+        ],
+        "hit_count": 18,
+        "sample_count": 18,
+        "avg_return_pct": 0.5167,
+        "win_rate_pct": 61.1111,
+        "avg_return_edge_vs_best_single_factor": -0.1465,
+        "beats_constituent_single_factors": false,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "未優於單因子"
+      },
+      "best_optional_test_by_win_rate": {
+        "strategy": "steady",
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "family": "steady",
+        "generation": "v1",
+        "factor_names": [
+          "low_k_turn_up",
+          "low_position_ma20"
+        ],
+        "hit_count": 18,
+        "sample_count": 18,
+        "avg_return_pct": 0.5167,
+        "win_rate_pct": 61.1111,
+        "avg_return_edge_vs_best_single_factor": -0.1465,
+        "beats_constituent_single_factors": false,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "未優於單因子"
+      },
+      "summary": "steady_v3 改為只保留 KD 低檔翻揚，相較 steady_v2 命中數 4->23、平均報酬 2.1593%->0.6632%、勝率 100.0%->65.2174%。"
     }
   },
   "v2_summary": {
@@ -814,5 +1317,105 @@
     "families_meeting_v19_goal": [
       "sniper"
     ]
+  },
+  "v22_summary": {
+    "steady_rewrite": {
+      "target_strategy": "steady_v3",
+      "core_variant_names": [
+        "steady",
+        "steady_v2",
+        "steady_v3"
+      ],
+      "optional_test_names": [
+        "kd_plus_low_position",
+        "kd_plus_volume_expand"
+      ],
+      "meets_v22_goal": false,
+      "best_optional_test_by_avg_return": {
+        "strategy": "steady",
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "family": "steady",
+        "generation": "v1",
+        "factor_names": [
+          "low_k_turn_up",
+          "low_position_ma20"
+        ],
+        "hit_count": 18,
+        "sample_count": 18,
+        "avg_return_pct": 0.5167,
+        "win_rate_pct": 61.1111,
+        "avg_return_edge_vs_best_single_factor": -0.1465,
+        "beats_constituent_single_factors": false,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "未優於單因子"
+      },
+      "best_optional_test_by_hit_count": {
+        "strategy": "steady",
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "family": "steady",
+        "generation": "v1",
+        "factor_names": [
+          "low_k_turn_up",
+          "low_position_ma20"
+        ],
+        "hit_count": 18,
+        "sample_count": 18,
+        "avg_return_pct": 0.5167,
+        "win_rate_pct": 61.1111,
+        "avg_return_edge_vs_best_single_factor": -0.1465,
+        "beats_constituent_single_factors": false,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "未優於單因子"
+      },
+      "best_optional_test_by_win_rate": {
+        "strategy": "steady",
+        "label": "穩定型",
+        "style_focus": "穩定",
+        "description": "KD 低檔翻揚 + 低位因子",
+        "selection_hint": "偏穩健，平均報酬較平，但勝率通常較高。",
+        "family": "steady",
+        "generation": "v1",
+        "factor_names": [
+          "low_k_turn_up",
+          "low_position_ma20"
+        ],
+        "hit_count": 18,
+        "sample_count": 18,
+        "avg_return_pct": 0.5167,
+        "win_rate_pct": 61.1111,
+        "avg_return_edge_vs_best_single_factor": -0.1465,
+        "beats_constituent_single_factors": false,
+        "best_single_factor": {
+          "factor": "low_k_turn_up",
+          "label": "KD 低檔翻揚",
+          "positive_group_label": "低檔翻揚組",
+          "sample_count": 23,
+          "avg_return_pct": 0.6632,
+          "win_rate_pct": 65.2174
+        },
+        "verdict": "未優於單因子"
+      },
+      "summary": "steady_v3 改為只保留 KD 低檔翻揚，相較 steady_v2 命中數 4->23、平均報酬 2.1593%->0.6632%、勝率 100.0%->65.2174%。"
+    }
   }
 }
