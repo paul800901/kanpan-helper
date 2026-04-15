@@ -36,19 +36,21 @@ GitHub Pages 部署
 ### 標準步驟
 1. **在雲端本體修改程式碼**（你的主要工作目錄）
 2. **本地測試**確認功能正常
-3. **複製到桌面 Git**：
+3. **只同步本次任務必要檔案到桌面 Git**：
    ```powershell
-   robocopy "G:\我的雲端硬碟\kanpan-helper" "$env:USERPROFILE\Desktop\kanpan_helper_github_sync\kanpan-helper" /MIR /XD .git __pycache__
+   Copy-Item "G:\我的雲端硬碟\kanpan-helper\frontend\app.js" "$env:USERPROFILE\Desktop\kanpan_helper_github_sync\kanpan-helper\frontend\app.js" -Force
    ```
-4. **提交並推送**：
+   - 若本次任務涉及多個檔案，逐一指定檔案或明確指定相關目錄
+   - 非必要時，不要預設使用整倉 `/MIR`
+4. **只提交並推送本次任務必要檔案**：
    ```bash
-   git add .
+   git add frontend/app.js
    git commit -m "描述修改內容"
    git push origin main
    ```
-5. **手動觸發部署**：
-   - 到 GitHub Actions → "Daily Report Generation and Deploy"
-   - 點擊 "Run workflow" → 選 test 或 full 模式
+5. **優先由 AI 直接完成部署**：
+   - 若目前環境可直接觸發 GitHub Actions 或部署指令，優先由 AI 自動執行
+   - 若需要 GitHub 登入或手動授權，由使用者先在 IDE 內瀏覽器登入，登入完成後再由 AI 接手後續操作
    - **注意**：修改 `reports/` 下的舊報告數據不會自動觸發部署！
 
 ### 關鍵提醒
@@ -57,7 +59,8 @@ GitHub Pages 部署
 - **`.github/workflows/` 修改** 也需要手動觸發
 - **GitHub Actions 會直接生成並提交 `reports/`，所以桌面 Git 倉庫或 GitHub 遠端的 `reports/` 可能比雲端本體更新**
 - **開始本地除錯、查資料或修改前，先檢查桌面 Git 倉庫或遠端 `reports/index.json` 是否比雲端本體新；若較新，先把 `reports/` 反向同步回雲端本體再開始**
-- **AI 修改完成後，若使用者未明示禁止，預設要同步到桌面 Git 倉庫並執行 `git add`、`git commit`、`git push origin main`**
+- **AI 修改完成後，若使用者未明示禁止，預設只同步、提交、推送本次任務必要且已驗證的檔案，不得整包帶入無關變更**
+- **AI 應優先嘗試直接完成部署；若需要 GitHub UI 登入或授權，由使用者先登入，再由 AI 接手；若當前工具無法完成該步，必須明確回報卡點，不可假裝已部署**
 - **若 push 被拒絕且遠端有新提交，先 `git pull --rebase origin main`，確認無衝突後再重推，不要直接放棄**
 - **同步與提交時不要順手帶入無關產物，例如 `worker/.wrangler/`**
 
