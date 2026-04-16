@@ -65,6 +65,17 @@ function formatValidationReason(reason) {
         .replace(/steady_v5/gi, '市場環境燈號');
 }
 
+function formatCandidateDisplayName(symbol, name) {
+    const normalizedSymbol = String(symbol || '').trim();
+    const normalizedName = String(name || '').trim();
+
+    if (!normalizedSymbol) return normalizedName || '--';
+    if (!normalizedName) return normalizedSymbol;
+    if (normalizedName === normalizedSymbol) return normalizedSymbol;
+    if (normalizedName.startsWith(`${normalizedSymbol} `)) return normalizedName;
+    return `${normalizedSymbol} ${normalizedName}`;
+}
+
 function buildFreshUrl(url) {
     const target = new URL(url, window.location.href);
     target.searchParams.set('_ts', String(Date.now()));
@@ -226,7 +237,7 @@ function renderCandidates(candidates) {
     list.innerHTML = candidates.map(c => `
         <div class="candidate-card">
             <div class="candidate-top">
-                <div class="candidate-symbol">${esc(c.symbol)} ${esc(c.name)}</div>
+                <div class="candidate-symbol">${esc(formatCandidateDisplayName(c.symbol, c.name))}</div>
                 <div class="candidate-rank">${c.rank}</div>
             </div>
             <div class="candidate-meta">

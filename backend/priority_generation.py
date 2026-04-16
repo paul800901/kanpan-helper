@@ -118,6 +118,30 @@ def _as_float(value: Any) -> Optional[float]:
         return None
 
 
+def _build_universe_name_lookup(universe_report: Dict[str, Any]) -> Dict[str, str]:
+    lookup: Dict[str, str] = {}
+    for stock in (universe_report or {}).get("stocks") or []:
+        if not isinstance(stock, dict):
+            continue
+        symbol = str(stock.get("symbol") or "").strip()
+        name = str(stock.get("name") or "").strip()
+        if symbol and name:
+            lookup[symbol] = name
+    return lookup
+
+
+def _resolve_priority_candidate_name(candidate: Dict[str, Any], universe_name_lookup: Dict[str, str]) -> str:
+    symbol = str(candidate.get("symbol") or "").strip()
+    name = str(candidate.get("name") or "").strip()
+    universe_name = universe_name_lookup.get(symbol, "")
+
+    if universe_name and universe_name != symbol:
+        return universe_name
+    if name and name != symbol:
+        return name
+    return symbol
+
+
 # =============================================================================
 # Technical Analysis Utilities
 # =============================================================================
@@ -951,11 +975,13 @@ def generate_priority_snapshot(
         "generated_at": generated_at,
     }
     
+    universe_name_lookup = _build_universe_name_lookup(universe_report)
+
     # V10.1: 第二頁正式 candidates（簡化版，供 frontend render-only）
     priority_candidates_v10_1 = [
         {
             "symbol": c["symbol"],
-            "name": c["name"],
+            "name": _resolve_priority_candidate_name(c, universe_name_lookup),
             "score": int(c["technical_state"]["score"] or 0),
             "rank": c["priority_rank"],
             "score_grade": _score_to_grade(c["technical_state"]["score"]),
