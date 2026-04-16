@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1b2a">
-    <meta name="description" content="市場情境卡 v8.5 - 只顯示市場層弱訊號推理，不含個股名稱與操作指令。">
-    <title>市場情境卡 - 看盤助手 v8.5</title>
+    <meta name="description" content="市場情境卡 v12 - 第三頁正式讀取 scenario_cards_v9，只 render 正式 contract 與 fallback 卡。">
+    <title>市場情境卡 - 看盤助手 v12</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .page-shell {
@@ -236,6 +236,24 @@
             gap: 12px;
         }
 
+        .scenario-priority-strip {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 0 0 14px;
+        }
+
+        .priority-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f2f7fb;
+            color: #23405a;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
         .scenario-row {
             display: grid;
             grid-template-columns: 112px 1fr;
@@ -295,6 +313,11 @@
             color: #1f6a44;
         }
 
+        .reason-chip {
+            background: #fff6df;
+            color: #8a5a00;
+        }
+
         .scenario-footer {
             display: flex;
             align-items: center;
@@ -331,7 +354,7 @@
                 <a href="index.html" class="back-link">← 返回首頁</a>
             </div>
             <div class="header-title">市場情境卡</div>
-            <div class="header-subtitle">v8.5 升級為市場層弱訊號推理，不輸出候選股、不點名股票，也不產生操作指令。</div>
+            <div class="header-subtitle">v12 正式落地第三頁，只讀 scenario_cards_v9，不回退 legacy cards / trace_catalog / stock_mapping_catalog。</div>
             <div class="header-controls">
                 <select id="dateSelect" class="context-date-select">
                     <option value="">載入中...</option>
@@ -343,7 +366,7 @@
 
         <main class="context-main">
             <section class="context-help">
-                本頁只使用既有市場總覽、分數分布、類股集中度、量能異常、AI 市場總覽與 steady_v5 啟用判斷等現成輸出，將至少兩個以上訊號交叉成可驗證的弱訊號推理層。不串新聞、不做股票映射，也不讓 AI 自由點名股票。
+                本頁只 render backend 正式輸出的 scenario_cards_v9。前端不重算第三頁排序、不重組核心推理，也不回退去吃 legacy cards、trace_catalog 或 stock_mapping_catalog。若當日走 fallback，畫面會直接顯示 backend fallback 卡。
             </section>
 
             <section class="schema-panel">
@@ -358,7 +381,7 @@
         </main>
     </div>
 
-    <script src="context.js?v=20260414-v85a"></script>
+    <script src="context.js?v=20260416-v12b"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js?v=20260414-v31b', { updateViaCache: 'none' })
