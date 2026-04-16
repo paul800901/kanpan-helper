@@ -24,6 +24,35 @@ const REQUIRED_CARD_FIELDS = [
 ];
 const VALID_CONFIDENCE = new Set(['low', 'medium', 'high']);
 const VALID_RELATION = new Set(['aligned', 'neutral', 'diverged', 'conflict']);
+const GUIDE_FIELDS = [
+    '市場重點',
+    '為什麼這樣看',
+    '關注主題',
+    '關注程度',
+    '觀察依據',
+    '更新時間'
+];
+const SOURCE_TYPE_LABELS = {
+    ai_market_overview: 'AI 摘要',
+    market_overview: '市場總覽',
+    score_distribution: '盤面強弱',
+    volume_anomaly: '量能變化',
+    volume_cluster: '量能變化',
+    strategy_activation: '市場環境',
+    sector_concentration: '主題集中度',
+    system_fallback: '系統保底'
+};
+const PRIORITY_REASON_LABELS = {
+    'confidence=high': '高可信',
+    'confidence=medium': '中可信',
+    'confidence=low': '低可信',
+    '有制度層支持': '有制度面支持',
+    '無制度層支持': '尚未看到制度面支持',
+    '量能與廣度交叉驗證成立': '量能與盤面結構一致',
+    '量能或廣度部分驗證': '量能或盤面結構部分一致',
+    'reasoning_chain=strong': '判斷理由完整',
+    '前端 defensive fallback': '系統保底'
+};
 
 let indexData = null;
 let currentDate = null;
@@ -54,6 +83,17 @@ function esc(text) {
 function formatGeneratedAt(text) {
     if (!text) return '--';
     return String(text).replace('T', ' ').replace(/\+08:00$/, '');
+}
+
+function formatSchemaVersion(version) {
+    const text = String(version || '').trim();
+    if (!text) return '--';
+    const match = text.match(/v\d+(?:\.\d+)?/i);
+    if (match) return match[0].toLowerCase();
+    if (text.startsWith('scenario-cards-')) {
+        return text.replace('scenario-cards-', 'v');
+    }
+    return text;
 }
 
 function normalizeRelationToTechnical(value) {
@@ -106,14 +146,14 @@ function hideFallbackBanner() {
 
 function renderSchemaFields() {
     const list = document.getElementById('schemaFieldList');
-    list.innerHTML = REQUIRED_CARD_FIELDS
+    list.innerHTML = GUIDE_FIELDS
         .map(field => `<span class="schema-field-chip">${esc(field)}</span>`)
         .join('');
 }
 
 function updateHeaderMeta(count, schemaVersion = CONTEXT_SCHEMA_VERSION) {
-    document.getElementById('schemaChip').textContent = `schema ${schemaVersion}`;
-    document.getElementById('countChip').textContent = `${count} 張卡`;
+    document.getElementById('schemaChip').textContent = `資料版本 ${formatSchemaVersion(schemaVersion)}`;
+    document.getElementById('countChip').textContent = `${count} 個重點`;
 }
 
 function buildDateDropdown() {
@@ -151,17 +191,17 @@ function buildDefensiveFallbackCard(reason, generatedAt) {
     const sourceTypes = ['system_fallback'];
     return {
         id: 'fallback-frontend',
-        title: '情境卡暫時不可用',
+        title: '市場重點暫時讀不到',
         summary: reason,
         confidence: 'low',
         relation_to_technical: 'neutral',
         source_types: sourceTypes,
         source_type: sourceTypes.join('+'),
-        themes: ['制度環境'],
+        themes: ['資料待補'],
         reasoning_chain: [
-            '目前無法讀取 backend 正式輸出的 scenario_cards_v9。',
-            'frontend 只保留極薄 defensive normalize，不再自行承擔主要推理與排序。',
-            '請確認當日 context report 是否已完成生成。'
+            '系統暫時拿不到完整的市場重點資料。',
+            '目前先用保底卡提醒你，避免顯示錯誤內容。',
+            '等報告更新完成後，再重新整理頁面即可。'
         ],
         priority_score: -999,
         priority_rank: 1,
@@ -169,6 +209,39 @@ function buildDefensiveFallbackCard(reason, generatedAt) {
         is_fallback: true,
         generated_at: generatedAt || new Date().toISOString()
     };
+}
+
+function describeSourceType(value) {
+    const normalized = String(value || '').trim();
+    if (!normalized) return '其他訊號';
+    if (SOURCE_TYPE_LABELS[normalized]) return SOURCE_TYPE_LABELS[normalized];
+    if (normalized.includes('ai')) return 'AI 摘要';
+    if (normalized.includes('market')) return '市場總覽';
+    if (normalized.includes('score')) return '盤面強弱';
+    if (normalized.includes('volume')) return '量能變化';
+    if (normalized.includes('strategy')) return '市場環境';
+    if (normalized.includes('sector')) return '主題集中度';
+    return '其他訊號';
+}
+
+function describePriorityReason(value) {
+    const normalized = String(value || '').trim();
+    const countMatch = normalized.match(/^訊號來源\s*(\d+)\s*類$/);
+    if (countMatch) {
+        return `參考 ${countMatch[1]} 種訊號`;
+    }
+    if (PRIORITY_REASON_LABELS[normalized]) {
+        return PRIORITY_REASON_LABELS[normalized];
+    }
+    if (normalized.includes('=') || normalized.includes('_')) {
+        return '補充訊號';
+    }
+    return normalized;
+}
+
+function buildCardKicker(card) {
+    if (card?.is_fallback) return '暫時保底';
+    return '市場重點';
 }
 
 function normalizeScenarioCard(card, generatedAt) {
@@ -234,53 +307,54 @@ function renderCard(card) {
     const reasoningHTML = card.reasoning_chain
         .map(item => `<li class="reasoning-item">${esc(item)}</li>`)
         .join('');
-    const priorityReasonsHTML = renderChipList(card.priority_reasons, 'reason-chip');
+    const priorityReasonsHTML = renderChipList(card.priority_reasons.map(describePriorityReason), 'reason-chip');
+    const sourceTypeHTML = renderChipList(card.source_types.map(describeSourceType), 'keyword-chip');
 
     return `
         <article class="scenario-card" data-card-id="${esc(card.id)}">
             <div class="scenario-card-top">
                 <div class="scenario-title-block">
-                    <div class="scenario-id">${esc(card.id)}</div>
+                    <div class="scenario-id">${esc(buildCardKicker(card))}</div>
                     <div class="scenario-card-title">${esc(card.title)}</div>
                 </div>
                 <div class="scenario-card-meta">
-                    <span class="priority-chip">#${esc(card.priority_rank)}</span>
-                    <span class="priority-chip">${esc(card.priority_score)} 分</span>
+                    <span class="priority-chip">第 ${esc(card.priority_rank)} 位</span>
+                    <span class="priority-chip">關注度 ${esc(card.priority_score)}</span>
                     <span class="meta-chip confidence-${esc(card.confidence)}">${esc(confidenceLabel(card.confidence))}</span>
                     <span class="meta-chip relation-${esc(normalizedRelation)}">${esc(relationLabel(normalizedRelation))}</span>
                 </div>
             </div>
             <div class="scenario-grid">
                 <div class="scenario-row">
-                    <div class="scenario-label">summary</div>
+                    <div class="scenario-label">重點摘要</div>
                     <div class="scenario-text">${esc(card.summary)}</div>
                 </div>
                 <div class="scenario-row">
-                    <div class="scenario-label">reasoning_chain</div>
+                    <div class="scenario-label">為什麼這樣看</div>
                     <div class="scenario-text"><ul class="reasoning-list">${reasoningHTML}</ul></div>
                 </div>
                 <div class="scenario-row">
-                    <div class="scenario-label">themes</div>
+                    <div class="scenario-label">關注主題</div>
                     <div class="scenario-text">${renderChipList(card.themes, 'theme-chip')}</div>
                 </div>
                 <div class="scenario-row">
-                    <div class="scenario-label">priority</div>
+                    <div class="scenario-label">關注程度</div>
                     <div class="scenario-text">
                         <div class="scenario-priority-strip">
-                            <span class="priority-chip">priority_rank #${esc(card.priority_rank)}</span>
-                            <span class="priority-chip">priority_score ${esc(card.priority_score)}</span>
+                            <span class="priority-chip">第 ${esc(card.priority_rank)} 位</span>
+                            <span class="priority-chip">關注度 ${esc(card.priority_score)}</span>
                         </div>
                         ${priorityReasonsHTML}
                     </div>
                 </div>
                 <div class="scenario-row">
-                    <div class="scenario-label">source_type</div>
-                    <div class="scenario-text">${esc(card.source_type)}</div>
+                    <div class="scenario-label">觀察依據</div>
+                    <div class="scenario-text">${sourceTypeHTML}</div>
                 </div>
             </div>
             <div class="scenario-footer">
-                <span>generated_at: ${esc(formatGeneratedAt(card.generated_at))}</span>
-                <span>schema: ${esc(CONTEXT_SCHEMA_VERSION)}</span>
+                <span>更新時間：${esc(formatGeneratedAt(card.generated_at))}</span>
+                <span>資料版本：${esc(formatSchemaVersion(CONTEXT_SCHEMA_VERSION))}</span>
             </div>
         </article>`;
 }
@@ -299,7 +373,7 @@ async function loadIndex() {
 }
 
 async function loadContextCards(date) {
-    showLoading(`載入 ${date} 市場情境卡中...`);
+    showLoading(`正在整理 ${date} 的市場重點...`);
 
     try {
         const contextReport = await fetchJSON(`${BASE}/${date}-context.json`);
@@ -308,15 +382,15 @@ async function loadContextCards(date) {
         const cards = normalizeScenarioCards(contextReport?.scenario_cards_v9, generatedAt);
 
         if (cards.some(card => card.is_fallback)) {
-            showFallbackBanner('本頁顯示的部分卡片為 backend fallback 或前端 defensive fallback。');
+            showFallbackBanner('今天的市場重點有部分資料不足，畫面已先顯示保底說明。');
         } else {
             hideFallbackBanner();
         }
 
         renderCards(cards, schemaVersion);
     } catch (error) {
-        const fallbackCards = [buildDefensiveFallbackCard('context 報告載入失敗，已回退到前端保底。', new Date().toISOString())];
-        showFallbackBanner('資料載入失敗，已回退到前端保底卡。');
+        const fallbackCards = [buildDefensiveFallbackCard('系統暫時讀不到今天的市場重點，先用保底說明提醒你稍後再看。', new Date().toISOString())];
+        showFallbackBanner('今天的市場重點暫時讀不到，畫面先顯示保底說明。');
         renderCards(fallbackCards, CONTEXT_SCHEMA_VERSION);
     }
 }
@@ -340,7 +414,7 @@ async function init() {
 
         await loadContextCards(currentDate);
     } catch (error) {
-        showEmpty('載入 index 或情境卡失敗。');
+        showEmpty('暫時讀不到市場重點，請稍後再試。');
     }
 }
 

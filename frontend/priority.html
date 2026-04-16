@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0d1b2a">
+    <meta name="description" content="今日名單 v10.1 - 把今天較值得先看的股票先排好，方便快速掃描。">
+    <title>今日名單 - 看盤助手 v10.1</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .page-shell {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #eef3f8 0%, #f8fbfd 100%);
+            padding-bottom: 32px;
+        }
+
+        .priority-header {
+            background: linear-gradient(135deg, #0d1b2a, #1b3350);
+            padding: 22px 18px 18px;
+            color: white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .priority-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meta-chip {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .priority-body {
+            padding: 16px;
+        }
+
+        .snapshot-section {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0d1b2a;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e8eef3;
+        }
+
+        .snapshot-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .snapshot-item {
+            background: #f5f8fb;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .snapshot-label {
+            font-size: 12px;
+            color: #5a6b7b;
+            margin-bottom: 4px;
+        }
+
+        .snapshot-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0d1b2a;
+        }
+
+        .confidence-high { color: #2e7d32; }
+        .confidence-medium { color: #f57c00; }
+        .confidence-low { color: #c62828; }
+
+        .candidates-section {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .candidate-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .candidate-card {
+            background: #f8fbfd;
+            border: 1px solid #e8eef3;
+            border-radius: 10px;
+            padding: 14px;
+            transition: transform 0.1s ease;
+        }
+
+        .candidate-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .candidate-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .candidate-symbol {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0d1b2a;
+        }
+
+        .candidate-rank {
+            background: #1b3350;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .candidate-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .candidate-meta-item {
+            font-size: 13px;
+            color: #5a6b7b;
+        }
+
+        .candidate-meta-value {
+            font-weight: 600;
+            color: #0d1b2a;
+        }
+
+        .grade-a { color: #2e7d32; }
+        .grade-b { color: #689f38; }
+        .grade-c { color: #f57c00; }
+        .grade-d { color: #c62828; }
+
+        .candidate-reason {
+            font-size: 13px;
+            color: #3d4f5f;
+            line-height: 1.5;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        .candidate-risk {
+            font-size: 12px;
+            color: #8b4513;
+            background: #fff3e0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border-left: 3px solid #ff9800;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: #5a6b7b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #5a6b7b;
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 40px;
+            color: #c62828;
+            background: #ffebee;
+            border-radius: 8px;
+            margin: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="priority-header">
+            <div class="priority-header-top">
+                <a href="index.html" class="back-link">← 返回首頁</a>
+            </div>
+            <div class="header-title">今日名單</div>
+            <div class="header-subtitle">把今天較值得先看的股票先排好，先看盤勢，再看名單。</div>
+            <div class="header-meta">
+                <span class="meta-chip" id="schemaChip">資料版本 v10.1</span>
+                <span class="meta-chip" id="dateChip">--</span>
+                <span class="meta-chip" id="confidenceChip">--</span>
+            </div>
+        </header>
+
+        <main class="priority-body">
+            <div id="loadingState" class="loading-state">載入今日名單中...</div>
+            <div id="errorState" class="error-state" style="display: none;"></div>
+            <div id="contentArea" style="display: none;">
+                <section class="snapshot-section">
+                    <div class="section-title">盤勢摘要</div>
+                    <div class="snapshot-grid" id="snapshotGrid">
+                        <!-- Snapshot items will be rendered here -->
+                    </div>
+                </section>
+
+                <section class="candidates-section">
+                    <div class="section-title">今天先看這些</div>
+                    <div class="candidate-list" id="candidateList">
+                        <!-- Candidates will be rendered here -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="priority.js?v=20260416-v10_2"></script>
+</body>
+</html>

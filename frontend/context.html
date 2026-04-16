@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1b2a">
-    <meta name="description" content="市場情境卡 v12 - 第三頁正式讀取 scenario_cards_v9，只 render 正式 contract 與 fallback 卡。">
-    <title>市場情境卡 - 看盤助手 v12</title>
+    <meta name="description" content="市場重點 v12 - 用白話整理今天盤面的重點、原因與目前市場氣氛。">
+    <title>市場重點 - 看盤助手 v12</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .page-shell {
@@ -353,24 +353,24 @@
             <div class="context-header-top">
                 <a href="index.html" class="back-link">← 返回首頁</a>
             </div>
-            <div class="header-title">市場情境卡</div>
-            <div class="header-subtitle">v12 正式落地第三頁，只讀 scenario_cards_v9，不回退 legacy cards / trace_catalog / stock_mapping_catalog。</div>
+            <div class="header-title">市場重點</div>
+            <div class="header-subtitle">把今天盤面的重點、原因和市場氣氛整理成幾張卡，先幫你快速抓大方向。</div>
             <div class="header-controls">
                 <select id="dateSelect" class="context-date-select">
                     <option value="">載入中...</option>
                 </select>
-                <span class="schema-chip" id="schemaChip">schema --</span>
-                <span class="count-chip" id="countChip">0 張卡</span>
+                <span class="schema-chip" id="schemaChip">資料版本 --</span>
+                <span class="count-chip" id="countChip">0 個重點</span>
             </div>
         </header>
 
         <main class="context-main">
             <section class="context-help">
-                本頁只 render backend 正式輸出的 scenario_cards_v9。前端不重算第三頁排序、不重組核心推理，也不回退去吃 legacy cards、trace_catalog 或 stock_mapping_catalog。若當日走 fallback，畫面會直接顯示 backend fallback 卡。
+                這頁不是買賣建議，而是先幫你看整體盤勢。每張卡都會用白話說明：現在市場在發生什麼、為什麼這樣判斷、目前把握高不高。
             </section>
 
             <section class="schema-panel">
-                <div class="schema-panel-title">固定 schema</div>
+                <div class="schema-panel-title">這頁會告訴你什麼</div>
                 <div class="schema-field-list" id="schemaFieldList"></div>
             </section>
 
@@ -381,7 +381,7 @@
         </main>
     </div>
 
-    <script src="context.js?v=20260416-v12b"></script>
+    <script src="context.js?v=20260416-v12c"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js?v=20260414-v31b', { updateViaCache: 'none' })
