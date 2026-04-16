@@ -1,7 +1,7 @@
 {
   "report_version": "v12-priority-validation",
   "date": "2025-10-09",
-  "generated_at": "2026-04-16T18:28:23.381488+08:00",
+  "generated_at": "2026-04-16T18:47:18.812058+08:00",
   "evaluation_horizon": "next_available_report",
   "next_report_date": "2025-10-13",
   "sort_rule": {
@@ -20,16 +20,16 @@
   },
   "candidate_count": 20,
   "top1_symbols": [
-    "2881"
+    "2882"
   ],
   "top3_symbols": [
-    "2881",
     "2882",
+    "2887",
     "2890"
   ],
   "top5_symbols": [
-    "2881",
     "2882",
+    "2887",
     "2890",
     "2883",
     "2884"
@@ -40,9 +40,9 @@
     "top3_evaluated_count": 3,
     "top5_evaluated_count": 5,
     "all_avg_return_pct": -1.2972,
-    "top1_avg_return_pct": -2.2272,
-    "top3_avg_return_pct": -1.4847,
-    "top5_avg_return_pct": -1.2599,
+    "top1_avg_return_pct": -1.6566,
+    "top3_avg_return_pct": -1.1856,
+    "top5_avg_return_pct": -1.0804,
     "all_win_rate_pct": 5.0,
     "top1_win_rate_pct": 0.0,
     "top3_win_rate_pct": 0.0,
@@ -51,65 +51,8 @@
   "candidates": [
     {
       "priority_rank": 1,
-      "symbol": "2881",
-      "name": "富邦金",
-      "primary_theme": "finance_axis",
-      "primary_theme_label": "金融主軸",
-      "themes": [
-        "finance_axis"
-      ],
-      "theme_labels": [
-        "金融主軸"
-      ],
-      "events": [
-        "breadth_axis_overlap",
-        "sector_axis_convergence",
-        "volume_focus_limited_diffusion"
-      ],
-      "event_labels": [
-        "盤面廣度與主軸",
-        "主軸題材收斂",
-        "量能聚焦與擴散"
-      ],
-      "hit_count": 3,
-      "first_seen_order": 0,
-      "reasons": [
-        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2881 在當日 universe 的類別為 金融，因此納入此股票池。"
-      ],
-      "technical_state": {
-        "score": 83.0,
-        "close": 89.8,
-        "ma5": 87.7,
-        "ma20": 87.91,
-        "k": 59.62,
-        "volume_ratio": 1.93,
-        "institutional": "連2買",
-        "advice": "強勢續看",
-        "advice_priority": 6,
-        "reason": "評分高且結構偏強",
-        "risk": "短線過熱時不宜追價",
-        "zone_label": "區間外",
-        "zone_priority": 0,
-        "in_pilot_zone": false,
-        "in_observe_zone": false,
-        "is_weak_blocked": false
-      },
-      "priority_explanation": "3 情境 > 強勢續看 > 區間外",
-      "next_report_validation": {
-        "next_report_date": "2025-10-13",
-        "found": true,
-        "current_close": 89.8,
-        "next_close": 87.8,
-        "return_pct": -2.2272,
-        "next_rank": 16,
-        "next_score": 65,
-        "next_action_bias": "可留意"
-      }
-    },
-    {
-      "priority_rank": 2,
       "symbol": "2882",
-      "name": "國泰金",
+      "name": "2882",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -142,16 +85,16 @@
         "volume_ratio": 1.43,
         "institutional": "連1買",
         "advice": "可偏多觀察",
-        "advice_priority": 5,
+        "advice_priority": 3,
         "reason": "價格站上中期結構且法人偏多",
         "risk": "短線若爆量不續攻，容易追高回檔",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": false
       },
-      "priority_explanation": "3 情境 > 可偏多觀察 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 可偏多觀察",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -164,237 +107,9 @@
       }
     },
     {
-      "priority_rank": 3,
-      "symbol": "2890",
-      "name": "永豐金",
-      "primary_theme": "finance_axis",
-      "primary_theme_label": "金融主軸",
-      "themes": [
-        "finance_axis"
-      ],
-      "theme_labels": [
-        "金融主軸"
-      ],
-      "events": [
-        "breadth_axis_overlap",
-        "sector_axis_convergence",
-        "volume_focus_limited_diffusion"
-      ],
-      "event_labels": [
-        "盤面廣度與主軸",
-        "主軸題材收斂",
-        "量能聚焦與擴散"
-      ],
-      "hit_count": 3,
-      "first_seen_order": 3,
-      "reasons": [
-        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2890 在當日 universe 的類別為 金融，因此納入此股票池。"
-      ],
-      "technical_state": {
-        "score": 78.0,
-        "close": 26.3,
-        "ma5": 25.81,
-        "ma20": 25.05,
-        "k": 86.08,
-        "volume_ratio": 0.98,
-        "institutional": "連2買",
-        "advice": "先觀望",
-        "advice_priority": 3,
-        "reason": "偏多條件存在，但量能或過熱需要先消化",
-        "risk": "追價後若量縮或高檔反轉，容易回落",
-        "zone_label": "試單區優先",
-        "zone_priority": 2,
-        "in_pilot_zone": true,
-        "in_observe_zone": false,
-        "is_weak_blocked": false
-      },
-      "priority_explanation": "3 情境 > 先觀望 > 試單區優先",
-      "next_report_validation": {
-        "next_report_date": "2025-10-13",
-        "found": true,
-        "current_close": 26.3,
-        "next_close": 26.15,
-        "return_pct": -0.5703,
-        "next_rank": 6,
-        "next_score": 78,
-        "next_action_bias": "可留意"
-      }
-    },
-    {
-      "priority_rank": 4,
-      "symbol": "2883",
-      "name": "開發金",
-      "primary_theme": "finance_axis",
-      "primary_theme_label": "金融主軸",
-      "themes": [
-        "finance_axis"
-      ],
-      "theme_labels": [
-        "金融主軸"
-      ],
-      "events": [
-        "breadth_axis_overlap",
-        "sector_axis_convergence",
-        "volume_focus_limited_diffusion"
-      ],
-      "event_labels": [
-        "盤面廣度與主軸",
-        "主軸題材收斂",
-        "量能聚焦與擴散"
-      ],
-      "hit_count": 3,
-      "first_seen_order": 4,
-      "reasons": [
-        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2883 在當日 universe 的類別為 金融，因此納入此股票池。"
-      ],
-      "technical_state": {
-        "score": 73.0,
-        "close": 15.15,
-        "ma5": 15.0,
-        "ma20": 15.05,
-        "k": 57.86,
-        "volume_ratio": 0.83,
-        "institutional": "連2買",
-        "advice": "先觀望",
-        "advice_priority": 3,
-        "reason": "偏多條件存在，但量能或過熱需要先消化",
-        "risk": "追價後若量縮或高檔反轉，容易回落",
-        "zone_label": "試單區優先",
-        "zone_priority": 2,
-        "in_pilot_zone": true,
-        "in_observe_zone": false,
-        "is_weak_blocked": false
-      },
-      "priority_explanation": "3 情境 > 先觀望 > 試單區優先",
-      "next_report_validation": {
-        "next_report_date": "2025-10-13",
-        "found": true,
-        "current_close": 15.15,
-        "next_close": 15.1,
-        "return_pct": -0.33,
-        "next_rank": 5,
-        "next_score": 80,
-        "next_action_bias": "可留意"
-      }
-    },
-    {
-      "priority_rank": 5,
-      "symbol": "2884",
-      "name": "玉山金",
-      "primary_theme": "finance_axis",
-      "primary_theme_label": "金融主軸",
-      "themes": [
-        "finance_axis"
-      ],
-      "theme_labels": [
-        "金融主軸"
-      ],
-      "events": [
-        "breadth_axis_overlap",
-        "sector_axis_convergence",
-        "volume_focus_limited_diffusion"
-      ],
-      "event_labels": [
-        "盤面廣度與主軸",
-        "主軸題材收斂",
-        "量能聚焦與擴散"
-      ],
-      "hit_count": 3,
-      "first_seen_order": 5,
-      "reasons": [
-        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2884 在當日 universe 的類別為 金融，因此納入此股票池。"
-      ],
-      "technical_state": {
-        "score": 72.0,
-        "close": 33.0,
-        "ma5": 32.82,
-        "ma20": 33.27,
-        "k": 43.05,
-        "volume_ratio": 1.27,
-        "institutional": "連2買",
-        "advice": "先觀望",
-        "advice_priority": 3,
-        "reason": "貼近中期結構，先觀察是否重新站穩",
-        "risk": "若無法站回中期結構，容易再度轉弱",
-        "zone_label": "試單區優先",
-        "zone_priority": 2,
-        "in_pilot_zone": true,
-        "in_observe_zone": false,
-        "is_weak_blocked": false
-      },
-      "priority_explanation": "3 情境 > 先觀望 > 試單區優先",
-      "next_report_validation": {
-        "next_report_date": "2025-10-13",
-        "found": true,
-        "current_close": 33.0,
-        "next_close": 32.5,
-        "return_pct": -1.5152,
-        "next_rank": 36,
-        "next_score": 50,
-        "next_action_bias": "偏保守"
-      }
-    },
-    {
-      "priority_rank": 6,
-      "symbol": "2886",
-      "name": "兆豐金",
-      "primary_theme": "finance_axis",
-      "primary_theme_label": "金融主軸",
-      "themes": [
-        "finance_axis"
-      ],
-      "theme_labels": [
-        "金融主軸"
-      ],
-      "events": [
-        "breadth_axis_overlap",
-        "sector_axis_convergence",
-        "volume_focus_limited_diffusion"
-      ],
-      "event_labels": [
-        "盤面廣度與主軸",
-        "主軸題材收斂",
-        "量能聚焦與擴散"
-      ],
-      "hit_count": 3,
-      "first_seen_order": 6,
-      "reasons": [
-        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2886 在當日 universe 的類別為 金融，因此納入此股票池。"
-      ],
-      "technical_state": {
-        "score": 70.0,
-        "close": 42.0,
-        "ma5": 41.93,
-        "ma20": 41.77,
-        "k": 54.8,
-        "volume_ratio": 0.8,
-        "institutional": "連2買",
-        "advice": "先觀望",
-        "advice_priority": 3,
-        "reason": "偏多條件存在，但量能或過熱需要先消化",
-        "risk": "追價後若量縮或高檔反轉，容易回落",
-        "zone_label": "試單區優先",
-        "zone_priority": 2,
-        "in_pilot_zone": true,
-        "in_observe_zone": false,
-        "is_weak_blocked": false
-      },
-      "priority_explanation": "3 情境 > 先觀望 > 試單區優先",
-      "next_report_validation": {
-        "next_report_date": "2025-10-13",
-        "found": true,
-        "current_close": 42.0,
-        "next_close": 41.65,
-        "return_pct": -0.8333,
-        "next_rank": 21,
-        "next_score": 63,
-        "next_action_bias": "可留意"
-      }
-    },
-    {
-      "priority_rank": 7,
+      "priority_rank": 2,
       "symbol": "2887",
-      "name": "台新金",
+      "name": "2887",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -427,16 +142,16 @@
         "volume_ratio": 1.41,
         "institutional": "連2買",
         "advice": "先觀望",
-        "advice_priority": 3,
+        "advice_priority": 1,
         "reason": "偏多條件存在，但量能或過熱需要先消化",
         "risk": "追價後若量縮或高檔反轉，容易回落",
         "zone_label": "區間外",
-        "zone_priority": 0,
+        "zone_priority": 1,
         "in_pilot_zone": false,
         "in_observe_zone": false,
         "is_weak_blocked": false
       },
-      "priority_explanation": "3 情境 > 先觀望 > 區間外",
+      "priority_explanation": "命中 3 個情境; 技術面: 先觀望",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -449,9 +164,294 @@
       }
     },
     {
+      "priority_rank": 3,
+      "symbol": "2890",
+      "name": "2890",
+      "primary_theme": "finance_axis",
+      "primary_theme_label": "金融主軸",
+      "themes": [
+        "finance_axis"
+      ],
+      "theme_labels": [
+        "金融主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散"
+      ],
+      "hit_count": 3,
+      "first_seen_order": 3,
+      "reasons": [
+        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2890 在當日 universe 的類別為 金融，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 78.0,
+        "close": 26.3,
+        "ma5": 25.81,
+        "ma20": 25.05,
+        "k": 86.08,
+        "volume_ratio": 0.98,
+        "institutional": "連2買",
+        "advice": "先觀望",
+        "advice_priority": 1,
+        "reason": "偏多條件存在，但量能或過熱需要先消化",
+        "risk": "追價後若量縮或高檔反轉，容易回落",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 3 個情境; 技術面: 先觀望",
+      "next_report_validation": {
+        "next_report_date": "2025-10-13",
+        "found": true,
+        "current_close": 26.3,
+        "next_close": 26.15,
+        "return_pct": -0.5703,
+        "next_rank": 6,
+        "next_score": 78,
+        "next_action_bias": "可留意"
+      }
+    },
+    {
+      "priority_rank": 4,
+      "symbol": "2883",
+      "name": "2883",
+      "primary_theme": "finance_axis",
+      "primary_theme_label": "金融主軸",
+      "themes": [
+        "finance_axis"
+      ],
+      "theme_labels": [
+        "金融主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散"
+      ],
+      "hit_count": 3,
+      "first_seen_order": 4,
+      "reasons": [
+        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2883 在當日 universe 的類別為 金融，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 73.0,
+        "close": 15.15,
+        "ma5": 15.0,
+        "ma20": 15.05,
+        "k": 57.86,
+        "volume_ratio": 0.83,
+        "institutional": "連2買",
+        "advice": "先觀望",
+        "advice_priority": 1,
+        "reason": "偏多條件存在，但量能或過熱需要先消化",
+        "risk": "追價後若量縮或高檔反轉，容易回落",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 3 個情境; 技術面: 先觀望",
+      "next_report_validation": {
+        "next_report_date": "2025-10-13",
+        "found": true,
+        "current_close": 15.15,
+        "next_close": 15.1,
+        "return_pct": -0.33,
+        "next_rank": 5,
+        "next_score": 80,
+        "next_action_bias": "可留意"
+      }
+    },
+    {
+      "priority_rank": 5,
+      "symbol": "2884",
+      "name": "2884",
+      "primary_theme": "finance_axis",
+      "primary_theme_label": "金融主軸",
+      "themes": [
+        "finance_axis"
+      ],
+      "theme_labels": [
+        "金融主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散"
+      ],
+      "hit_count": 3,
+      "first_seen_order": 5,
+      "reasons": [
+        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2884 在當日 universe 的類別為 金融，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 72.0,
+        "close": 33.0,
+        "ma5": 32.82,
+        "ma20": 33.27,
+        "k": 43.05,
+        "volume_ratio": 1.27,
+        "institutional": "連2買",
+        "advice": "先觀望",
+        "advice_priority": 1,
+        "reason": "貼近中期結構，先觀察是否重新站穩",
+        "risk": "若無法站回中期結構，容易再度轉弱",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 3 個情境; 技術面: 先觀望",
+      "next_report_validation": {
+        "next_report_date": "2025-10-13",
+        "found": true,
+        "current_close": 33.0,
+        "next_close": 32.5,
+        "return_pct": -1.5152,
+        "next_rank": 36,
+        "next_score": 50,
+        "next_action_bias": "偏保守"
+      }
+    },
+    {
+      "priority_rank": 6,
+      "symbol": "2886",
+      "name": "2886",
+      "primary_theme": "finance_axis",
+      "primary_theme_label": "金融主軸",
+      "themes": [
+        "finance_axis"
+      ],
+      "theme_labels": [
+        "金融主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散"
+      ],
+      "hit_count": 3,
+      "first_seen_order": 6,
+      "reasons": [
+        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2886 在當日 universe 的類別為 金融，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 70.0,
+        "close": 42.0,
+        "ma5": 41.93,
+        "ma20": 41.77,
+        "k": 54.8,
+        "volume_ratio": 0.8,
+        "institutional": "連2買",
+        "advice": "先觀望",
+        "advice_priority": 1,
+        "reason": "偏多條件存在，但量能或過熱需要先消化",
+        "risk": "追價後若量縮或高檔反轉，容易回落",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 3 個情境; 技術面: 先觀望",
+      "next_report_validation": {
+        "next_report_date": "2025-10-13",
+        "found": true,
+        "current_close": 42.0,
+        "next_close": 41.65,
+        "return_pct": -0.8333,
+        "next_rank": 21,
+        "next_score": 63,
+        "next_action_bias": "可留意"
+      }
+    },
+    {
+      "priority_rank": 7,
+      "symbol": "2881",
+      "name": "2881",
+      "primary_theme": "finance_axis",
+      "primary_theme_label": "金融主軸",
+      "themes": [
+        "finance_axis"
+      ],
+      "theme_labels": [
+        "金融主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散"
+      ],
+      "hit_count": 3,
+      "first_seen_order": 0,
+      "reasons": [
+        "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2881 在當日 universe 的類別為 金融，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 83.0,
+        "close": 89.8,
+        "ma5": 87.7,
+        "ma20": 87.91,
+        "k": 59.62,
+        "volume_ratio": 1.93,
+        "institutional": "連2買",
+        "advice": "強勢續看",
+        "advice_priority": 0,
+        "reason": "評分高且結構偏強",
+        "risk": "短線過熱時不宜追價",
+        "zone_label": "區間外",
+        "zone_priority": 1,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 3 個情境; 技術面: 強勢續看",
+      "next_report_validation": {
+        "next_report_date": "2025-10-13",
+        "found": true,
+        "current_close": 89.8,
+        "next_close": 87.8,
+        "return_pct": -2.2272,
+        "next_rank": 16,
+        "next_score": 65,
+        "next_action_bias": "可留意"
+      }
+    },
+    {
       "priority_rank": 8,
       "symbol": "2880",
-      "name": "華南金",
+      "name": "2880",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -484,16 +484,16 @@
         "volume_ratio": 0.79,
         "institutional": "連2買",
         "advice": "暫不進場",
-        "advice_priority": 2,
+        "advice_priority": 0,
         "reason": "分數偏低且仍在中期壓力下方",
         "risk": "弱勢延續時，反彈容易失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "3 情境 > 暫不進場 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 暫不進場",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -508,7 +508,7 @@
     {
       "priority_rank": 9,
       "symbol": "2891",
-      "name": "中信金",
+      "name": "2891",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -541,16 +541,16 @@
         "volume_ratio": 1.14,
         "institutional": "連1賣",
         "advice": "暫不考慮",
-        "advice_priority": 1,
+        "advice_priority": 0,
         "reason": "分數過低且結構偏弱",
         "risk": "下跌延續或反彈失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "3 情境 > 暫不考慮 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 暫不考慮",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -565,7 +565,7 @@
     {
       "priority_rank": 10,
       "symbol": "2885",
-      "name": "元大金",
+      "name": "2885",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -598,16 +598,16 @@
         "volume_ratio": 0.82,
         "institutional": "連2賣",
         "advice": "暫不考慮",
-        "advice_priority": 1,
+        "advice_priority": 0,
         "reason": "分數過低且結構偏弱",
         "risk": "下跌延續或反彈失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "3 情境 > 暫不考慮 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 暫不考慮",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -622,7 +622,7 @@
     {
       "priority_rank": 11,
       "symbol": "2892",
-      "name": "第一金",
+      "name": "2892",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -655,16 +655,16 @@
         "volume_ratio": 1.48,
         "institutional": "連2賣",
         "advice": "暫不考慮",
-        "advice_priority": 1,
+        "advice_priority": 0,
         "reason": "分數過低且結構偏弱",
         "risk": "下跌延續或反彈失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "3 情境 > 暫不考慮 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 暫不考慮",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -679,7 +679,7 @@
     {
       "priority_rank": 12,
       "symbol": "5880",
-      "name": "合庫金",
+      "name": "5880",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -712,16 +712,16 @@
         "volume_ratio": 1.49,
         "institutional": "連2賣",
         "advice": "暫不考慮",
-        "advice_priority": 1,
+        "advice_priority": 0,
         "reason": "分數過低且結構偏弱",
         "risk": "下跌延續或反彈失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "3 情境 > 暫不考慮 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 暫不考慮",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -736,7 +736,7 @@
     {
       "priority_rank": 13,
       "symbol": "5876",
-      "name": "上海商銀",
+      "name": "5876",
       "primary_theme": "finance_axis",
       "primary_theme_label": "金融主軸",
       "themes": [
@@ -769,16 +769,16 @@
         "volume_ratio": 0.74,
         "institutional": "連1賣",
         "advice": "暫不考慮",
-        "advice_priority": 1,
+        "advice_priority": 0,
         "reason": "分數過低且結構偏弱",
         "risk": "下跌延續或反彈失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "3 情境 > 暫不考慮 > 試單區優先",
+      "priority_explanation": "命中 3 個情境; 技術面: 暫不考慮",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -792,61 +792,8 @@
     },
     {
       "priority_rank": 14,
-      "symbol": "3711",
-      "name": "日月光投控",
-      "primary_theme": "semiconductor_axis",
-      "primary_theme_label": "半導體主軸",
-      "themes": [
-        "semiconductor_axis"
-      ],
-      "theme_labels": [
-        "半導體主軸"
-      ],
-      "events": [
-        "breadth_axis_overlap"
-      ],
-      "event_labels": [
-        "盤面廣度與主軸"
-      ],
-      "hit_count": 1,
-      "first_seen_order": 13,
-      "reasons": [
-        "半導體主軸 依固定 mapping 對應類別 半導體；3711 在當日 universe 的類別為 半導體，因此納入此股票池。"
-      ],
-      "technical_state": {
-        "score": 85.0,
-        "close": 179.0,
-        "ma5": 171.4,
-        "ma20": 169.4,
-        "k": 64.61,
-        "volume_ratio": 1.35,
-        "institutional": "連2買",
-        "advice": "強勢續看",
-        "advice_priority": 6,
-        "reason": "評分高且結構偏強",
-        "risk": "短線過熱時不宜追價",
-        "zone_label": "區間外",
-        "zone_priority": 0,
-        "in_pilot_zone": false,
-        "in_observe_zone": false,
-        "is_weak_blocked": false
-      },
-      "priority_explanation": "1 情境 > 強勢續看 > 區間外",
-      "next_report_validation": {
-        "next_report_date": "2025-10-13",
-        "found": true,
-        "current_close": 179.0,
-        "next_close": 173.0,
-        "return_pct": -3.352,
-        "next_rank": 12,
-        "next_score": 70,
-        "next_action_bias": "可留意"
-      }
-    },
-    {
-      "priority_rank": 15,
       "symbol": "2408",
-      "name": "南亞科",
+      "name": "2408",
       "primary_theme": "semiconductor_axis",
       "primary_theme_label": "半導體主軸",
       "themes": [
@@ -875,16 +822,16 @@
         "volume_ratio": 1.52,
         "institutional": "連2賣",
         "advice": "可偏多觀察",
-        "advice_priority": 5,
+        "advice_priority": 3,
         "reason": "結構仍偏多，但量能或過熱需要再確認",
         "risk": "縮量或高檔過熱時，續攻失敗容易回檔",
         "zone_label": "區間外",
-        "zone_priority": 0,
+        "zone_priority": 1,
         "in_pilot_zone": false,
         "in_observe_zone": false,
         "is_weak_blocked": false
       },
-      "priority_explanation": "1 情境 > 可偏多觀察 > 區間外",
+      "priority_explanation": "命中 1 個情境; 技術面: 可偏多觀察",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -897,9 +844,9 @@
       }
     },
     {
-      "priority_rank": 16,
+      "priority_rank": 15,
       "symbol": "2303",
-      "name": "聯電",
+      "name": "2303",
       "primary_theme": "semiconductor_axis",
       "primary_theme_label": "半導體主軸",
       "themes": [
@@ -928,16 +875,16 @@
         "volume_ratio": 1.32,
         "institutional": "連2買",
         "advice": "可偏多觀察",
-        "advice_priority": 5,
+        "advice_priority": 3,
         "reason": "價格站上中期結構且法人偏多",
         "risk": "短線若爆量不續攻，容易追高回檔",
         "zone_label": "區間外",
-        "zone_priority": 0,
+        "zone_priority": 1,
         "in_pilot_zone": false,
         "in_observe_zone": false,
         "is_weak_blocked": false
       },
-      "priority_explanation": "1 情境 > 可偏多觀察 > 區間外",
+      "priority_explanation": "命中 1 個情境; 技術面: 可偏多觀察",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -950,9 +897,9 @@
       }
     },
     {
-      "priority_rank": 17,
+      "priority_rank": 16,
       "symbol": "2363",
-      "name": "矽統",
+      "name": "2363",
       "primary_theme": "semiconductor_axis",
       "primary_theme_label": "半導體主軸",
       "themes": [
@@ -981,16 +928,16 @@
         "volume_ratio": 0.97,
         "institutional": "連1買",
         "advice": "先觀望",
-        "advice_priority": 3,
+        "advice_priority": 1,
         "reason": "偏多條件存在，但量能或過熱需要先消化",
         "risk": "追價後若量縮或高檔反轉，容易回落",
         "zone_label": "區間外",
-        "zone_priority": 0,
+        "zone_priority": 1,
         "in_pilot_zone": false,
         "in_observe_zone": false,
         "is_weak_blocked": false
       },
-      "priority_explanation": "1 情境 > 先觀望 > 區間外",
+      "priority_explanation": "命中 1 個情境; 技術面: 先觀望",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -1003,9 +950,9 @@
       }
     },
     {
-      "priority_rank": 18,
+      "priority_rank": 17,
       "symbol": "2330",
-      "name": "台積電",
+      "name": "2330",
       "primary_theme": "semiconductor_axis",
       "primary_theme_label": "半導體主軸",
       "themes": [
@@ -1034,16 +981,16 @@
         "volume_ratio": 1.19,
         "institutional": "連1買",
         "advice": "先觀望",
-        "advice_priority": 3,
+        "advice_priority": 1,
         "reason": "偏多條件存在，但量能或過熱需要先消化",
         "risk": "追價後若量縮或高檔反轉，容易回落",
         "zone_label": "區間外",
-        "zone_priority": 0,
+        "zone_priority": 1,
         "in_pilot_zone": false,
         "in_observe_zone": false,
         "is_weak_blocked": false
       },
-      "priority_explanation": "1 情境 > 先觀望 > 區間外",
+      "priority_explanation": "命中 1 個情境; 技術面: 先觀望",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -1056,9 +1003,62 @@
       }
     },
     {
+      "priority_rank": 18,
+      "symbol": "3711",
+      "name": "3711",
+      "primary_theme": "semiconductor_axis",
+      "primary_theme_label": "半導體主軸",
+      "themes": [
+        "semiconductor_axis"
+      ],
+      "theme_labels": [
+        "半導體主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸"
+      ],
+      "hit_count": 1,
+      "first_seen_order": 13,
+      "reasons": [
+        "半導體主軸 依固定 mapping 對應類別 半導體；3711 在當日 universe 的類別為 半導體，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 85.0,
+        "close": 179.0,
+        "ma5": 171.4,
+        "ma20": 169.4,
+        "k": 64.61,
+        "volume_ratio": 1.35,
+        "institutional": "連2買",
+        "advice": "強勢續看",
+        "advice_priority": 0,
+        "reason": "評分高且結構偏強",
+        "risk": "短線過熱時不宜追價",
+        "zone_label": "區間外",
+        "zone_priority": 1,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 1 個情境; 技術面: 強勢續看",
+      "next_report_validation": {
+        "next_report_date": "2025-10-13",
+        "found": true,
+        "current_close": 179.0,
+        "next_close": 173.0,
+        "return_pct": -3.352,
+        "next_rank": 12,
+        "next_score": 70,
+        "next_action_bias": "可留意"
+      }
+    },
+    {
       "priority_rank": 19,
       "symbol": "2454",
-      "name": "聯發科",
+      "name": "2454",
       "primary_theme": "semiconductor_axis",
       "primary_theme_label": "半導體主軸",
       "themes": [
@@ -1087,16 +1087,16 @@
         "volume_ratio": 0.69,
         "institutional": "連1賣",
         "advice": "暫不進場",
-        "advice_priority": 2,
+        "advice_priority": 0,
         "reason": "分數偏低且仍在中期壓力下方",
         "risk": "弱勢延續時，反彈容易失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "1 情境 > 暫不進場 > 試單區優先",
+      "priority_explanation": "命中 1 個情境; 技術面: 暫不進場",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -1111,7 +1111,7 @@
     {
       "priority_rank": 20,
       "symbol": "3034",
-      "name": "聯詠",
+      "name": "3034",
       "primary_theme": "semiconductor_axis",
       "primary_theme_label": "半導體主軸",
       "themes": [
@@ -1140,16 +1140,16 @@
         "volume_ratio": 0.5,
         "institutional": "連2賣",
         "advice": "暫不進場",
-        "advice_priority": 2,
+        "advice_priority": 0,
         "reason": "分數偏低且仍在中期壓力下方",
         "risk": "弱勢延續時，反彈容易失敗",
         "zone_label": "試單區優先",
-        "zone_priority": 2,
+        "zone_priority": 3,
         "in_pilot_zone": true,
         "in_observe_zone": false,
         "is_weak_blocked": true
       },
-      "priority_explanation": "1 情境 > 暫不進場 > 試單區優先",
+      "priority_explanation": "命中 1 個情境; 技術面: 暫不進場",
       "next_report_validation": {
         "next_report_date": "2025-10-13",
         "found": true,
@@ -1160,6 +1160,259 @@
         "next_score": 46,
         "next_action_bias": "暫不考慮"
       }
+    }
+  ],
+  "priority_validation_v10_1_schema_version": "priority-validation-v10.1",
+  "priority_snapshot_v10_1": {
+    "as_of_date": "2025-10-09",
+    "market_regime": "trending",
+    "breadth_state": "mixed_breadth",
+    "volume_state": "neutral",
+    "leader_state": "strong_leaders",
+    "validation_summary": "市場狀態: trending; 廣度: mixed_breadth; 量能: neutral; 領漲: strong_leaders; 候選數: 20",
+    "confidence": "high",
+    "generated_at": "2026-04-16T18:47:18.812058+08:00"
+  },
+  "priority_candidates_v10_1": [
+    {
+      "symbol": "2882",
+      "name": "2882",
+      "score": 79,
+      "rank": 1,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 可偏多觀察; 位置: 試單區優先",
+      "risk_note": "短線若爆量不續攻，容易追高回檔",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2887",
+      "name": "2887",
+      "score": 79,
+      "rank": 2,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 先觀望",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2890",
+      "name": "2890",
+      "score": 78,
+      "rank": 3,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 先觀望; 位置: 試單區優先",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2883",
+      "name": "2883",
+      "score": 73,
+      "rank": 4,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 先觀望; 位置: 試單區優先",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2884",
+      "name": "2884",
+      "score": 72,
+      "rank": 5,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 先觀望; 位置: 試單區優先",
+      "risk_note": "若無法站回中期結構，容易再度轉弱",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2886",
+      "name": "2886",
+      "score": 70,
+      "rank": 6,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 先觀望; 位置: 試單區優先",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2881",
+      "name": "2881",
+      "score": 83,
+      "rank": 7,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 強勢續看",
+      "risk_note": "短線過熱時不宜追價",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2880",
+      "name": "2880",
+      "score": 50,
+      "rank": 8,
+      "score_grade": "C",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 暫不進場; 位置: 試單區優先",
+      "risk_note": "弱勢延續時，反彈容易失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2891",
+      "name": "2891",
+      "score": 48,
+      "rank": 9,
+      "score_grade": "C",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 暫不考慮; 位置: 試單區優先",
+      "risk_note": "下跌延續或反彈失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2885",
+      "name": "2885",
+      "score": 46,
+      "rank": 10,
+      "score_grade": "C",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 暫不考慮; 位置: 試單區優先",
+      "risk_note": "下跌延續或反彈失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2892",
+      "name": "2892",
+      "score": 43,
+      "rank": 11,
+      "score_grade": "D",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 暫不考慮; 位置: 試單區優先",
+      "risk_note": "下跌延續或反彈失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "5880",
+      "name": "5880",
+      "score": 43,
+      "rank": 12,
+      "score_grade": "D",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 暫不考慮; 位置: 試單區優先",
+      "risk_note": "下跌延續或反彈失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "5876",
+      "name": "5876",
+      "score": 43,
+      "rank": 13,
+      "score_grade": "D",
+      "category": "其他",
+      "theme": "finance_axis",
+      "validation_reason": "命中 3 情境; 技術面: 暫不考慮; 位置: 試單區優先",
+      "risk_note": "下跌延續或反彈失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2408",
+      "name": "2408",
+      "score": 81,
+      "rank": 14,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 可偏多觀察",
+      "risk_note": "縮量或高檔過熱時，續攻失敗容易回檔",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2303",
+      "name": "2303",
+      "score": 75,
+      "rank": 15,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 可偏多觀察",
+      "risk_note": "短線若爆量不續攻，容易追高回檔",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2363",
+      "name": "2363",
+      "score": 72,
+      "rank": 16,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 先觀望",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2330",
+      "name": "2330",
+      "score": 69,
+      "rank": 17,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 先觀望",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "3711",
+      "name": "3711",
+      "score": 85,
+      "rank": 18,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 強勢續看",
+      "risk_note": "短線過熱時不宜追價",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2454",
+      "name": "2454",
+      "score": 55,
+      "rank": 19,
+      "score_grade": "C",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 暫不進場; 位置: 試單區優先",
+      "risk_note": "弱勢延續時，反彈容易失敗",
+      "trace_ref": null
+    },
+    {
+      "symbol": "3034",
+      "name": "3034",
+      "score": 53,
+      "rank": 20,
+      "score_grade": "C",
+      "category": "其他",
+      "theme": "semiconductor_axis",
+      "validation_reason": "命中 1 情境; 技術面: 暫不進場; 位置: 試單區優先",
+      "risk_note": "弱勢延續時，反彈容易失敗",
+      "trace_ref": null
     }
   ]
 }

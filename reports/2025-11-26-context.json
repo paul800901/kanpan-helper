@@ -1,7 +1,7 @@
 {
   "report_version": "v9-context",
   "date": "2025-11-26",
-  "generated_at": "2026-04-13T21:39:05.666470+08:00",
+  "generated_at": "2026-04-16T18:47:18.444130+08:00",
   "trace_catalog": {
     "keyword_dictionary_version": "context-keywords-v1",
     "theme_taxonomy_version": "context-themes-v1",
@@ -467,7 +467,7 @@
       "confidence": "high",
       "relation_to_technical": "aligned",
       "source_type": "score_distribution+sector_concentration+volume_cluster+market_overview",
-      "generated_at": "2026-04-13T21:39:05.666470+08:00"
+      "generated_at": "2026-04-16T18:47:18.444130+08:00"
     },
     {
       "id": "sector-concentration",
@@ -536,7 +536,7 @@
       "confidence": "high",
       "relation_to_technical": "aligned",
       "source_type": "sector_concentration+volume_cluster+score_distribution",
-      "generated_at": "2026-04-13T21:39:05.666470+08:00"
+      "generated_at": "2026-04-16T18:47:18.444130+08:00"
     },
     {
       "id": "volume-cluster",
@@ -651,7 +651,113 @@
       "confidence": "high",
       "relation_to_technical": "aligned",
       "source_type": "volume_cluster+score_distribution+sector_concentration",
-      "generated_at": "2026-04-13T21:39:05.666470+08:00"
+      "generated_at": "2026-04-16T18:47:18.444130+08:00"
+    }
+  ],
+  "scenario_cards_v9_schema_version": "scenario-cards-v9",
+  "scenario_cards_v9": [
+    {
+      "id": "sector-concentration",
+      "title": "主軸集中度",
+      "summary": "主軸集中與放量重疊同時出現，盤面開始形成可追蹤的弱主題。 前 10 名樣本中，前兩大類別占比約 70%，放量重疊類別為 航運、半導體。",
+      "confidence": "high",
+      "relation_to_technical": "aligned",
+      "source_types": [
+        "sector_concentration",
+        "volume_anomaly"
+      ],
+      "source_type": "sector_concentration+volume_anomaly",
+      "themes": [
+        "資金輪動",
+        "主流收斂"
+      ],
+      "reasoning_chain": [
+        "訊號 A：前 10 名樣本裡，主軸目前集中在 金融5項、航運2項，代表資金注意力開始收斂。",
+        "訊號 B：放量樣本與前段主軸重疊在 航運、半導體，用來確認主題不是只有排名集中，還有量能呼應。",
+        "訊號 C：steady_v5 的資金集中度欄位目前標記為「未提供」，制度層也把這個結構納入環境判讀。",
+        "交叉判讀：類別集中與量能重疊同時存在，主題輪廓比較像可追蹤的弱訊號。"
+      ],
+      "priority_score": 12,
+      "priority_rank": 1,
+      "priority_reasons": [
+        "訊號來源 2 類",
+        "confidence=high",
+        "技術面一致",
+        "無制度層支持",
+        "量能與廣度交叉驗證成立",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-04-13T21:38:50.470551+08:00"
+    },
+    {
+      "id": "breadth-balance",
+      "title": "盤面廣度與強弱分布",
+      "summary": "盤面廣度偏強，但 AI 敘事仍偏保留，偏強訊號需要後續驗證。 市場總覽約 81 分，強勢樣本約 5 檔，A/B 32 檔、C/D 18 檔。",
+      "confidence": "high",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "market_overview",
+        "score_distribution",
+        "ai_market_overview"
+      ],
+      "source_type": "market_overview+score_distribution+ai_market_overview",
+      "themes": [
+        "市場廣度",
+        "情緒校準"
+      ],
+      "reasoning_chain": [
+        "訊號 A：市場總覽顯示平均強度約 81 分，強勢樣本約 5 檔，代表風險承擔沒有快速收縮。",
+        "訊號 B：A/B 比 C/D 多 14 檔，平均分數約 61.2，盤面不是只靠少數極端樣本撐住。",
+        "交叉判讀：AI 方向目前為「中性」，代表情緒端仍保留中性，這個弱訊號只完成一部分驗證。",
+        "限制：這張卡只保留市場層推理，不延伸到任何股票與操作結論。"
+      ],
+      "priority_score": 10,
+      "priority_rank": 2,
+      "priority_reasons": [
+        "訊號來源 3 類",
+        "confidence=high",
+        "技術面中性",
+        "無制度層支持",
+        "量能或廣度部分驗證",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-04-13T21:38:50.470551+08:00"
+    },
+    {
+      "id": "volume-focus",
+      "title": "量能異常與擴散",
+      "summary": "量能擴散與高分結構同步，市場注意力不是孤點放量。 量比大於等於 1.5 的樣本共 4 檔，占全體約 8%；前段平均量比約 1.49，制度量能標記為「未提供」。",
+      "confidence": "medium",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "volume_anomaly",
+        "score_distribution"
+      ],
+      "source_type": "volume_anomaly+score_distribution",
+      "themes": [
+        "量能擴張",
+        "結構分化"
+      ],
+      "reasoning_chain": [
+        "訊號 A：放量樣本主要落在 航運2項、半導體1項，共 4 檔，占全體約 8%。",
+        "訊號 B：放量樣本中有 4 檔同時位於 A/B 區，而整體 breadth 仍是 A/B 32 對 C/D 18，代表量能不是只落在弱勢端。",
+        "訊號 C：steady_v5 的量能欄位標記為「未提供」，前段平均量比約 1.49，可用來確認放量是否只是零星雜訊。",
+        "交叉判讀：量能雖有變化，但廣度或制度層尚未完全接手，所以目前只能算弱訊號。"
+      ],
+      "priority_score": 9,
+      "priority_rank": 3,
+      "priority_reasons": [
+        "訊號來源 2 類",
+        "confidence=medium",
+        "技術面中性",
+        "無制度層支持",
+        "量能與廣度交叉驗證成立",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-04-13T21:38:50.470551+08:00"
     }
   ]
 }
