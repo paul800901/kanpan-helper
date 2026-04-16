@@ -22,7 +22,7 @@ from backend.fetch_data import fetch_all_stocks, load_cached_data
 from backend.calc_indicators import calculate_all_indicators, StockIndicators
 from backend.ranking import rank_stocks, StockScore
 from backend.generate_report import generate_report_v2, generate_lite_report, save_both_reports, generate_ai_report_if_enabled, generate_universe_report, save_universe_report, save_report, validate_report_consistency
-from backend.priority_validation import backfill_priority_validation_reports
+from backend.priority_facade import backfill_priority_validation_reports
 from backend.report_index import atomic_update_index
 
 
@@ -192,7 +192,10 @@ def run_pipeline(
     print("\n[Step 7] 產生 Context、Priority、steady v5 跨時間驗證、失效環境分析與啟用判斷報告")
     print("-" * 40)
 
-    validation_result = backfill_priority_validation_reports(target_date=report_date)
+    validation_result = backfill_priority_validation_reports(
+        target_date=report_date,
+        refresh_context=True,
+    )
     context_path = validation_result.get("current_context_path")
     priority_path = validation_result.get("current_priority_path")
     history_path = validation_result.get("history_path")
