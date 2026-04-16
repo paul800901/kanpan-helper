@@ -1,6 +1,6 @@
 {
   "report_version": "v30-strategy-activation",
-  "generated_at": "2026-04-16T11:21:17.344179+08:00",
+  "generated_at": "2026-04-16T18:28:38.321316+08:00",
   "as_of_date": "2026-04-16",
   "activation_target": {
     "strategy": "steady_v5",
@@ -38,30 +38,25 @@
   },
   "regime_basis": {
     "source_report_version": "v29-steady-v5-regime-analysis",
-    "clear_regime_detected": false,
-    "works_in": "steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏金融、半導體 的市場。",
-    "fails_in": "steady_v5 較容易在 大盤上升、震盪、分散輪動、放量、主軸偏電子、半導體 的市場變成負 alpha。"
+    "clear_regime_detected": true,
+    "works_in": "steady_v5 較適合 大盤上升、震盪、族群集中、放量、主軸偏金融、半導體 的市場。",
+    "fails_in": "steady_v5 較容易在 大盤下降、震盪、分散輪動、放量、主軸偏半導體、電子 的市場變成負 alpha。"
   },
   "current_market_snapshot": {
     "market_trend": {
       "market_trend": "上升",
-      "net_market_return_pct": 12.9279,
-      "positive_day_count": 8,
-      "negative_day_count": 2,
-      "avg_abs_daily_market_return_pct": 2.1,
-      "directional_efficiency_pct": 61.5629,
+      "net_market_return_pct": 17.0507,
+      "positive_day_count": 9,
+      "negative_day_count": 1,
+      "avg_abs_daily_market_return_pct": 1.967,
+      "directional_efficiency_pct": 86.682,
       "volatility_regime": "單邊",
       "as_of_date": "2026-04-16",
       "lookback_days": 10,
       "available_return_days": 10,
-      "window_start_date": "2026-03-30",
-      "window_end_date": "2026-04-15",
+      "window_start_date": "2026-03-31",
+      "window_end_date": "2026-04-16",
       "daily_market_returns": [
-        {
-          "date": "2026-03-30",
-          "next_report_date": "2026-03-31",
-          "market_return_pct": -2.4453
-        },
         {
           "date": "2026-03-31",
           "next_report_date": "2026-04-01",
@@ -106,6 +101,11 @@
           "date": "2026-04-14",
           "next_report_date": "2026-04-15",
           "market_return_pct": 1.1737
+        },
+        {
+          "date": "2026-04-15",
+          "next_report_date": "2026-04-16",
+          "market_return_pct": 1.1162
         }
       ]
     },
@@ -115,13 +115,13 @@
       "top_two_category_share_pct": 40.0,
       "top_categories": [
         "半導體",
-        "金融"
+        "電子"
       ],
       "front_sample_count": 10
     },
     "volume": {
       "label": "放量",
-      "avg_front_volume_ratio": 1.668,
+      "avg_front_volume_ratio": 1.66,
       "front_sample_count": 10,
       "missing_universe_dates": []
     }
