@@ -53,6 +53,14 @@ const PRIORITY_REASON_LABELS = {
     'reasoning_chain=strong': '判斷理由完整',
     '前端 defensive fallback': '系統保底'
 };
+const TEXT_REPLACEMENTS = [
+    [/steady_v5/gi, '市場環境燈號'],
+    [/electronics_axis/gi, '電子主線'],
+    [/semiconductor_axis/gi, '半導體主線'],
+    [/optics_axis/gi, '光學主線'],
+    [/finance_axis/gi, '金融主線'],
+    [/bio_axis/gi, '生技主線']
+];
 
 let indexData = null;
 let currentDate = null;
@@ -92,6 +100,14 @@ function formatSchemaVersion(version) {
     if (match) return match[0].toLowerCase();
     if (text.startsWith('scenario-cards-')) {
         return text.replace('scenario-cards-', 'v');
+    }
+    return text;
+}
+
+function humanizeText(value) {
+    let text = String(value || '').trim();
+    for (const [pattern, replacement] of TEXT_REPLACEMENTS) {
+        text = text.replace(pattern, replacement);
     }
     return text;
 }
@@ -305,7 +321,7 @@ function renderChipList(items, chipClass) {
 function renderCard(card) {
     const normalizedRelation = normalizeRelationToTechnical(card.relation_to_technical);
     const reasoningHTML = card.reasoning_chain
-        .map(item => `<li class="reasoning-item">${esc(item)}</li>`)
+        .map(item => `<li class="reasoning-item">${esc(humanizeText(item))}</li>`)
         .join('');
     const priorityReasonsHTML = renderChipList(card.priority_reasons.map(describePriorityReason), 'reason-chip');
     const sourceTypeHTML = renderChipList(card.source_types.map(describeSourceType), 'keyword-chip');
@@ -315,7 +331,7 @@ function renderCard(card) {
             <div class="scenario-card-top">
                 <div class="scenario-title-block">
                     <div class="scenario-id">${esc(buildCardKicker(card))}</div>
-                    <div class="scenario-card-title">${esc(card.title)}</div>
+                    <div class="scenario-card-title">${esc(humanizeText(card.title))}</div>
                 </div>
                 <div class="scenario-card-meta">
                     <span class="priority-chip">第 ${esc(card.priority_rank)} 位</span>
@@ -327,7 +343,7 @@ function renderCard(card) {
             <div class="scenario-grid">
                 <div class="scenario-row">
                     <div class="scenario-label">重點摘要</div>
-                    <div class="scenario-text">${esc(card.summary)}</div>
+                    <div class="scenario-text">${esc(humanizeText(card.summary))}</div>
                 </div>
                 <div class="scenario-row">
                     <div class="scenario-label">為什麼這樣看</div>
@@ -335,7 +351,7 @@ function renderCard(card) {
                 </div>
                 <div class="scenario-row">
                     <div class="scenario-label">關注主題</div>
-                    <div class="scenario-text">${renderChipList(card.themes, 'theme-chip')}</div>
+                    <div class="scenario-text">${renderChipList(card.themes.map(humanizeText), 'theme-chip')}</div>
                 </div>
                 <div class="scenario-row">
                     <div class="scenario-label">關注程度</div>

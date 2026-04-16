@@ -38,6 +38,13 @@ const REQUIRED_CANDIDATE_FIELDS = [
     'validation_reason',
     'risk_note'
 ];
+const THEME_LABELS = {
+    electronics_axis: '電子主線',
+    semiconductor_axis: '半導體主線',
+    optics_axis: '光學主線',
+    finance_axis: '金融主線',
+    bio_axis: '生技主線'
+};
 
 let currentDate = null;
 
@@ -45,6 +52,17 @@ function formatConfidenceLabel(confidence) {
     if (confidence === 'high') return '高';
     if (confidence === 'medium') return '中';
     return '低';
+}
+
+function formatTheme(theme) {
+    const normalized = String(theme || '').trim();
+    return THEME_LABELS[normalized] || normalized || '其他';
+}
+
+function formatValidationReason(reason) {
+    return String(reason || '')
+        .replace(/命中\s*(\d+)\s*情境/g, '符合 $1 個市場重點')
+        .replace(/steady_v5/gi, '市場環境燈號');
 }
 
 function buildFreshUrl(url) {
@@ -220,10 +238,10 @@ function renderCandidates(candidates) {
                     類別: <span class="candidate-meta-value">${esc(c.category)}</span>
                 </div>
                 <div class="candidate-meta-item">
-                    主題: <span class="candidate-meta-value">${esc(c.theme)}</span>
+                    主題: <span class="candidate-meta-value">${esc(formatTheme(c.theme))}</span>
                 </div>
             </div>
-            <div class="candidate-reason">${esc(c.validation_reason)}</div>
+            <div class="candidate-reason">${esc(formatValidationReason(c.validation_reason))}</div>
             <div class="candidate-risk">風險提醒: ${esc(c.risk_note)}</div>
         </div>
     `).join('');
