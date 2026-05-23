@@ -1,0 +1,52 @@
+{
+  "report_version": "v12-priority-validation",
+  "date": "2026-05-14",
+  "generated_at": "2026-05-23T11:38:47.663590+08:00",
+  "evaluation_horizon": "next_available_report",
+  "next_report_date": "2026-05-15",
+  "sort_rule": {
+    "description": "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。",
+    "keys": [
+      "hit_count desc",
+      "advice_priority desc",
+      "zone_priority desc",
+      "first_seen_order asc"
+    ]
+  },
+  "source_reports": {
+    "context": "2026-05-14-context.json",
+    "universe": "2026-05-14-universe.json",
+    "next_universe": "2026-05-15-universe.json"
+  },
+  "candidate_count": 0,
+  "top1_symbols": [],
+  "top3_symbols": [],
+  "top5_symbols": [],
+  "evaluation": {
+    "evaluated_candidate_count": 0,
+    "top1_evaluated_count": 0,
+    "top3_evaluated_count": 0,
+    "top5_evaluated_count": 0,
+    "all_avg_return_pct": null,
+    "top1_avg_return_pct": null,
+    "top3_avg_return_pct": null,
+    "top5_avg_return_pct": null,
+    "all_win_rate_pct": null,
+    "top1_win_rate_pct": null,
+    "top3_win_rate_pct": null,
+    "top5_win_rate_pct": null
+  },
+  "candidates": [],
+  "priority_validation_v10_1_schema_version": "priority-validation-v10.1",
+  "priority_snapshot_v10_1": {
+    "as_of_date": "2026-05-14",
+    "market_regime": "unknown",
+    "breadth_state": "mixed_breadth",
+    "volume_state": "neutral",
+    "leader_state": "unknown",
+    "validation_summary": "市場狀態: unknown; 廣度: mixed_breadth; 量能: neutral; 領漲: unknown; 候選數: 0",
+    "confidence": "low",
+    "generated_at": "2026-05-23T11:38:47.663590+08:00"
+  },
+  "priority_candidates_v10_1": []
+}
