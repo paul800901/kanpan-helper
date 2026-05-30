@@ -1,9 +1,9 @@
 {
   "report_version": "v23-steady-v2-signature",
-  "generated_at": "2026-05-29T12:01:36.017136+08:00",
+  "generated_at": "2026-05-30T11:48:12.741234+08:00",
   "evaluation_horizon": "next_available_report",
-  "evaluated_days": 152,
-  "candidate_samples": 2740,
+  "evaluated_days": 153,
+  "candidate_samples": 2765,
   "strategy_target": {
     "family": "steady",
     "focus_strategy": "steady_v2",
@@ -18,9 +18,9 @@
     ]
   },
   "sample_partition": {
-    "steady_v2_count": 102,
-    "steady_v3_total_count": 205,
-    "steady_v3_other_count": 103
+    "steady_v2_count": 104,
+    "steady_v3_total_count": 208,
+    "steady_v3_other_count": 104
   },
   "metric_definitions": {
     "k_value": {
@@ -77,19 +77,19 @@
         "ma20_v2",
         "low_k_turn_up"
       ],
-      "hit_count": 102,
-      "sample_count": 102,
-      "avg_return_pct": 0.2871,
-      "win_rate_pct": 51.9608,
-      "avg_return_edge_vs_best_single_factor": 0.0786,
+      "hit_count": 104,
+      "sample_count": 104,
+      "avg_return_pct": 0.2656,
+      "win_rate_pct": 50.9615,
+      "avg_return_edge_vs_best_single_factor": 0.0628,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "ma20_v2",
         "label": "接近 MA20 區間",
         "positive_group_label": "接近 MA20 / 3 日內跌破組",
-        "sample_count": 1156,
-        "avg_return_pct": 0.2085,
-        "win_rate_pct": 49.5675
+        "sample_count": 1164,
+        "avg_return_pct": 0.2028,
+        "win_rate_pct": 49.3127
       },
       "verdict": "優於單因子"
     },
@@ -104,19 +104,19 @@
       "factor_names": [
         "low_k_turn_up"
       ],
-      "hit_count": 205,
-      "sample_count": 205,
-      "avg_return_pct": -0.165,
-      "win_rate_pct": 53.6585,
+      "hit_count": 208,
+      "sample_count": 208,
+      "avg_return_pct": -0.173,
+      "win_rate_pct": 52.8846,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": null,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 205,
-        "avg_return_pct": -0.165,
-        "win_rate_pct": 53.6585
+        "sample_count": 208,
+        "avg_return_pct": -0.173,
+        "win_rate_pct": 52.8846
       },
       "verdict": "單因子基準"
     }
@@ -125,9 +125,9 @@
     "steady_v2": {
       "group": "steady_v2",
       "label": "steady_v2 樣本",
-      "sample_count": 102,
-      "avg_return_pct": 0.2871,
-      "win_rate_pct": 51.9608,
+      "sample_count": 104,
+      "avg_return_pct": 0.2656,
+      "win_rate_pct": 50.9615,
       "samples": [
         {
           "symbol": "2883",
@@ -1352,37 +1352,61 @@
           "volume_ratio": 0.9,
           "prior_pullback_pct": 0.0,
           "has_sharp_drop": false
+        },
+        {
+          "symbol": "2884",
+          "name": "玉山金",
+          "date": "2026-05-28",
+          "return_pct": -1.4446,
+          "k_value": 13.43,
+          "ma20_gap_pct": -1.8589,
+          "abs_ma20_gap_pct": 1.8589,
+          "volume_ratio": 1.33,
+          "prior_pullback_pct": 0.0,
+          "has_sharp_drop": false
+        },
+        {
+          "symbol": "5880",
+          "name": "合庫金",
+          "date": "2026-05-28",
+          "return_pct": -0.2198,
+          "k_value": 23.73,
+          "ma20_gap_pct": -0.394,
+          "abs_ma20_gap_pct": 0.394,
+          "volume_ratio": 0.96,
+          "prior_pullback_pct": 0.2203,
+          "has_sharp_drop": false
         }
       ],
       "metrics": {
         "k_value": {
-          "sample_count": 102,
-          "avg_value": 22.9811,
+          "sample_count": 104,
+          "avg_value": 22.8964,
           "min_value": 9.2,
           "max_value": 29.34
         },
         "abs_ma20_gap_pct": {
-          "sample_count": 102,
-          "avg_value": 1.1043,
+          "sample_count": 104,
+          "avg_value": 1.1047,
           "min_value": 0.0473,
           "max_value": 1.9871
         },
         "volume_ratio": {
-          "sample_count": 102,
-          "avg_value": 0.926,
+          "sample_count": 104,
+          "avg_value": 0.9302,
           "min_value": 0.35,
           "max_value": 2.89
         },
         "prior_pullback_pct": {
-          "sample_count": 102,
-          "avg_value": 0.5135,
+          "sample_count": 104,
+          "avg_value": 0.5057,
           "min_value": -0.8242,
           "max_value": 4.038
         },
         "has_sharp_drop": {
-          "sample_count": 102,
+          "sample_count": 104,
           "true_count": 0,
-          "false_count": 102,
+          "false_count": 104,
           "true_rate_pct": 0.0
         }
       }
@@ -1390,9 +1414,9 @@
     "steady_v3_other": {
       "group": "steady_v3_other",
       "label": "steady_v3 其餘樣本",
-      "sample_count": 103,
-      "avg_return_pct": -0.6127,
-      "win_rate_pct": 55.3398,
+      "sample_count": 104,
+      "avg_return_pct": -0.6116,
+      "win_rate_pct": 54.8077,
       "samples": [
         {
           "symbol": "2395",
@@ -2629,38 +2653,50 @@
           "volume_ratio": 0.93,
           "prior_pullback_pct": 0.3623,
           "has_sharp_drop": false
+        },
+        {
+          "symbol": "2890",
+          "name": "永豐金",
+          "date": "2026-05-28",
+          "return_pct": -0.5059,
+          "k_value": 27.05,
+          "ma20_gap_pct": -2.1775,
+          "abs_ma20_gap_pct": 2.1775,
+          "volume_ratio": 0.82,
+          "prior_pullback_pct": 0.3384,
+          "has_sharp_drop": false
         }
       ],
       "metrics": {
         "k_value": {
-          "sample_count": 103,
-          "avg_value": 18.8675,
+          "sample_count": 104,
+          "avg_value": 18.9462,
           "min_value": 5.66,
           "max_value": 29.94
         },
         "abs_ma20_gap_pct": {
-          "sample_count": 103,
-          "avg_value": 3.9502,
+          "sample_count": 104,
+          "avg_value": 3.9332,
           "min_value": 2.0228,
           "max_value": 11.0099
         },
         "volume_ratio": {
-          "sample_count": 103,
-          "avg_value": 0.9133,
+          "sample_count": 104,
+          "avg_value": 0.9124,
           "min_value": 0.3,
           "max_value": 2.46
         },
         "prior_pullback_pct": {
-          "sample_count": 103,
-          "avg_value": -0.0538,
+          "sample_count": 104,
+          "avg_value": -0.05,
           "min_value": -4.8913,
           "max_value": 9.899
         },
         "has_sharp_drop": {
-          "sample_count": 103,
+          "sample_count": 104,
           "true_count": 10,
-          "false_count": 93,
-          "true_rate_pct": 9.7087
+          "false_count": 94,
+          "true_rate_pct": 9.6154
         }
       }
     }
@@ -2675,24 +2711,24 @@
       "signature_label": "KD 區間不同",
       "preferred_v2_direction": null,
       "v2_summary": {
-        "sample_count": 102,
-        "avg_value": 22.9811,
+        "sample_count": 104,
+        "avg_value": 22.8964,
         "min_value": 9.2,
         "max_value": 29.34
       },
       "comparison_summary": {
-        "sample_count": 103,
-        "avg_value": 18.8675,
+        "sample_count": 104,
+        "avg_value": 18.9462,
         "min_value": 5.66,
         "max_value": 29.94
       },
-      "v2_avg_value": 22.9811,
-      "comparison_avg_value": 18.8675,
-      "avg_delta": 4.1136,
+      "v2_avg_value": 22.8964,
+      "comparison_avg_value": 18.9462,
+      "avg_delta": 3.9502,
       "direction": "v2_higher",
-      "gap_score": 0.1694,
+      "gap_score": 0.1627,
       "qualifies_as_signature": true,
-      "summary": "steady_v2 平均KD 數值為 22.9811，其餘 steady_v3 樣本為 18.8675，差異 4.1136。"
+      "summary": "steady_v2 平均KD 數值為 22.8964，其餘 steady_v3 樣本為 18.9462，差異 3.9502。"
     },
     "abs_ma20_gap_pct": {
       "metric": "abs_ma20_gap_pct",
@@ -2703,24 +2739,24 @@
       "signature_label": "更貼近 MA20",
       "preferred_v2_direction": "lower",
       "v2_summary": {
-        "sample_count": 102,
-        "avg_value": 1.1043,
+        "sample_count": 104,
+        "avg_value": 1.1047,
         "min_value": 0.0473,
         "max_value": 1.9871
       },
       "comparison_summary": {
-        "sample_count": 103,
-        "avg_value": 3.9502,
+        "sample_count": 104,
+        "avg_value": 3.9332,
         "min_value": 2.0228,
         "max_value": 11.0099
       },
-      "v2_avg_value": 1.1043,
-      "comparison_avg_value": 3.9502,
-      "avg_delta": -2.8459,
+      "v2_avg_value": 1.1047,
+      "comparison_avg_value": 3.9332,
+      "avg_delta": -2.8285,
       "direction": "v2_lower",
-      "gap_score": 0.2596,
+      "gap_score": 0.258,
       "qualifies_as_signature": true,
-      "summary": "steady_v2 平均距 MA20為 1.1043，其餘 steady_v3 樣本為 3.9502，差異 -2.8459。"
+      "summary": "steady_v2 平均距 MA20為 1.1047，其餘 steady_v3 樣本為 3.9332，差異 -2.8285。"
     },
     "volume_ratio": {
       "metric": "volume_ratio",
@@ -2731,24 +2767,24 @@
       "signature_label": "量能結構不同",
       "preferred_v2_direction": null,
       "v2_summary": {
-        "sample_count": 102,
-        "avg_value": 0.926,
+        "sample_count": 104,
+        "avg_value": 0.9302,
         "min_value": 0.35,
         "max_value": 2.89
       },
       "comparison_summary": {
-        "sample_count": 103,
-        "avg_value": 0.9133,
+        "sample_count": 104,
+        "avg_value": 0.9124,
         "min_value": 0.3,
         "max_value": 2.46
       },
-      "v2_avg_value": 0.926,
-      "comparison_avg_value": 0.9133,
-      "avg_delta": 0.0127,
+      "v2_avg_value": 0.9302,
+      "comparison_avg_value": 0.9124,
+      "avg_delta": 0.0178,
       "direction": "v2_higher",
-      "gap_score": 0.0049,
+      "gap_score": 0.0069,
       "qualifies_as_signature": true,
-      "summary": "steady_v2 平均volume_ratio為 0.926，其餘 steady_v3 樣本為 0.9133，差異 0.0127。"
+      "summary": "steady_v2 平均volume_ratio為 0.9302，其餘 steady_v3 樣本為 0.9124，差異 0.0178。"
     },
     "prior_pullback_pct": {
       "metric": "prior_pullback_pct",
@@ -2759,24 +2795,24 @@
       "signature_label": "訊號前回落更深",
       "preferred_v2_direction": "lower",
       "v2_summary": {
-        "sample_count": 102,
-        "avg_value": 0.5135,
+        "sample_count": 104,
+        "avg_value": 0.5057,
         "min_value": -0.8242,
         "max_value": 4.038
       },
       "comparison_summary": {
-        "sample_count": 103,
-        "avg_value": -0.0538,
+        "sample_count": 104,
+        "avg_value": -0.05,
         "min_value": -4.8913,
         "max_value": 9.899
       },
-      "v2_avg_value": 0.5135,
-      "comparison_avg_value": -0.0538,
-      "avg_delta": 0.5673,
+      "v2_avg_value": 0.5057,
+      "comparison_avg_value": -0.05,
+      "avg_delta": 0.5557,
       "direction": "v2_higher",
-      "gap_score": 0.0384,
+      "gap_score": 0.0376,
       "qualifies_as_signature": false,
-      "summary": "steady_v2 平均之前跌幅為 0.5135，其餘 steady_v3 樣本為 -0.0538，差異 0.5673。"
+      "summary": "steady_v2 平均之前跌幅為 0.5057，其餘 steady_v3 樣本為 -0.05，差異 0.5557。"
     },
     "has_sharp_drop": {
       "metric": "has_sharp_drop",
@@ -2787,22 +2823,22 @@
       "signature_label": "更常出現在急跌後",
       "preferred_v2_direction": "higher",
       "v2_summary": {
-        "sample_count": 102,
+        "sample_count": 104,
         "true_count": 0,
-        "false_count": 102,
+        "false_count": 104,
         "true_rate_pct": 0.0
       },
       "comparison_summary": {
-        "sample_count": 103,
+        "sample_count": 104,
         "true_count": 10,
-        "false_count": 93,
-        "true_rate_pct": 9.7087
+        "false_count": 94,
+        "true_rate_pct": 9.6154
       },
-      "rate_diff_pct": -9.7087,
+      "rate_diff_pct": -9.6154,
       "direction": "v2_lower",
-      "gap_score": 0.0971,
+      "gap_score": 0.0962,
       "qualifies_as_signature": false,
-      "summary": "steady_v2 的急跌率為 0.0%，其餘 steady_v3 樣本為 9.7087%，差異 -9.7087 個百分點。"
+      "summary": "steady_v2 的急跌率為 0.0%，其餘 steady_v3 樣本為 9.6154%，差異 -9.6154 個百分點。"
     }
   },
   "key_signatures": [
@@ -2812,8 +2848,8 @@
       "label": "距 MA20",
       "signature_label": "更貼近 MA20",
       "direction": "v2_lower",
-      "gap_score": 0.2596,
-      "summary": "steady_v2 平均距 MA20為 1.1043，其餘 steady_v3 樣本為 3.9502，差異 -2.8459。"
+      "gap_score": 0.258,
+      "summary": "steady_v2 平均距 MA20為 1.1047，其餘 steady_v3 樣本為 3.9332，差異 -2.8285。"
     },
     {
       "feature_key": "k_depth",
@@ -2821,9 +2857,9 @@
       "label": "KD 數值",
       "signature_label": "KD 區間不同",
       "direction": "v2_higher",
-      "gap_score": 0.1694,
-      "summary": "steady_v2 平均KD 數值為 22.9811，其餘 steady_v3 樣本為 18.8675，差異 4.1136。"
+      "gap_score": 0.1627,
+      "summary": "steady_v2 平均KD 數值為 22.8964，其餘 steady_v3 樣本為 18.9462，差異 3.9502。"
     }
   ],
-  "signature_summary": "steady_v2 的 102 個樣本，相較其餘 103 個 steady_v3 樣本，最明顯的共同特徵是 更貼近 MA20 與 KD 區間不同。"
+  "signature_summary": "steady_v2 的 104 個樣本，相較其餘 104 個 steady_v3 樣本，最明顯的共同特徵是 更貼近 MA20 與 KD 區間不同。"
 }
