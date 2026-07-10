@@ -1,9 +1,9 @@
 {
   "report_version": "v21-timing-alignment",
-  "generated_at": "2026-07-09T08:49:40.891221+08:00",
+  "generated_at": "2026-07-10T08:49:17.594057+08:00",
   "evaluation_horizon": "next_available_report",
-  "evaluated_days": 174,
-  "kd_event_sample_count": 217,
+  "evaluated_days": 175,
+  "kd_event_sample_count": 219,
   "lookahead_days": [
     1,
     2,
@@ -20,22 +20,22 @@
     "description": "接近 MA20 區間 / 最近 3 日內跌破"
   },
   "event_day_baseline": {
-    "sample_count": 217,
-    "avg_return_pct": -0.1817,
-    "win_rate_pct": 52.0737,
-    "avg_close": 174.1447,
-    "avg_ma20_gap_pct": -0.0245,
+    "sample_count": 219,
+    "avg_return_pct": -0.1642,
+    "win_rate_pct": 52.5114,
+    "avg_close": 173.5589,
+    "avg_ma20_gap_pct": -0.0248,
     "already_in_ma20_v2_count": 108,
-    "already_in_ma20_v2_rate_pct": 49.7696
+    "already_in_ma20_v2_rate_pct": 49.3151
   },
   "delay_alignment": {
     "day_1": {
       "delay_days": 1,
-      "available_sample_count": 217,
+      "available_sample_count": 219,
       "aligned_count": 103,
-      "aligned_rate_pct": 47.4654,
+      "aligned_rate_pct": 47.032,
       "first_alignment_count": 22,
-      "first_alignment_rate_pct": 10.1382,
+      "first_alignment_rate_pct": 10.0457,
       "avg_ma20_gap_pct_when_aligned": -0.0075,
       "first_alignment_avg_return_pct": -0.0337,
       "first_alignment_win_rate_pct": 40.9091,
@@ -43,11 +43,11 @@
     },
     "day_2": {
       "delay_days": 2,
-      "available_sample_count": 217,
+      "available_sample_count": 219,
       "aligned_count": 106,
-      "aligned_rate_pct": 48.8479,
+      "aligned_rate_pct": 48.4018,
       "first_alignment_count": 17,
-      "first_alignment_rate_pct": 7.8341,
+      "first_alignment_rate_pct": 7.7626,
       "avg_ma20_gap_pct_when_aligned": -0.0055,
       "first_alignment_avg_return_pct": 0.0447,
       "first_alignment_win_rate_pct": 35.2941,
@@ -55,12 +55,12 @@
     },
     "day_3": {
       "delay_days": 3,
-      "available_sample_count": 213,
-      "aligned_count": 105,
-      "aligned_rate_pct": 49.2958,
+      "available_sample_count": 217,
+      "aligned_count": 106,
+      "aligned_rate_pct": 48.8479,
       "first_alignment_count": 11,
-      "first_alignment_rate_pct": 5.0691,
-      "avg_ma20_gap_pct_when_aligned": -0.0051,
+      "first_alignment_rate_pct": 5.0228,
+      "avg_ma20_gap_pct_when_aligned": -0.0052,
       "first_alignment_avg_return_pct": -0.3482,
       "first_alignment_win_rate_pct": 36.3636,
       "first_alignment_evaluated_count": 11
@@ -70,36 +70,36 @@
     "day_0": {
       "delay_days": 0,
       "sample_count": 108,
-      "sample_rate_pct": 49.7696
+      "sample_rate_pct": 49.3151
     },
     "day_1": {
       "delay_days": 1,
       "sample_count": 22,
-      "sample_rate_pct": 10.1382
+      "sample_rate_pct": 10.0457
     },
     "day_2": {
       "delay_days": 2,
       "sample_count": 17,
-      "sample_rate_pct": 7.8341
+      "sample_rate_pct": 7.7626
     },
     "day_3": {
       "delay_days": 3,
       "sample_count": 11,
-      "sample_rate_pct": 5.0691
+      "sample_rate_pct": 5.0228
     },
     "no_alignment_within_3d": {
       "delay_days": null,
-      "sample_count": 59,
-      "sample_rate_pct": 27.1889
+      "sample_count": 61,
+      "sample_rate_pct": 27.8539
     }
   },
   "best_alignment_delay": {
     "delay_days": 1,
-    "available_sample_count": 217,
+    "available_sample_count": 219,
     "aligned_count": 103,
-    "aligned_rate_pct": 47.4654,
+    "aligned_rate_pct": 47.032,
     "first_alignment_count": 22,
-    "first_alignment_rate_pct": 10.1382,
+    "first_alignment_rate_pct": 10.0457,
     "avg_ma20_gap_pct_when_aligned": -0.0075,
     "first_alignment_avg_return_pct": -0.0337,
     "first_alignment_win_rate_pct": 40.9091,
@@ -107,11 +107,11 @@
   },
   "best_delayed_entry_timing": {
     "delay_days": 2,
-    "available_sample_count": 217,
+    "available_sample_count": 219,
     "aligned_count": 106,
-    "aligned_rate_pct": 48.8479,
+    "aligned_rate_pct": 48.4018,
     "first_alignment_count": 17,
-    "first_alignment_rate_pct": 7.8341,
+    "first_alignment_rate_pct": 7.7626,
     "avg_ma20_gap_pct_when_aligned": -0.0055,
     "first_alignment_avg_return_pct": 0.0447,
     "first_alignment_win_rate_pct": 35.2941,
@@ -121,10 +121,10 @@
   "recommendation": {
     "recommended_delay_days": 2,
     "beats_kd_event_baseline": true,
-    "baseline_kd_avg_return_pct": -0.1817,
-    "summary": "KD 後 2 天的首次 MA20_v2 對齊，平均報酬 0.0447%，高於 KD 當天樣本的 -0.1817%，可視為較佳延遲進場時間。"
+    "baseline_kd_avg_return_pct": -0.1642,
+    "summary": "KD 後 2 天的首次 MA20_v2 對齊，平均報酬 0.0447%，高於 KD 當天樣本的 -0.1642%，可視為較佳延遲進場時間。"
   },
-  "timing_alignment_summary": "KD 後 1 天最容易首次進入 MA20_v2，共有 22 個樣本，占 KD 樣本的 10.1382%。",
+  "timing_alignment_summary": "KD 後 1 天最容易首次進入 MA20_v2，共有 22 個樣本，占 KD 樣本的 10.0457%。",
   "event_samples": [
     {
       "symbol": "2883",
@@ -8676,10 +8676,10 @@
           "entry_return_pct": null
         },
         "day_3": {
-          "available": false,
-          "date": null,
-          "close": null,
-          "ma20_gap_pct": null,
+          "available": true,
+          "date": "2026-07-10",
+          "close": 684.0,
+          "ma20_gap_pct": -0.06640278441274822,
           "in_ma20_v2": false,
           "first_alignment": false,
           "entry_return_pct": null
@@ -8716,10 +8716,10 @@
           "entry_return_pct": null
         },
         "day_3": {
-          "available": false,
-          "date": null,
-          "close": null,
-          "ma20_gap_pct": null,
+          "available": true,
+          "date": "2026-07-10",
+          "close": 237.5,
+          "ma20_gap_pct": -0.06219151036525173,
           "in_ma20_v2": false,
           "first_alignment": false,
           "entry_return_pct": null
@@ -8753,14 +8753,14 @@
           "ma20_gap_pct": -0.011105235325224793,
           "in_ma20_v2": true,
           "first_alignment": false,
-          "entry_return_pct": null
+          "entry_return_pct": -0.8021
         },
         "day_3": {
-          "available": false,
-          "date": null,
-          "close": null,
-          "ma20_gap_pct": null,
-          "in_ma20_v2": false,
+          "available": true,
+          "date": "2026-07-10",
+          "close": 18.55,
+          "ma20_gap_pct": -0.018518518518518406,
+          "in_ma20_v2": true,
           "first_alignment": false,
           "entry_return_pct": null
         }
@@ -8791,6 +8791,86 @@
           "date": "2026-07-09",
           "close": 23.1,
           "ma20_gap_pct": -0.039101497504159644,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": true,
+          "date": "2026-07-10",
+          "close": 22.7,
+          "ma20_gap_pct": -0.05298289528577387,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2882",
+      "date": "2026-07-08",
+      "event_day": {
+        "close": 97.0,
+        "ma20_gap_pct": -0.06442901234567908,
+        "return_pct": 1.0309,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-07-09",
+          "close": 98.0,
+          "ma20_gap_pct": -0.05204101373573221,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-07-10",
+          "close": 96.3,
+          "ma20_gap_pct": -0.06686046511627912,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_3": {
+          "available": false,
+          "date": null,
+          "close": null,
+          "ma20_gap_pct": null,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        }
+      }
+    },
+    {
+      "symbol": "2881",
+      "date": "2026-07-08",
+      "event_day": {
+        "close": 123.0,
+        "ma20_gap_pct": -0.044289044289044205,
+        "return_pct": 2.439,
+        "in_ma20_v2": false
+      },
+      "first_alignment_delay_days": null,
+      "lookahead": {
+        "day_1": {
+          "available": true,
+          "date": "2026-07-09",
+          "close": 126.0,
+          "ma20_gap_pct": -0.021359223300970873,
+          "in_ma20_v2": false,
+          "first_alignment": false,
+          "entry_return_pct": null
+        },
+        "day_2": {
+          "available": true,
+          "date": "2026-07-10",
+          "close": 124.5,
+          "ma20_gap_pct": -0.033760186263096584,
           "in_ma20_v2": false,
           "first_alignment": false,
           "entry_return_pct": null
