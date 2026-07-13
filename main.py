@@ -175,11 +175,17 @@ def run_pipeline(
     print("\n[Step 5] 生成 AI 分析報告 (v6)")
     print("-" * 40)
     
-    ai_path = generate_ai_report_if_enabled(full_report, report_date)
+    try:
+        ai_path = generate_ai_report_if_enabled(full_report, report_date)
+    except Exception as e:
+        # AI 摘要是加值資料；基礎報告已完成一致性驗證，不應因摘要品質檢查失敗而無法發布。
+        ai_path = None
+        print(f"[WARN] AI 分析生成失敗，將繼續發布基礎報告: {e}")
+
     if ai_path:
         print(f"[OK] AI 報告已生成: {ai_path}")
     else:
-        print("[INFO] AI 分析未啟用或失敗，略過此步驟")
+        print("[INFO] 本次未產生 AI 報告，前端將使用基礎資料顯示")
     
     # Step 6: 生成 Universe 報告 (v6.1)
     print("\n[Step 6] 生成 Universe 報告 (v6.1)")

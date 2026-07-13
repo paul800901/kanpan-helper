@@ -90,9 +90,10 @@ jobs:
             echo "Error: 索引更新失敗，找不到 reports/index.json"
             exit 1
           fi
-          if [ ! -f "reports/${TODAY}-ai.json" ]; then
-            echo "Error: AI 報告生成失敗，找不到 reports/${TODAY}-ai.json"
-            exit 1
+          if [ -f "reports/${TODAY}-ai.json" ]; then
+            echo "AI 報告已生成：reports/${TODAY}-ai.json"
+          else
+            echo "Warning: AI 報告未生成，將發布已驗證的基礎報告並由前端使用 fallback。"
           fi
           if [ ! -f "reports/${TODAY}-universe.json" ]; then
             echo "Error: Universe 報告生成失敗，找不到 reports/${TODAY}-universe.json"
@@ -161,7 +162,9 @@ jobs:
           python -m json.tool reports/${TODAY}.json > /dev/null
           python -m json.tool reports/${TODAY}-lite.json > /dev/null
           python -m json.tool reports/index.json > /dev/null
-          python -m json.tool reports/${TODAY}-ai.json > /dev/null
+          if [ -f "reports/${TODAY}-ai.json" ]; then
+            python -m json.tool reports/${TODAY}-ai.json > /dev/null
+          fi
           python -m json.tool reports/${TODAY}-universe.json > /dev/null
           python -m json.tool reports/${TODAY}-context.json > /dev/null
           python -m json.tool reports/${TODAY}-priority.json > /dev/null
