@@ -1,6 +1,6 @@
 {
   "report_version": "v29-steady-v5-regime-analysis",
-  "generated_at": "2026-07-23T08:45:39.562021+08:00",
+  "generated_at": "2026-07-24T08:42:40.268474+08:00",
   "evaluation_horizon": "next_available_report",
   "analysis_target": {
     "strategy": "steady_v5",
@@ -22,8 +22,8 @@
     "rolling_window_days": 10,
     "step_days": 10,
     "available_window_count": 12,
-    "analyzed_window_count": 10,
-    "negative_window_count": 3,
+    "analyzed_window_count": 11,
+    "negative_window_count": 4,
     "positive_window_count": 7
   },
   "assessment_rules": {
@@ -55,30 +55,32 @@
     {
       "period_index": 1,
       "alpha_regime": "negative",
-      "start_date": "2026-03-09",
-      "end_date": "2026-03-20",
+      "start_date": "2026-02-23",
+      "end_date": "2026-03-23",
       "window_indices": [
+        4,
         5
       ],
-      "window_count": 1,
+      "window_count": 2,
       "avg_alpha_pct": -3.525,
       "avg_return_pct": -0.447,
       "avg_win_rate_pct": 0.0,
-      "market_trend": "上升",
+      "market_trend": "下降",
       "volatility": "震盪",
-      "sector_concentration": "分散輪動",
+      "sector_concentration": "族群集中",
       "volume": "放量",
       "dominant_categories": [
         "電子",
-        "金融"
+        "航運",
+        "電信"
       ],
-      "summary": "2026-03-09 至 2026-03-20 共有 1 段負 alpha rolling 區段，主要是大盤上升、震盪、分散輪動、放量。"
+      "summary": "2026-02-23 至 2026-03-23 共有 2 段負 alpha rolling 區段，主要是大盤下降、震盪、族群集中、放量。"
     },
     {
       "period_index": 2,
       "alpha_regime": "negative",
-      "start_date": "2026-05-12",
-      "end_date": "2026-05-26",
+      "start_date": "2026-05-13",
+      "end_date": "2026-05-27",
       "window_indices": [
         9
       ],
@@ -94,13 +96,13 @@
         "金融",
         "航運"
       ],
-      "summary": "2026-05-12 至 2026-05-26 共有 1 段負 alpha rolling 區段，主要是大盤上升、震盪、分散輪動、放量。"
+      "summary": "2026-05-13 至 2026-05-27 共有 1 段負 alpha rolling 區段，主要是大盤上升、震盪、分散輪動、放量。"
     },
     {
       "period_index": 3,
       "alpha_regime": "negative",
-      "start_date": "2026-06-15",
-      "end_date": "2026-07-01",
+      "start_date": "2026-06-16",
+      "end_date": "2026-07-02",
       "window_indices": [
         11
       ],
@@ -110,46 +112,46 @@
       "avg_win_rate_pct": 0.0,
       "market_trend": "下降",
       "volatility": "震盪",
-      "sector_concentration": "分散輪動",
+      "sector_concentration": "族群集中",
       "volume": "放量",
       "dominant_categories": [
         "金融",
         "半導體"
       ],
-      "summary": "2026-06-15 至 2026-07-01 共有 1 段負 alpha rolling 區段，主要是大盤下降、震盪、分散輪動、放量。"
+      "summary": "2026-06-16 至 2026-07-02 共有 1 段負 alpha rolling 區段，主要是大盤下降、震盪、族群集中、放量。"
     }
   ],
   "positive_alpha_periods": [
     {
       "period_index": 1,
       "alpha_regime": "positive",
-      "start_date": "2025-12-30",
-      "end_date": "2026-02-10",
+      "start_date": "2025-12-31",
+      "end_date": "2026-02-11",
       "window_indices": [
         1,
         2,
         3
       ],
       "window_count": 3,
-      "avg_alpha_pct": 2.0392,
-      "avg_return_pct": 1.9844,
-      "avg_win_rate_pct": 72.2222,
+      "avg_alpha_pct": 4.028,
+      "avg_return_pct": 3.7475,
+      "avg_win_rate_pct": 88.8889,
       "market_trend": "上升",
-      "volatility": "單邊",
+      "volatility": "震盪",
       "sector_concentration": "分散輪動",
       "volume": "放量",
       "dominant_categories": [
         "半導體",
-        "電子",
-        "金融"
+        "金融",
+        "電子"
       ],
-      "summary": "2025-12-30 至 2026-02-10 共有 3 段正 alpha rolling 區段，主要是大盤上升、單邊、分散輪動、放量。"
+      "summary": "2025-12-31 至 2026-02-11 共有 3 段正 alpha rolling 區段，主要是大盤上升、震盪、分散輪動、放量。"
     },
     {
       "period_index": 2,
       "alpha_regime": "positive",
-      "start_date": "2026-03-23",
-      "end_date": "2026-04-07",
+      "start_date": "2026-03-24",
+      "end_date": "2026-04-08",
       "window_indices": [
         6
       ],
@@ -163,15 +165,15 @@
       "volume": "放量",
       "dominant_categories": [
         "金融",
-        "食品"
+        "半導體"
       ],
-      "summary": "2026-03-23 至 2026-04-07 共有 1 段正 alpha rolling 區段，主要是大盤上升、震盪、分散輪動、放量。"
+      "summary": "2026-03-24 至 2026-04-08 共有 1 段正 alpha rolling 區段，主要是大盤上升、震盪、分散輪動、放量。"
     },
     {
       "period_index": 3,
       "alpha_regime": "positive",
-      "start_date": "2026-04-27",
-      "end_date": "2026-05-11",
+      "start_date": "2026-04-28",
+      "end_date": "2026-05-12",
       "window_indices": [
         8
       ],
@@ -187,13 +189,13 @@
         "電子",
         "半導體"
       ],
-      "summary": "2026-04-27 至 2026-05-11 共有 1 段正 alpha rolling 區段，主要是大盤上升、震盪、族群集中、放量。"
+      "summary": "2026-04-28 至 2026-05-12 共有 1 段正 alpha rolling 區段，主要是大盤上升、震盪、族群集中、放量。"
     },
     {
       "period_index": 4,
       "alpha_regime": "positive",
-      "start_date": "2026-05-27",
-      "end_date": "2026-06-11",
+      "start_date": "2026-05-28",
+      "end_date": "2026-06-15",
       "window_indices": [
         10
       ],
@@ -209,57 +211,118 @@
         "金融",
         "航運"
       ],
-      "summary": "2026-05-27 至 2026-06-11 共有 1 段正 alpha rolling 區段，主要是大盤上升、震盪、族群集中、放量。"
+      "summary": "2026-05-28 至 2026-06-15 共有 1 段正 alpha rolling 區段，主要是大盤上升、震盪、族群集中、放量。"
     },
     {
       "period_index": 5,
       "alpha_regime": "positive",
-      "start_date": "2026-07-02",
-      "end_date": "2026-07-21",
+      "start_date": "2026-07-06",
+      "end_date": "2026-07-22",
       "window_indices": [
         12
       ],
       "window_count": 1,
-      "avg_alpha_pct": 2.3057,
-      "avg_return_pct": -0.6505,
-      "avg_win_rate_pct": 50.0,
+      "avg_alpha_pct": 1.6329,
+      "avg_return_pct": -0.3193,
+      "avg_win_rate_pct": 66.6667,
       "market_trend": "下降",
       "volatility": "震盪",
       "sector_concentration": "分散輪動",
       "volume": "放量",
       "dominant_categories": [
         "金融",
-        "食品"
+        "航運"
       ],
-      "summary": "2026-07-02 至 2026-07-21 共有 1 段正 alpha rolling 區段，主要是大盤下降、震盪、分散輪動、放量。"
+      "summary": "2026-07-06 至 2026-07-22 共有 1 段正 alpha rolling 區段，主要是大盤下降、震盪、分散輪動、放量。"
     }
   ],
   "negative_alpha_windows": [
     {
-      "window_index": 5,
-      "start_date": "2026-03-09",
-      "end_date": "2026-03-20",
+      "window_index": 4,
+      "start_date": "2026-02-23",
+      "end_date": "2026-03-09",
       "observed_days": 10,
-      "hit_days": 2,
-      "total_hits": 2,
-      "avg_return_pct": -0.447,
+      "hit_days": 1,
+      "total_hits": 1,
+      "avg_return_pct": -0.894,
       "win_rate_pct": 0.0,
-      "avg_alpha_pct": -3.525,
+      "avg_alpha_pct": -2.9539,
       "has_not_broken": false,
       "alpha_regime": "negative",
       "market_regime": {
-        "market_trend": "上升",
-        "net_market_return_pct": 1.9062,
-        "positive_day_count": 4,
-        "negative_day_count": 6,
-        "avg_abs_daily_market_return_pct": 1.6225,
-        "directional_efficiency_pct": 11.7487,
+        "market_trend": "下降",
+        "net_market_return_pct": -2.9651,
+        "positive_day_count": 5,
+        "negative_day_count": 5,
+        "avg_abs_daily_market_return_pct": 2.1539,
+        "directional_efficiency_pct": 13.7663,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-03-09",
+          "2026-02-23",
+          "2026-02-24",
+          "2026-02-25",
+          "2026-02-26",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-04",
+          "2026-03-05",
+          "2026-03-06",
+          "2026-03-09"
+        ],
+        "missing_universe_dates": [],
+        "category_counter": {
+          "電子": 22,
+          "金融": 11,
+          "租賃": 1,
+          "汽車": 3,
+          "航運": 28,
+          "半導體": 8,
+          "電信": 14,
+          "化工": 3,
+          "鋼鐵": 1,
+          "光學": 3,
+          "食品": 2,
+          "航太": 2,
+          "纖維": 2
+        },
+        "top_categories": [
+          "航運",
+          "電子"
+        ],
+        "top_two_category_share_pct": 50.0,
+        "sector_concentration": "族群集中",
+        "avg_front_volume_ratio": 2.0128,
+        "volume_regime": "放量"
+      },
+      "summary": "第 4 個 10 天區段（2026-02-23 至 2026-03-09）屬於 負 alpha，平均 alpha -2.9539%、平均隔日報酬 -0.894%、勝率 0.0%；大盤下降 / 震盪，前段樣本族群集中、量能放量，主軸偏 航運、電子。"
+    },
+    {
+      "window_index": 5,
+      "start_date": "2026-03-10",
+      "end_date": "2026-03-23",
+      "observed_days": 10,
+      "hit_days": 1,
+      "total_hits": 1,
+      "avg_return_pct": 0.0,
+      "win_rate_pct": 0.0,
+      "avg_alpha_pct": -4.096,
+      "has_not_broken": false,
+      "alpha_regime": "negative",
+      "market_regime": {
+        "market_trend": "下降",
+        "net_market_return_pct": -0.4871,
+        "positive_day_count": 3,
+        "negative_day_count": 7,
+        "avg_abs_daily_market_return_pct": 1.4502,
+        "directional_efficiency_pct": 3.3589,
+        "volatility_regime": "震盪"
+      },
+      "flow_regime": {
+        "front_sample_count": 100,
+        "analyzed_dates": [
           "2026-03-10",
           "2026-03-11",
           "2026-03-12",
@@ -268,39 +331,40 @@
           "2026-03-17",
           "2026-03-18",
           "2026-03-19",
-          "2026-03-20"
+          "2026-03-20",
+          "2026-03-23"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "電子": 27,
-          "半導體": 13,
-          "電信": 14,
-          "金融": 17,
-          "航運": 11,
-          "纖維": 1,
-          "租賃": 5,
+          "電子": 28,
+          "半導體": 11,
+          "航運": 10,
+          "租賃": 6,
+          "電信": 15,
           "化工": 4,
-          "航空": 1,
+          "金融": 14,
+          "航空": 2,
           "光學": 3,
           "水泥": 1,
-          "食品": 2,
-          "鋼鐵": 1
+          "食品": 3,
+          "鋼鐵": 2,
+          "零售": 1
         },
         "top_categories": [
           "電子",
-          "金融"
+          "電信"
         ],
-        "top_two_category_share_pct": 44.0,
+        "top_two_category_share_pct": 43.0,
         "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.0774,
+        "avg_front_volume_ratio": 1.0406,
         "volume_regime": "放量"
       },
-      "summary": "第 5 個 10 天區段（2026-03-09 至 2026-03-20）屬於 負 alpha，平均 alpha -3.525%、平均隔日報酬 -0.447%、勝率 0.0%；大盤上升 / 震盪，前段樣本分散輪動、量能放量，主軸偏 電子、金融。"
+      "summary": "第 5 個 10 天區段（2026-03-10 至 2026-03-23）屬於 負 alpha，平均 alpha -4.096%、平均隔日報酬 0.0%、勝率 0.0%；大盤下降 / 震盪，前段樣本分散輪動、量能放量，主軸偏 電子、電信。"
     },
     {
       "window_index": 9,
-      "start_date": "2026-05-12",
-      "end_date": "2026-05-26",
+      "start_date": "2026-05-13",
+      "end_date": "2026-05-27",
       "observed_days": 10,
       "hit_days": 1,
       "total_hits": 1,
@@ -311,17 +375,16 @@
       "alpha_regime": "negative",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 2.2978,
+        "net_market_return_pct": 2.1408,
         "positive_day_count": 4,
         "negative_day_count": 6,
-        "avg_abs_daily_market_return_pct": 1.3863,
-        "directional_efficiency_pct": 16.5753,
+        "avg_abs_daily_market_return_pct": 1.4014,
+        "directional_efficiency_pct": 15.2758,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-05-12",
           "2026-05-13",
           "2026-05-14",
           "2026-05-15",
@@ -330,37 +393,39 @@
           "2026-05-20",
           "2026-05-21",
           "2026-05-25",
-          "2026-05-26"
+          "2026-05-26",
+          "2026-05-27"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "纖維": 5,
-          "金融": 24,
-          "半導體": 14,
-          "電子": 10,
-          "光學": 6,
           "食品": 3,
+          "光學": 5,
+          "電子": 9,
           "電信": 14,
-          "電線電纜": 5,
+          "電線電纜": 6,
+          "金融": 25,
+          "半導體": 12,
+          "纖維": 4,
           "租賃": 1,
-          "航運": 15,
-          "航空": 3
+          "航運": 16,
+          "航空": 4,
+          "鋼鐵": 1
         },
         "top_categories": [
           "金融",
           "航運"
         ],
-        "top_two_category_share_pct": 39.0,
+        "top_two_category_share_pct": 41.0,
         "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.5445,
+        "avg_front_volume_ratio": 1.5624,
         "volume_regime": "放量"
       },
-      "summary": "第 9 個 10 天區段（2026-05-12 至 2026-05-26）屬於 負 alpha，平均 alpha -2.4986%、平均隔日報酬 0.8681%、勝率 100.0%；大盤上升 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、航運。"
+      "summary": "第 9 個 10 天區段（2026-05-13 至 2026-05-27）屬於 負 alpha，平均 alpha -2.4986%、平均隔日報酬 0.8681%、勝率 100.0%；大盤上升 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、航運。"
     },
     {
       "window_index": 11,
-      "start_date": "2026-06-15",
-      "end_date": "2026-07-01",
+      "start_date": "2026-06-16",
+      "end_date": "2026-07-02",
       "observed_days": 10,
       "hit_days": 1,
       "total_hits": 1,
@@ -371,17 +436,16 @@
       "alpha_regime": "negative",
       "market_regime": {
         "market_trend": "下降",
-        "net_market_return_pct": -0.7385,
+        "net_market_return_pct": -1.555,
         "positive_day_count": 6,
         "negative_day_count": 4,
-        "avg_abs_daily_market_return_pct": 1.5047,
-        "directional_efficiency_pct": 4.9079,
+        "avg_abs_daily_market_return_pct": 1.4217,
+        "directional_efficiency_pct": 10.9375,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-06-15",
           "2026-06-16",
           "2026-06-17",
           "2026-06-22",
@@ -390,23 +454,24 @@
           "2026-06-25",
           "2026-06-29",
           "2026-06-30",
-          "2026-07-01"
+          "2026-07-01",
+          "2026-07-02"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "金融": 27,
-          "航空": 12,
-          "航運": 2,
-          "航太": 4,
-          "食品": 8,
-          "光學": 3,
-          "電子": 7,
           "水泥": 1,
-          "半導體": 20,
+          "航空": 10,
+          "光學": 2,
+          "半導體": 23,
+          "航運": 1,
+          "電子": 8,
+          "金融": 27,
           "鋼鐵": 4,
           "電信": 3,
           "化工": 5,
+          "食品": 8,
           "電線電纜": 1,
+          "航太": 4,
           "汽車": 1,
           "纖維": 1,
           "租賃": 1
@@ -415,40 +480,39 @@
           "金融",
           "半導體"
         ],
-        "top_two_category_share_pct": 47.0,
-        "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.2909,
+        "top_two_category_share_pct": 50.0,
+        "sector_concentration": "族群集中",
+        "avg_front_volume_ratio": 1.3395,
         "volume_regime": "放量"
       },
-      "summary": "第 11 個 10 天區段（2026-06-15 至 2026-07-01）屬於 負 alpha，平均 alpha -1.4672%、平均隔日報酬 -0.1859%、勝率 0.0%；大盤下降 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、半導體。"
+      "summary": "第 11 個 10 天區段（2026-06-16 至 2026-07-02）屬於 負 alpha，平均 alpha -1.4672%、平均隔日報酬 -0.1859%、勝率 0.0%；大盤下降 / 震盪，前段樣本族群集中、量能放量，主軸偏 金融、半導體。"
     }
   ],
   "positive_alpha_windows": [
     {
       "window_index": 1,
-      "start_date": "2025-12-30",
-      "end_date": "2026-01-13",
+      "start_date": "2025-12-31",
+      "end_date": "2026-01-14",
       "observed_days": 10,
-      "hit_days": 2,
-      "total_hits": 2,
-      "avg_return_pct": 4.6701,
-      "win_rate_pct": 50.0,
-      "avg_alpha_pct": 4.4536,
-      "has_not_broken": false,
+      "hit_days": 1,
+      "total_hits": 1,
+      "avg_return_pct": 9.9593,
+      "win_rate_pct": 100.0,
+      "avg_alpha_pct": 10.4199,
+      "has_not_broken": true,
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 7.7843,
-        "positive_day_count": 7,
-        "negative_day_count": 3,
-        "avg_abs_daily_market_return_pct": 0.9449,
-        "directional_efficiency_pct": 82.3858,
+        "net_market_return_pct": 6.3769,
+        "positive_day_count": 6,
+        "negative_day_count": 4,
+        "avg_abs_daily_market_return_pct": 0.8979,
+        "directional_efficiency_pct": 71.0186,
         "volatility_regime": "單邊"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2025-12-30",
           "2025-12-31",
           "2026-01-02",
           "2026-01-05",
@@ -457,39 +521,40 @@
           "2026-01-08",
           "2026-01-09",
           "2026-01-12",
-          "2026-01-13"
+          "2026-01-13",
+          "2026-01-14"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "鋼鐵": 5,
-          "水泥": 8,
+          "電子": 23,
+          "光學": 5,
           "半導體": 25,
-          "光學": 6,
-          "電子": 21,
-          "電信": 7,
+          "鋼鐵": 4,
+          "水泥": 8,
           "航運": 6,
           "金融": 5,
           "電線電纜": 7,
-          "航太": 5,
+          "電信": 4,
+          "航太": 6,
           "化工": 2,
           "纖維": 2,
-          "航空": 1
+          "航空": 3
         },
         "top_categories": [
           "半導體",
           "電子"
         ],
-        "top_two_category_share_pct": 46.0,
+        "top_two_category_share_pct": 48.0,
         "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.7331,
+        "avg_front_volume_ratio": 1.78,
         "volume_regime": "放量"
       },
-      "summary": "第 1 個 10 天區段（2025-12-30 至 2026-01-13）屬於 正 alpha，平均 alpha 4.4536%、平均隔日報酬 4.6701%、勝率 50.0%；大盤上升 / 單邊，前段樣本分散輪動、量能放量，主軸偏 半導體、電子。"
+      "summary": "第 1 個 10 天區段（2025-12-31 至 2026-01-14）屬於 正 alpha，平均 alpha 10.4199%、平均隔日報酬 9.9593%、勝率 100.0%；大盤上升 / 單邊，前段樣本分散輪動、量能放量，主軸偏 半導體、電子。"
     },
     {
       "window_index": 2,
-      "start_date": "2026-01-14",
-      "end_date": "2026-01-27",
+      "start_date": "2026-01-15",
+      "end_date": "2026-01-28",
       "observed_days": 10,
       "hit_days": 2,
       "total_hits": 2,
@@ -500,17 +565,16 @@
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 6.018,
+        "net_market_return_pct": 5.6011,
         "positive_day_count": 8,
         "negative_day_count": 2,
-        "avg_abs_daily_market_return_pct": 0.9992,
-        "directional_efficiency_pct": 60.227,
-        "volatility_regime": "單邊"
+        "avg_abs_daily_market_return_pct": 1.0384,
+        "directional_efficiency_pct": 53.9408,
+        "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-01-14",
           "2026-01-15",
           "2026-01-16",
           "2026-01-19",
@@ -519,38 +583,39 @@
           "2026-01-22",
           "2026-01-23",
           "2026-01-26",
-          "2026-01-27"
+          "2026-01-27",
+          "2026-01-28"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "航空": 14,
-          "半導體": 24,
-          "電子": 16,
-          "水泥": 4,
-          "航太": 6,
           "纖維": 5,
-          "化工": 6,
-          "航運": 5,
-          "鋼鐵": 3,
+          "航空": 12,
+          "電子": 14,
+          "化工": 7,
+          "航運": 6,
+          "鋼鐵": 4,
           "電信": 2,
-          "金融": 14,
+          "半導體": 26,
+          "航太": 5,
+          "金融": 15,
+          "水泥": 3,
           "食品": 1
         },
         "top_categories": [
           "半導體",
-          "電子"
+          "金融"
         ],
-        "top_two_category_share_pct": 40.0,
+        "top_two_category_share_pct": 41.0,
         "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.7466,
+        "avg_front_volume_ratio": 1.7956,
         "volume_regime": "放量"
       },
-      "summary": "第 2 個 10 天區段（2026-01-14 至 2026-01-27）屬於 正 alpha，平均 alpha 0.0593%、平均隔日報酬 0.5894%、勝率 100.0%；大盤上升 / 單邊，前段樣本分散輪動、量能放量，主軸偏 半導體、電子。"
+      "summary": "第 2 個 10 天區段（2026-01-15 至 2026-01-28）屬於 正 alpha，平均 alpha 0.0593%、平均隔日報酬 0.5894%、勝率 100.0%；大盤上升 / 震盪，前段樣本分散輪動、量能放量，主軸偏 半導體、金融。"
     },
     {
       "window_index": 3,
-      "start_date": "2026-01-28",
-      "end_date": "2026-02-10",
+      "start_date": "2026-01-29",
+      "end_date": "2026-02-11",
       "observed_days": 10,
       "hit_days": 2,
       "total_hits": 3,
@@ -561,17 +626,16 @@
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 2.4445,
-        "positive_day_count": 5,
-        "negative_day_count": 5,
-        "avg_abs_daily_market_return_pct": 1.2939,
-        "directional_efficiency_pct": 18.8919,
+        "net_market_return_pct": 3.8019,
+        "positive_day_count": 6,
+        "negative_day_count": 4,
+        "avg_abs_daily_market_return_pct": 1.2622,
+        "directional_efficiency_pct": 30.1203,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-01-28",
           "2026-01-29",
           "2026-01-30",
           "2026-02-02",
@@ -580,22 +644,22 @@
           "2026-02-05",
           "2026-02-06",
           "2026-02-09",
-          "2026-02-10"
+          "2026-02-10",
+          "2026-02-11"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "電子": 8,
-          "半導體": 15,
-          "金融": 43,
-          "航運": 1,
-          "化工": 4,
-          "鋼鐵": 7,
           "電線電纜": 2,
+          "金融": 49,
+          "鋼鐵": 6,
           "水泥": 1,
+          "化工": 3,
+          "半導體": 11,
+          "電子": 8,
           "汽車": 1,
           "電信": 9,
           "航空": 4,
-          "租賃": 2,
+          "租賃": 3,
           "纖維": 1,
           "零售": 1,
           "食品": 1
@@ -604,17 +668,17 @@
           "金融",
           "半導體"
         ],
-        "top_two_category_share_pct": 58.0,
+        "top_two_category_share_pct": 60.0,
         "sector_concentration": "族群集中",
-        "avg_front_volume_ratio": 1.3947,
+        "avg_front_volume_ratio": 1.3262,
         "volume_regime": "放量"
       },
-      "summary": "第 3 個 10 天區段（2026-01-28 至 2026-02-10）屬於 正 alpha，平均 alpha 1.6047%、平均隔日報酬 0.6938%、勝率 66.6667%；大盤上升 / 震盪，前段樣本族群集中、量能放量，主軸偏 金融、半導體。"
+      "summary": "第 3 個 10 天區段（2026-01-29 至 2026-02-11）屬於 正 alpha，平均 alpha 1.6047%、平均隔日報酬 0.6938%、勝率 66.6667%；大盤上升 / 震盪，前段樣本族群集中、量能放量，主軸偏 金融、半導體。"
     },
     {
       "window_index": 6,
-      "start_date": "2026-03-23",
-      "end_date": "2026-04-07",
+      "start_date": "2026-03-24",
+      "end_date": "2026-04-08",
       "observed_days": 10,
       "hit_days": 4,
       "total_hits": 4,
@@ -625,17 +689,16 @@
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 6.2308,
-        "positive_day_count": 4,
-        "negative_day_count": 6,
-        "avg_abs_daily_market_return_pct": 2.1111,
-        "directional_efficiency_pct": 29.5143,
+        "net_market_return_pct": 6.8959,
+        "positive_day_count": 5,
+        "negative_day_count": 5,
+        "avg_abs_daily_market_return_pct": 2.1061,
+        "directional_efficiency_pct": 32.7424,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-03-23",
           "2026-03-24",
           "2026-03-25",
           "2026-03-26",
@@ -644,38 +707,41 @@
           "2026-03-31",
           "2026-04-01",
           "2026-04-02",
-          "2026-04-07"
+          "2026-04-07",
+          "2026-04-08"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "電信": 7,
-          "食品": 12,
-          "電子": 8,
-          "鋼鐵": 6,
-          "租賃": 7,
-          "零售": 6,
-          "航空": 4,
-          "金融": 32,
-          "半導體": 11,
+          "電信": 5,
+          "航空": 3,
+          "金融": 36,
+          "食品": 11,
+          "電子": 7,
+          "鋼鐵": 5,
+          "租賃": 6,
+          "半導體": 13,
+          "零售": 5,
           "水泥": 4,
           "化工": 2,
-          "纖維": 1
+          "纖維": 1,
+          "光學": 1,
+          "電線電纜": 1
         },
         "top_categories": [
           "金融",
-          "食品"
+          "半導體"
         ],
-        "top_two_category_share_pct": 44.0,
+        "top_two_category_share_pct": 49.0,
         "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.0604,
+        "avg_front_volume_ratio": 1.1285,
         "volume_regime": "放量"
       },
-      "summary": "第 6 個 10 天區段（2026-03-23 至 2026-04-07）屬於 正 alpha，平均 alpha 0.2239%、平均隔日報酬 2.7002%、勝率 100.0%；大盤上升 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、食品。"
+      "summary": "第 6 個 10 天區段（2026-03-24 至 2026-04-08）屬於 正 alpha，平均 alpha 0.2239%、平均隔日報酬 2.7002%、勝率 100.0%；大盤上升 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、半導體。"
     },
     {
       "window_index": 8,
-      "start_date": "2026-04-27",
-      "end_date": "2026-05-11",
+      "start_date": "2026-04-28",
+      "end_date": "2026-05-12",
       "observed_days": 10,
       "hit_days": 5,
       "total_hits": 5,
@@ -686,17 +752,16 @@
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 5.7595,
+        "net_market_return_pct": 4.688,
         "positive_day_count": 6,
         "negative_day_count": 4,
-        "avg_abs_daily_market_return_pct": 1.0809,
-        "directional_efficiency_pct": 53.2843,
+        "avg_abs_daily_market_return_pct": 1.182,
+        "directional_efficiency_pct": 39.6626,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-04-27",
           "2026-04-28",
           "2026-04-29",
           "2026-04-30",
@@ -705,40 +770,40 @@
           "2026-05-06",
           "2026-05-07",
           "2026-05-08",
-          "2026-05-11"
+          "2026-05-11",
+          "2026-05-12"
         ],
         "missing_universe_dates": [],
         "category_counter": {
           "半導體": 26,
-          "租賃": 1,
-          "電子": 29,
-          "電信": 3,
-          "水泥": 1,
-          "光學": 1,
-          "金融": 23,
+          "電子": 28,
+          "光學": 2,
+          "金融": 25,
+          "電信": 2,
           "化工": 2,
           "航運": 7,
           "電線電纜": 2,
           "航太": 2,
           "零售": 1,
           "航空": 1,
-          "食品": 1
+          "食品": 1,
+          "纖維": 1
         },
         "top_categories": [
           "電子",
           "半導體"
         ],
-        "top_two_category_share_pct": 55.0,
+        "top_two_category_share_pct": 54.0,
         "sector_concentration": "族群集中",
-        "avg_front_volume_ratio": 1.5628,
+        "avg_front_volume_ratio": 1.6143,
         "volume_regime": "放量"
       },
-      "summary": "第 8 個 10 天區段（2026-04-27 至 2026-05-11）屬於 正 alpha，平均 alpha 2.3945%、平均隔日報酬 2.1478%、勝率 80.0%；大盤上升 / 震盪，前段樣本族群集中、量能放量，主軸偏 電子、半導體。"
+      "summary": "第 8 個 10 天區段（2026-04-28 至 2026-05-12）屬於 正 alpha，平均 alpha 2.3945%、平均隔日報酬 2.1478%、勝率 80.0%；大盤上升 / 震盪，前段樣本族群集中、量能放量，主軸偏 電子、半導體。"
     },
     {
       "window_index": 10,
-      "start_date": "2026-05-27",
-      "end_date": "2026-06-11",
+      "start_date": "2026-05-28",
+      "end_date": "2026-06-15",
       "observed_days": 10,
       "hit_days": 1,
       "total_hits": 1,
@@ -749,17 +814,16 @@
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "上升",
-        "net_market_return_pct": 2.0196,
-        "positive_day_count": 5,
-        "negative_day_count": 5,
-        "avg_abs_daily_market_return_pct": 1.7998,
-        "directional_efficiency_pct": 11.2214,
+        "net_market_return_pct": 4.4094,
+        "positive_day_count": 6,
+        "negative_day_count": 4,
+        "avg_abs_daily_market_return_pct": 1.7504,
+        "directional_efficiency_pct": 25.1907,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-05-27",
           "2026-05-28",
           "2026-06-01",
           "2026-06-02",
@@ -768,24 +832,26 @@
           "2026-06-08",
           "2026-06-09",
           "2026-06-10",
-          "2026-06-11"
+          "2026-06-11",
+          "2026-06-15"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "航運": 12,
-          "半導體": 6,
+          "半導體": 4,
           "金融": 44,
+          "航運": 12,
           "電子": 9,
-          "航空": 6,
-          "鋼鐵": 3,
-          "電線電纜": 2,
+          "鋼鐵": 2,
+          "電線電纜": 1,
+          "航空": 7,
           "電信": 8,
           "化工": 1,
           "零售": 1,
           "租賃": 4,
           "纖維": 1,
-          "食品": 2,
-          "光學": 1
+          "食品": 3,
+          "光學": 2,
+          "航太": 1
         },
         "top_categories": [
           "金融",
@@ -793,36 +859,35 @@
         ],
         "top_two_category_share_pct": 56.0,
         "sector_concentration": "族群集中",
-        "avg_front_volume_ratio": 1.6728,
+        "avg_front_volume_ratio": 1.6158,
         "volume_regime": "放量"
       },
-      "summary": "第 10 個 10 天區段（2026-05-27 至 2026-06-11）屬於 正 alpha，平均 alpha 0.4051%、平均隔日報酬 2.3847%、勝率 100.0%；大盤上升 / 震盪，前段樣本族群集中、量能放量，主軸偏 金融、航運。"
+      "summary": "第 10 個 10 天區段（2026-05-28 至 2026-06-15）屬於 正 alpha，平均 alpha 0.4051%、平均隔日報酬 2.3847%、勝率 100.0%；大盤上升 / 震盪，前段樣本族群集中、量能放量，主軸偏 金融、航運。"
     },
     {
       "window_index": 12,
-      "start_date": "2026-07-02",
-      "end_date": "2026-07-21",
+      "start_date": "2026-07-06",
+      "end_date": "2026-07-22",
       "observed_days": 10,
-      "hit_days": 2,
-      "total_hits": 2,
-      "avg_return_pct": -0.6505,
-      "win_rate_pct": 50.0,
-      "avg_alpha_pct": 2.3057,
+      "hit_days": 3,
+      "total_hits": 3,
+      "avg_return_pct": -0.3193,
+      "win_rate_pct": 66.6667,
+      "avg_alpha_pct": 1.6329,
       "has_not_broken": false,
       "alpha_regime": "positive",
       "market_regime": {
         "market_trend": "下降",
-        "net_market_return_pct": -3.1944,
+        "net_market_return_pct": -3.2159,
         "positive_day_count": 5,
         "negative_day_count": 5,
-        "avg_abs_daily_market_return_pct": 1.9227,
-        "directional_efficiency_pct": 16.6144,
+        "avg_abs_daily_market_return_pct": 1.9204,
+        "directional_efficiency_pct": 16.7456,
         "volatility_regime": "震盪"
       },
       "flow_regime": {
         "front_sample_count": 100,
         "analyzed_dates": [
-          "2026-07-02",
           "2026-07-06",
           "2026-07-07",
           "2026-07-08",
@@ -831,85 +896,87 @@
           "2026-07-15",
           "2026-07-16",
           "2026-07-20",
-          "2026-07-21"
+          "2026-07-21",
+          "2026-07-22"
         ],
         "missing_universe_dates": [],
         "category_counter": {
-          "金融": 36,
-          "半導體": 6,
-          "航太": 7,
-          "電子": 10,
-          "食品": 12,
-          "航運": 10,
+          "航運": 13,
           "化工": 5,
+          "航太": 7,
+          "食品": 11,
+          "電子": 10,
           "零售": 6,
+          "金融": 36,
+          "半導體": 3,
           "汽車": 2,
-          "租賃": 5,
+          "租賃": 6,
           "水泥": 1
         },
         "top_categories": [
           "金融",
-          "食品"
+          "航運"
         ],
-        "top_two_category_share_pct": 48.0,
+        "top_two_category_share_pct": 49.0,
         "sector_concentration": "分散輪動",
-        "avg_front_volume_ratio": 1.3831,
+        "avg_front_volume_ratio": 1.3533,
         "volume_regime": "放量"
       },
-      "summary": "第 12 個 10 天區段（2026-07-02 至 2026-07-21）屬於 正 alpha，平均 alpha 2.3057%、平均隔日報酬 -0.6505%、勝率 50.0%；大盤下降 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、食品。"
+      "summary": "第 12 個 10 天區段（2026-07-06 至 2026-07-22）屬於 正 alpha，平均 alpha 1.6329%、平均隔日報酬 -0.3193%、勝率 66.6667%；大盤下降 / 震盪，前段樣本分散輪動、量能放量，主軸偏 金融、航運。"
     }
   ],
   "regime_comparison": {
     "negative_alpha": {
-      "window_count": 3,
-      "avg_alpha_pct": -2.4969,
-      "avg_return_pct": 0.0784,
-      "avg_win_rate_pct": 33.3333,
+      "window_count": 4,
+      "avg_alpha_pct": -2.7539,
+      "avg_return_pct": -0.053,
+      "avg_win_rate_pct": 25.0,
       "market_trend": {
-        "sample_count": 3,
+        "sample_count": 4,
         "counts": {
-          "上升": 2,
-          "下降": 1
+          "下降": 3,
+          "上升": 1
         },
-        "dominant_label": "上升",
-        "dominant_share_pct": 66.6667
+        "dominant_label": "下降",
+        "dominant_share_pct": 75.0
       },
       "volatility": {
-        "sample_count": 3,
+        "sample_count": 4,
         "counts": {
-          "震盪": 3
+          "震盪": 4
         },
         "dominant_label": "震盪",
         "dominant_share_pct": 100.0
       },
       "sector_concentration": {
-        "sample_count": 3,
+        "sample_count": 4,
         "counts": {
-          "分散輪動": 3
+          "族群集中": 2,
+          "分散輪動": 2
         },
-        "dominant_label": "分散輪動",
-        "dominant_share_pct": 100.0
+        "dominant_label": "族群集中",
+        "dominant_share_pct": 50.0
       },
       "volume": {
-        "sample_count": 3,
+        "sample_count": 4,
         "counts": {
-          "放量": 3
+          "放量": 4
         },
         "dominant_label": "放量",
         "dominant_share_pct": 100.0
       },
       "dominant_categories": [
-        "金融",
+        "航運",
         "電子",
-        "航運"
+        "金融"
       ],
-      "summary": "負 alpha 區段共 3 段，主要出現在大盤上升、震盪、分散輪動、放量的環境。"
+      "summary": "負 alpha 區段共 4 段，主要出現在大盤下降、震盪、族群集中、放量的環境。"
     },
     "positive_alpha": {
       "window_count": 7,
-      "avg_alpha_pct": 1.6353,
-      "avg_return_pct": 1.7908,
-      "avg_win_rate_pct": 78.0952,
+      "avg_alpha_pct": 2.3915,
+      "avg_return_pct": 2.5937,
+      "avg_win_rate_pct": 87.6191,
       "market_trend": {
         "sample_count": 7,
         "counts": {
@@ -922,11 +989,11 @@
       "volatility": {
         "sample_count": 7,
         "counts": {
-          "單邊": 2,
-          "震盪": 5
+          "單邊": 1,
+          "震盪": 6
         },
         "dominant_label": "震盪",
-        "dominant_share_pct": 71.4286
+        "dominant_share_pct": 85.7143
       },
       "sector_concentration": {
         "sample_count": 7,
@@ -952,14 +1019,36 @@
       ],
       "summary": "正 alpha 區段共 7 段，主要出現在大盤上升、震盪、分散輪動、放量的環境。"
     },
-    "differing_dimensions": []
+    "differing_dimensions": [
+      {
+        "dimension": "市場趨勢",
+        "positive_alpha": "上升",
+        "negative_alpha": "下降"
+      },
+      {
+        "dimension": "類股集中度",
+        "positive_alpha": "分散輪動",
+        "negative_alpha": "族群集中"
+      }
+    ]
   },
   "answers": {
     "works_in": "steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏半導體、金融 的市場。",
-    "fails_in": "steady_v5 較容易在 大盤上升、震盪、分散輪動、放量、主軸偏金融、電子 的市場變成負 alpha。",
-    "clear_regime_detected": false,
-    "differing_dimensions": [],
-    "summary": "steady_v5 有部分 regime 差異：steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏半導體、金融 的市場。；但負 alpha 樣本仍不是單一市場型態。"
+    "fails_in": "steady_v5 較容易在 大盤下降、震盪、族群集中、放量、主軸偏航運、電子 的市場變成負 alpha。",
+    "clear_regime_detected": true,
+    "differing_dimensions": [
+      {
+        "dimension": "市場趨勢",
+        "positive_alpha": "上升",
+        "negative_alpha": "下降"
+      },
+      {
+        "dimension": "類股集中度",
+        "positive_alpha": "分散輪動",
+        "negative_alpha": "族群集中"
+      }
+    ],
+    "summary": "steady_v5 有明確 regime：steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏半導體、金融 的市場。；steady_v5 較容易在 大盤下降、震盪、族群集中、放量、主軸偏航運、電子 的市場變成負 alpha。"
   },
-  "summary": "steady_v5 有部分 regime 差異：steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏半導體、金融 的市場。；但負 alpha 樣本仍不是單一市場型態。"
+  "summary": "steady_v5 有明確 regime：steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏半導體、金融 的市場。；steady_v5 較容易在 大盤下降、震盪、族群集中、放量、主軸偏航運、電子 的市場變成負 alpha。"
 }
