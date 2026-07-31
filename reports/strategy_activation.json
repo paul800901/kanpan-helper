@@ -1,7 +1,7 @@
 {
   "report_version": "v30-strategy-activation",
-  "generated_at": "2026-07-30T08:41:38.514358+08:00",
-  "as_of_date": "2026-07-30",
+  "generated_at": "2026-07-31T08:46:44.265132+08:00",
+  "as_of_date": "2026-07-31",
   "activation_target": {
     "strategy": "steady_v5",
     "family": "steady",
@@ -39,29 +39,24 @@
   "regime_basis": {
     "source_report_version": "v29-steady-v5-regime-analysis",
     "clear_regime_detected": false,
-    "works_in": "steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏金融、半導體 的市場。",
-    "fails_in": "steady_v5 較容易在 大盤下降、震盪、分散輪動、放量、主軸偏金融、航運 的市場變成負 alpha。"
+    "works_in": "steady_v5 較適合 大盤上升、震盪、分散輪動、放量、主軸偏金融、電子 的市場。",
+    "fails_in": "steady_v5 較容易在 大盤下降、震盪、分散輪動、放量、主軸偏金融、半導體 的市場變成負 alpha。"
   },
   "current_market_snapshot": {
     "market_trend": {
       "market_trend": "下降",
-      "net_market_return_pct": -12.2556,
+      "net_market_return_pct": -12.4749,
       "positive_day_count": 3,
       "negative_day_count": 7,
-      "avg_abs_daily_market_return_pct": 2.3732,
-      "directional_efficiency_pct": 51.641,
+      "avg_abs_daily_market_return_pct": 2.3982,
+      "directional_efficiency_pct": 52.0173,
       "volatility_regime": "震盪",
-      "as_of_date": "2026-07-30",
+      "as_of_date": "2026-07-31",
       "lookback_days": 10,
       "available_return_days": 10,
-      "window_start_date": "2026-07-15",
-      "window_end_date": "2026-07-29",
+      "window_start_date": "2026-07-16",
+      "window_end_date": "2026-07-30",
       "daily_market_returns": [
-        {
-          "date": "2026-07-15",
-          "next_report_date": "2026-07-16",
-          "market_return_pct": -0.0145
-        },
         {
           "date": "2026-07-16",
           "next_report_date": "2026-07-17",
@@ -106,22 +101,27 @@
           "date": "2026-07-28",
           "next_report_date": "2026-07-29",
           "market_return_pct": -3.7597
+        },
+        {
+          "date": "2026-07-29",
+          "next_report_date": "2026-07-30",
+          "market_return_pct": -0.2644
         }
       ]
     },
     "capital_concentration": {
       "label": "集中",
       "raw_label": "族群集中",
-      "top_two_category_share_pct": 60.0,
+      "top_two_category_share_pct": 80.0,
       "top_categories": [
-        "電信",
-        "金融"
+        "金融",
+        "電信"
       ],
       "front_sample_count": 10
     },
     "volume": {
       "label": "放量",
-      "avg_front_volume_ratio": 1.496,
+      "avg_front_volume_ratio": 1.556,
       "front_sample_count": 10,
       "missing_universe_dates": []
     }
@@ -160,7 +160,7 @@
       "資金集中度"
     ],
     "sniper_unaffected": true,
-    "summary": "2026-07-30 只通過 1/3 項條件（大盤趨勢下降、資金集中度集中、量能放量），不符合 steady_v5 的適用市場，今日建議關閉。"
+    "summary": "2026-07-31 只通過 1/3 項條件（大盤趨勢下降、資金集中度集中、量能放量），不符合 steady_v5 的適用市場，今日建議關閉。"
   },
-  "summary": "2026-07-30 只通過 1/3 項條件（大盤趨勢下降、資金集中度集中、量能放量），不符合 steady_v5 的適用市場，今日建議關閉。"
+  "summary": "2026-07-31 只通過 1/3 項條件（大盤趨勢下降、資金集中度集中、量能放量），不符合 steady_v5 的適用市場，今日建議關閉。"
 }
