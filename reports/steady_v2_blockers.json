@@ -1,9 +1,9 @@
 {
   "report_version": "v20-steady-v2-blockers",
-  "generated_at": "2026-08-04T08:44:50.110132+08:00",
+  "generated_at": "2026-08-05T08:41:52.727445+08:00",
   "evaluation_horizon": "next_available_report",
-  "evaluated_days": 187,
-  "candidate_samples": 3379,
+  "evaluated_days": 188,
+  "candidate_samples": 3399,
   "strategy_target": {
     "family": "steady",
     "v1_strategy": "steady",
@@ -21,7 +21,7 @@
   "low_position_definition": {
     "metric": "(close - ma20) / ma20",
     "positive_group": "lower_third",
-    "lower_third_cutoff": -0.000659
+    "lower_third_cutoff": -0.00061
   },
   "condition_names": [
     "ma20_v2",
@@ -47,31 +47,31 @@
       "condition": "ma20_v2",
       "label": "MA20_v2 條件",
       "description": "接近 MA20 區間 / 最近 3 日內跌破",
-      "candidate_count": 3379,
-      "pass_count": 1335,
-      "fail_count": 2044,
-      "pass_rate_pct": 39.5087,
-      "block_rate_pct": 60.4913
+      "candidate_count": 3399,
+      "pass_count": 1338,
+      "fail_count": 2061,
+      "pass_rate_pct": 39.3645,
+      "block_rate_pct": 60.6355
     },
     "kd_low_turn_up": {
       "condition": "kd_low_turn_up",
       "label": "KD 條件",
       "description": "KD 低檔翻揚",
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 227,
-      "fail_count": 3152,
-      "pass_rate_pct": 6.718,
-      "block_rate_pct": 93.282
+      "fail_count": 3172,
+      "pass_rate_pct": 6.6784,
+      "block_rate_pct": 93.3216
     },
     "low_position": {
       "condition": "low_position",
       "label": "低位條件",
       "description": "低位因子",
-      "candidate_count": 3379,
-      "pass_count": 1126,
-      "fail_count": 2253,
-      "pass_rate_pct": 33.3235,
-      "block_rate_pct": 66.6765
+      "candidate_count": 3399,
+      "pass_count": 1134,
+      "fail_count": 2265,
+      "pass_rate_pct": 33.3628,
+      "block_rate_pct": 66.6372
     }
   },
   "condition_breakdown": {
@@ -79,11 +79,11 @@
       "condition": "ma20_v2",
       "label": "MA20_v2 條件",
       "description": "接近 MA20 區間 / 最近 3 日內跌破",
-      "candidate_count": 3379,
-      "pass_count": 1335,
-      "fail_count": 2044,
-      "pass_rate_pct": 39.5087,
-      "block_rate_pct": 60.4913,
+      "candidate_count": 3399,
+      "pass_count": 1338,
+      "fail_count": 2061,
+      "pass_rate_pct": 39.3645,
+      "block_rate_pct": 60.6355,
       "intersections": {
         "kd_low_turn_up": {
           "intersection": "ma20_v2__kd_low_turn_up",
@@ -95,13 +95,13 @@
             "MA20_v2 條件",
             "KD 條件"
           ],
-          "candidate_count": 3379,
+          "candidate_count": 3399,
           "pass_count": 111,
-          "fail_count": 3268,
-          "overall_pass_rate_pct": 3.285,
-          "block_rate_pct": 96.715,
+          "fail_count": 3288,
+          "overall_pass_rate_pct": 3.2657,
+          "block_rate_pct": 96.7343,
           "within_condition_pass_rates": {
-            "ma20_v2": 8.3146,
+            "ma20_v2": 8.296,
             "kd_low_turn_up": 48.8987
           }
         },
@@ -115,14 +115,14 @@
             "MA20_v2 條件",
             "低位條件"
           ],
-          "candidate_count": 3379,
-          "pass_count": 654,
-          "fail_count": 2725,
-          "overall_pass_rate_pct": 19.3548,
-          "block_rate_pct": 80.6452,
+          "candidate_count": 3399,
+          "pass_count": 659,
+          "fail_count": 2740,
+          "overall_pass_rate_pct": 19.3881,
+          "block_rate_pct": 80.6119,
           "within_condition_pass_rates": {
-            "ma20_v2": 48.9888,
-            "low_position": 58.0817
+            "ma20_v2": 49.2526,
+            "low_position": 58.1129
           }
         }
       },
@@ -138,15 +138,15 @@
           "KD 條件",
           "低位條件"
         ],
-        "candidate_count": 3379,
+        "candidate_count": 3399,
         "pass_count": 100,
-        "fail_count": 3279,
-        "overall_pass_rate_pct": 2.9595,
-        "block_rate_pct": 97.0405,
+        "fail_count": 3299,
+        "overall_pass_rate_pct": 2.942,
+        "block_rate_pct": 97.058,
         "within_condition_pass_rates": {
-          "ma20_v2": 7.4906,
+          "ma20_v2": 7.4738,
           "kd_low_turn_up": 44.0529,
-          "low_position": 8.881
+          "low_position": 8.8183
         }
       }
     },
@@ -154,11 +154,11 @@
       "condition": "kd_low_turn_up",
       "label": "KD 條件",
       "description": "KD 低檔翻揚",
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 227,
-      "fail_count": 3152,
-      "pass_rate_pct": 6.718,
-      "block_rate_pct": 93.282,
+      "fail_count": 3172,
+      "pass_rate_pct": 6.6784,
+      "block_rate_pct": 93.3216,
       "intersections": {
         "ma20_v2": {
           "intersection": "ma20_v2__kd_low_turn_up",
@@ -170,13 +170,13 @@
             "MA20_v2 條件",
             "KD 條件"
           ],
-          "candidate_count": 3379,
+          "candidate_count": 3399,
           "pass_count": 111,
-          "fail_count": 3268,
-          "overall_pass_rate_pct": 3.285,
-          "block_rate_pct": 96.715,
+          "fail_count": 3288,
+          "overall_pass_rate_pct": 3.2657,
+          "block_rate_pct": 96.7343,
           "within_condition_pass_rates": {
-            "ma20_v2": 8.3146,
+            "ma20_v2": 8.296,
             "kd_low_turn_up": 48.8987
           }
         },
@@ -190,14 +190,14 @@
             "KD 條件",
             "低位條件"
           ],
-          "candidate_count": 3379,
+          "candidate_count": 3399,
           "pass_count": 213,
-          "fail_count": 3166,
-          "overall_pass_rate_pct": 6.3036,
-          "block_rate_pct": 93.6964,
+          "fail_count": 3186,
+          "overall_pass_rate_pct": 6.2665,
+          "block_rate_pct": 93.7335,
           "within_condition_pass_rates": {
             "kd_low_turn_up": 93.8326,
-            "low_position": 18.9165
+            "low_position": 18.7831
           }
         }
       },
@@ -213,15 +213,15 @@
           "KD 條件",
           "低位條件"
         ],
-        "candidate_count": 3379,
+        "candidate_count": 3399,
         "pass_count": 100,
-        "fail_count": 3279,
-        "overall_pass_rate_pct": 2.9595,
-        "block_rate_pct": 97.0405,
+        "fail_count": 3299,
+        "overall_pass_rate_pct": 2.942,
+        "block_rate_pct": 97.058,
         "within_condition_pass_rates": {
-          "ma20_v2": 7.4906,
+          "ma20_v2": 7.4738,
           "kd_low_turn_up": 44.0529,
-          "low_position": 8.881
+          "low_position": 8.8183
         }
       }
     },
@@ -229,11 +229,11 @@
       "condition": "low_position",
       "label": "低位條件",
       "description": "低位因子",
-      "candidate_count": 3379,
-      "pass_count": 1126,
-      "fail_count": 2253,
-      "pass_rate_pct": 33.3235,
-      "block_rate_pct": 66.6765,
+      "candidate_count": 3399,
+      "pass_count": 1134,
+      "fail_count": 2265,
+      "pass_rate_pct": 33.3628,
+      "block_rate_pct": 66.6372,
       "intersections": {
         "ma20_v2": {
           "intersection": "ma20_v2__low_position",
@@ -245,14 +245,14 @@
             "MA20_v2 條件",
             "低位條件"
           ],
-          "candidate_count": 3379,
-          "pass_count": 654,
-          "fail_count": 2725,
-          "overall_pass_rate_pct": 19.3548,
-          "block_rate_pct": 80.6452,
+          "candidate_count": 3399,
+          "pass_count": 659,
+          "fail_count": 2740,
+          "overall_pass_rate_pct": 19.3881,
+          "block_rate_pct": 80.6119,
           "within_condition_pass_rates": {
-            "ma20_v2": 48.9888,
-            "low_position": 58.0817
+            "ma20_v2": 49.2526,
+            "low_position": 58.1129
           }
         },
         "kd_low_turn_up": {
@@ -265,14 +265,14 @@
             "KD 條件",
             "低位條件"
           ],
-          "candidate_count": 3379,
+          "candidate_count": 3399,
           "pass_count": 213,
-          "fail_count": 3166,
-          "overall_pass_rate_pct": 6.3036,
-          "block_rate_pct": 93.6964,
+          "fail_count": 3186,
+          "overall_pass_rate_pct": 6.2665,
+          "block_rate_pct": 93.7335,
           "within_condition_pass_rates": {
             "kd_low_turn_up": 93.8326,
-            "low_position": 18.9165
+            "low_position": 18.7831
           }
         }
       },
@@ -288,15 +288,15 @@
           "KD 條件",
           "低位條件"
         ],
-        "candidate_count": 3379,
+        "candidate_count": 3399,
         "pass_count": 100,
-        "fail_count": 3279,
-        "overall_pass_rate_pct": 2.9595,
-        "block_rate_pct": 97.0405,
+        "fail_count": 3299,
+        "overall_pass_rate_pct": 2.942,
+        "block_rate_pct": 97.058,
         "within_condition_pass_rates": {
-          "ma20_v2": 7.4906,
+          "ma20_v2": 7.4738,
           "kd_low_turn_up": 44.0529,
-          "low_position": 8.881
+          "low_position": 8.8183
         }
       }
     }
@@ -306,31 +306,31 @@
       "condition": "kd_low_turn_up",
       "label": "KD 條件",
       "description": "KD 低檔翻揚",
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 227,
-      "fail_count": 3152,
-      "pass_rate_pct": 6.718,
-      "block_rate_pct": 93.282
+      "fail_count": 3172,
+      "pass_rate_pct": 6.6784,
+      "block_rate_pct": 93.3216
     },
     {
       "condition": "low_position",
       "label": "低位條件",
       "description": "低位因子",
-      "candidate_count": 3379,
-      "pass_count": 1126,
-      "fail_count": 2253,
-      "pass_rate_pct": 33.3235,
-      "block_rate_pct": 66.6765
+      "candidate_count": 3399,
+      "pass_count": 1134,
+      "fail_count": 2265,
+      "pass_rate_pct": 33.3628,
+      "block_rate_pct": 66.6372
     },
     {
       "condition": "ma20_v2",
       "label": "MA20_v2 條件",
       "description": "接近 MA20 區間 / 最近 3 日內跌破",
-      "candidate_count": 3379,
-      "pass_count": 1335,
-      "fail_count": 2044,
-      "pass_rate_pct": 39.5087,
-      "block_rate_pct": 60.4913
+      "candidate_count": 3399,
+      "pass_count": 1338,
+      "fail_count": 2061,
+      "pass_rate_pct": 39.3645,
+      "block_rate_pct": 60.6355
     }
   ],
   "pairwise_intersections": {
@@ -344,13 +344,13 @@
         "MA20_v2 條件",
         "KD 條件"
       ],
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 111,
-      "fail_count": 3268,
-      "overall_pass_rate_pct": 3.285,
-      "block_rate_pct": 96.715,
+      "fail_count": 3288,
+      "overall_pass_rate_pct": 3.2657,
+      "block_rate_pct": 96.7343,
       "within_condition_pass_rates": {
-        "ma20_v2": 8.3146,
+        "ma20_v2": 8.296,
         "kd_low_turn_up": 48.8987
       }
     },
@@ -364,14 +364,14 @@
         "MA20_v2 條件",
         "低位條件"
       ],
-      "candidate_count": 3379,
-      "pass_count": 654,
-      "fail_count": 2725,
-      "overall_pass_rate_pct": 19.3548,
-      "block_rate_pct": 80.6452,
+      "candidate_count": 3399,
+      "pass_count": 659,
+      "fail_count": 2740,
+      "overall_pass_rate_pct": 19.3881,
+      "block_rate_pct": 80.6119,
       "within_condition_pass_rates": {
-        "ma20_v2": 48.9888,
-        "low_position": 58.0817
+        "ma20_v2": 49.2526,
+        "low_position": 58.1129
       }
     },
     "kd_low_turn_up__low_position": {
@@ -384,14 +384,14 @@
         "KD 條件",
         "低位條件"
       ],
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 213,
-      "fail_count": 3166,
-      "overall_pass_rate_pct": 6.3036,
-      "block_rate_pct": 93.6964,
+      "fail_count": 3186,
+      "overall_pass_rate_pct": 6.2665,
+      "block_rate_pct": 93.7335,
       "within_condition_pass_rates": {
         "kd_low_turn_up": 93.8326,
-        "low_position": 18.9165
+        "low_position": 18.7831
       }
     }
   },
@@ -407,15 +407,15 @@
       "KD 條件",
       "低位條件"
     ],
-    "candidate_count": 3379,
+    "candidate_count": 3399,
     "pass_count": 100,
-    "fail_count": 3279,
-    "overall_pass_rate_pct": 2.9595,
-    "block_rate_pct": 97.0405,
+    "fail_count": 3299,
+    "overall_pass_rate_pct": 2.942,
+    "block_rate_pct": 97.058,
     "within_condition_pass_rates": {
-      "ma20_v2": 7.4906,
+      "ma20_v2": 7.4738,
       "kd_low_turn_up": 44.0529,
-      "low_position": 8.881
+      "low_position": 8.8183
     }
   },
   "strategy_variant_snapshot": {
@@ -437,15 +437,15 @@
       "sample_count": 213,
       "avg_return_pct": -0.2376,
       "win_rate_pct": 53.0516,
-      "avg_return_edge_vs_best_single_factor": -0.3435,
+      "avg_return_edge_vs_best_single_factor": -0.3581,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1127,
-        "avg_return_pct": 0.1059,
-        "win_rate_pct": 48.2697
+        "sample_count": 1134,
+        "avg_return_pct": 0.1205,
+        "win_rate_pct": 48.3245
       },
       "verdict": "未優於單因子"
     },
@@ -465,15 +465,15 @@
       "sample_count": 111,
       "avg_return_pct": 0.2559,
       "win_rate_pct": 51.3514,
-      "avg_return_edge_vs_best_single_factor": 0.0855,
+      "avg_return_edge_vs_best_single_factor": 0.0797,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "ma20_v2",
         "label": "接近 MA20 區間",
         "positive_group_label": "接近 MA20 / 3 日內跌破組",
-        "sample_count": 1335,
-        "avg_return_pct": 0.1704,
-        "win_rate_pct": 49.2135
+        "sample_count": 1338,
+        "avg_return_pct": 0.1762,
+        "win_rate_pct": 49.1779
       },
       "verdict": "優於單因子"
     },
@@ -2811,15 +2811,15 @@
         "sample_count": 213,
         "avg_return_pct": -0.2376,
         "win_rate_pct": 53.0516,
-        "avg_return_edge_vs_best_single_factor": -0.3435,
+        "avg_return_edge_vs_best_single_factor": -0.3581,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "low_position_ma20",
           "label": "低位因子",
           "positive_group_label": "低位組",
-          "sample_count": 1127,
-          "avg_return_pct": 0.1059,
-          "win_rate_pct": 48.2697
+          "sample_count": 1134,
+          "avg_return_pct": 0.1205,
+          "win_rate_pct": 48.3245
         },
         "verdict": "未優於單因子"
       },
@@ -3021,15 +3021,15 @@
       "sample_count": 213,
       "avg_return_pct": -0.2376,
       "win_rate_pct": 53.0516,
-      "avg_return_edge_vs_best_single_factor": -0.3435,
+      "avg_return_edge_vs_best_single_factor": -0.3581,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1127,
-        "avg_return_pct": 0.1059,
-        "win_rate_pct": 48.2697
+        "sample_count": 1134,
+        "avg_return_pct": 0.1205,
+        "win_rate_pct": 48.3245
       },
       "verdict": "未優於單因子"
     },
@@ -3049,15 +3049,15 @@
       "sample_count": 213,
       "avg_return_pct": -0.2376,
       "win_rate_pct": 53.0516,
-      "avg_return_edge_vs_best_single_factor": -0.3435,
+      "avg_return_edge_vs_best_single_factor": -0.3581,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1127,
-        "avg_return_pct": 0.1059,
-        "win_rate_pct": 48.2697
+        "sample_count": 1134,
+        "avg_return_pct": 0.1205,
+        "win_rate_pct": 48.3245
       },
       "verdict": "未優於單因子"
     },
@@ -3069,22 +3069,22 @@
       "condition": "kd_low_turn_up",
       "label": "KD 條件",
       "description": "KD 低檔翻揚",
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 227,
-      "fail_count": 3152,
-      "pass_rate_pct": 6.718,
-      "block_rate_pct": 93.282
+      "fail_count": 3172,
+      "pass_rate_pct": 6.6784,
+      "block_rate_pct": 93.3216
     },
     "overall_strictest_conditions": [
       {
         "condition": "kd_low_turn_up",
         "label": "KD 條件",
         "description": "KD 低檔翻揚",
-        "candidate_count": 3379,
+        "candidate_count": 3399,
         "pass_count": 227,
-        "fail_count": 3152,
-        "pass_rate_pct": 6.718,
-        "block_rate_pct": 93.282
+        "fail_count": 3172,
+        "pass_rate_pct": 6.6784,
+        "block_rate_pct": 93.3216
       }
     ],
     "steady_v2_required_condition_intersection": {
@@ -3097,13 +3097,13 @@
         "MA20_v2 條件",
         "KD 條件"
       ],
-      "candidate_count": 3379,
+      "candidate_count": 3399,
       "pass_count": 111,
-      "fail_count": 3268,
-      "overall_pass_rate_pct": 3.285,
-      "block_rate_pct": 96.715,
+      "fail_count": 3288,
+      "overall_pass_rate_pct": 3.2657,
+      "block_rate_pct": 96.7343,
       "within_condition_pass_rates": {
-        "ma20_v2": 8.3146,
+        "ma20_v2": 8.296,
         "kd_low_turn_up": 48.8987
       }
     },
@@ -3112,11 +3112,11 @@
         "condition": "kd_low_turn_up",
         "label": "KD 條件",
         "description": "KD 低檔翻揚",
-        "candidate_count": 3379,
+        "candidate_count": 3399,
         "pass_count": 227,
-        "fail_count": 3152,
-        "pass_rate_pct": 6.718,
-        "block_rate_pct": 93.282
+        "fail_count": 3172,
+        "pass_rate_pct": 6.6784,
+        "block_rate_pct": 93.3216
       },
       "old_secondary_condition_on_shared_base": {
         "condition": "low_position",
@@ -3137,11 +3137,11 @@
         "condition": "ma20_v2",
         "label": "MA20_v2 條件",
         "description": "接近 MA20 區間 / 最近 3 日內跌破",
-        "candidate_count": 3379,
-        "pass_count": 1335,
-        "fail_count": 2044,
-        "pass_rate_pct": 39.5087,
-        "block_rate_pct": 60.4913
+        "candidate_count": 3399,
+        "pass_count": 1338,
+        "fail_count": 2061,
+        "pass_rate_pct": 39.3645,
+        "block_rate_pct": 60.6355
       }
     },
     "summary": "steady_v2 的主要 bottleneck 是 MA20_v2 條件：在 KD 條件通過的 227 個樣本裡，低位條件可保留 213 個，但 MA20_v2 只保留 111 個，因此 steady 從 213 檔降到 111 檔。"
