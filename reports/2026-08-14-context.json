@@ -1,7 +1,7 @@
 {
   "report_version": "v9-context",
   "date": "2026-08-14",
-  "generated_at": "2026-08-15T08:19:07.785836+08:00",
+  "generated_at": "2026-08-16T08:19:57.608550+08:00",
   "trace_catalog": {
     "keyword_dictionary_version": "context-keywords-v1",
     "theme_taxonomy_version": "context-themes-v1",
@@ -443,7 +443,7 @@
       "confidence": "high",
       "relation_to_technical": "aligned",
       "source_type": "score_distribution+sector_concentration+volume_cluster+market_overview",
-      "generated_at": "2026-08-15T08:19:07.785836+08:00"
+      "generated_at": "2026-08-16T08:19:57.608550+08:00"
     },
     {
       "id": "sector-concentration",
@@ -570,7 +570,7 @@
       "confidence": "medium",
       "relation_to_technical": "aligned",
       "source_type": "sector_concentration+volume_cluster+score_distribution",
-      "generated_at": "2026-08-15T08:19:07.785836+08:00"
+      "generated_at": "2026-08-16T08:19:57.608550+08:00"
     },
     {
       "id": "volume-cluster",
@@ -691,7 +691,7 @@
       "confidence": "medium",
       "relation_to_technical": "aligned",
       "source_type": "volume_cluster+score_distribution+sector_concentration",
-      "generated_at": "2026-08-15T08:19:07.785836+08:00"
+      "generated_at": "2026-08-16T08:19:57.608550+08:00"
     },
     {
       "id": "ai-market-alignment",
@@ -820,7 +820,7 @@
       "confidence": "medium",
       "relation_to_technical": "neutral",
       "source_type": "ai_market_overview+score_distribution+volume_cluster",
-      "generated_at": "2026-08-15T08:19:07.785836+08:00"
+      "generated_at": "2026-08-16T08:19:57.608550+08:00"
     }
   ],
   "scenario_cards_v9_schema_version": "scenario-cards-v9",
@@ -833,10 +833,9 @@
       "relation_to_technical": "aligned",
       "source_types": [
         "sector_concentration",
-        "volume_anomaly",
-        "strategy_activation"
+        "volume_anomaly"
       ],
-      "source_type": "sector_concentration+volume_anomaly+strategy_activation",
+      "source_type": "sector_concentration+volume_anomaly",
       "themes": [
         "資金輪動",
         "主流收斂"
@@ -844,51 +843,16 @@
       "reasoning_chain": [
         "訊號 A：前 10 名樣本裡，主軸目前集中在 半導體3項、電子3項，代表資金注意力開始收斂。",
         "訊號 B：放量樣本與前段主軸重疊在 電子、電線電纜，用來確認主題不是只有排名集中，還有量能呼應。",
-        "訊號 C：steady_v5 的資金集中度欄位目前標記為「集中」，制度層也把這個結構納入環境判讀。",
+        "訊號 C：steady_v5 的資金集中度欄位目前標記為「未提供」，制度層也把這個結構納入環境判讀。",
         "交叉判讀：類別集中與量能重疊同時存在，主題輪廓比較像可追蹤的弱訊號。"
       ],
-      "priority_score": 15,
+      "priority_score": 12,
       "priority_rank": 1,
       "priority_reasons": [
-        "訊號來源 3 類",
+        "訊號來源 2 類",
         "confidence=high",
         "技術面一致",
-        "有制度層支持",
-        "量能與廣度交叉驗證成立",
-        "reasoning_chain=strong"
-      ],
-      "is_fallback": false,
-      "generated_at": "2026-08-14T08:31:39.477908+08:00"
-    },
-    {
-      "id": "volume-focus",
-      "title": "量能異常與擴散",
-      "summary": "有放量，但高分結構承接不足，訊號品質仍待確認。 量比大於等於 1.5 的樣本共 5 檔，占全體約 10%；前段平均量比約 1.14，制度量能標記為「放量」。",
-      "confidence": "high",
-      "relation_to_technical": "aligned",
-      "source_types": [
-        "volume_anomaly",
-        "score_distribution",
-        "strategy_activation"
-      ],
-      "source_type": "volume_anomaly+score_distribution+strategy_activation",
-      "themes": [
-        "量能擴張",
-        "結構分化"
-      ],
-      "reasoning_chain": [
-        "訊號 A：放量樣本主要落在 金融2項、電線電纜1項，共 5 檔，占全體約 10%。",
-        "訊號 B：放量樣本中有 2 檔同時位於 A/B 區，而整體 breadth 仍是 A/B 29 對 C/D 21，代表量能不是只落在弱勢端。",
-        "訊號 C：steady_v5 的量能欄位標記為「放量」，前段平均量比約 1.14，可用來確認放量是否只是零星雜訊。",
-        "交叉判讀：量能、廣度與制度量能同向，這層訊號比較像市場注意力已開始擴散。"
-      ],
-      "priority_score": 15,
-      "priority_rank": 2,
-      "priority_reasons": [
-        "訊號來源 3 類",
-        "confidence=high",
-        "技術面一致",
-        "有制度層支持",
+        "無制度層支持",
         "量能與廣度交叉驗證成立",
         "reasoning_chain=strong"
       ],
@@ -898,16 +862,15 @@
     {
       "id": "ai-overlay",
       "title": "AI 摘要與技術面對照",
-      "summary": "AI 敘事提供方向，但橫截面或制度訊號仍只做到部分驗證。 AI 方向「偏多」，技術結構「中性」，steady_v5 通過 2/3 項。",
+      "summary": "AI 敘事提供方向，但橫截面或制度訊號仍只做到部分驗證。 AI 方向「偏多」，技術結構「中性」，steady_v5 通過 0/3 項。",
       "confidence": "medium",
       "relation_to_technical": "neutral",
       "source_types": [
         "ai_market_overview",
         "score_distribution",
-        "volume_anomaly",
-        "strategy_activation"
+        "volume_anomaly"
       ],
-      "source_type": "ai_market_overview+score_distribution+volume_anomaly+strategy_activation",
+      "source_type": "ai_market_overview+score_distribution+volume_anomaly",
       "themes": [
         "情緒校準",
         "敘事驗證"
@@ -915,58 +878,21 @@
       "reasoning_chain": [
         "訊號 A：AI 只提供市場方向，這裡先把它壓縮成「偏多」，不帶入任何股票敘事。",
         "訊號 B：橫截面目前平均分數約 61.0，放量樣本占比約 10%，用來檢查敘事是否有結構支撐。",
-        "訊號 C：steady_v5 目前通過 2/3 項條件，狀態為「降權」，可用來判斷制度面是否同意這個方向。",
+        "訊號 C：steady_v5 目前通過 0/3 項條件，狀態為「未提供」，可用來判斷制度面是否同意這個方向。",
         "交叉判讀：AI 有方向，但橫截面或制度面還沒完全跟上，所以只能當補充線索。"
       ],
-      "priority_score": 13,
-      "priority_rank": 3,
+      "priority_score": 10,
+      "priority_rank": 2,
       "priority_reasons": [
-        "訊號來源 4 類",
+        "訊號來源 3 類",
         "confidence=medium",
         "技術面中性",
-        "有制度層支持",
+        "無制度層支持",
         "量能與廣度交叉驗證成立",
         "reasoning_chain=strong"
       ],
       "is_fallback": false,
       "generated_at": "2026-08-14T08:31:55.964572+08:00"
-    },
-    {
-      "id": "regime-activation",
-      "title": "steady_v5 啟用環境",
-      "summary": "steady_v5 只通過部分條件，顯示環境接近但還不是完整型態。 大盤趨勢 上升、資金集中度 集中、量能 放量；A/B 29 對 C/D 21，前兩大類別占比約 60%。",
-      "confidence": "medium",
-      "relation_to_technical": "neutral",
-      "source_types": [
-        "strategy_activation",
-        "score_distribution",
-        "sector_concentration",
-        "volume_anomaly"
-      ],
-      "source_type": "strategy_activation+score_distribution+sector_concentration+volume_anomaly",
-      "themes": [
-        "制度環境",
-        "策略適配"
-      ],
-      "reasoning_chain": [
-        "訊號 A：steady_v5 目前通過 2/3 項條件，未通過的主要缺口是 資金集中度。",
-        "訊號 B：同一批市場橫截面資料裡，平均分數約 61.0，A/B 29 對 C/D 21，代表風險承擔是否還撐得住。",
-        "訊號 C：前兩大類別占比約 60%，而量能標記為「放量」，可用來判斷是分散輪動還是集中衝刺。",
-        "同日校準：這張卡與目前日期對齊，所以可以拿來當制度背景。",
-        "限制：這張卡只保留制度與市場結構的交叉判讀，不轉成股票清單或操作指令。"
-      ],
-      "priority_score": 13,
-      "priority_rank": 4,
-      "priority_reasons": [
-        "訊號來源 4 類",
-        "confidence=medium",
-        "技術面中性",
-        "有制度層支持",
-        "量能與廣度交叉驗證成立",
-        "reasoning_chain=strong"
-      ],
-      "is_fallback": false,
-      "generated_at": "2026-08-14T08:32:26.871807+08:00"
     },
     {
       "id": "breadth-balance",
@@ -991,13 +917,47 @@
         "限制：這張卡只保留市場層推理，不延伸到任何股票與操作結論。"
       ],
       "priority_score": 9,
-      "priority_rank": 5,
+      "priority_rank": 3,
       "priority_reasons": [
         "訊號來源 3 類",
         "confidence=medium",
         "技術面中性",
         "無制度層支持",
         "量能或廣度部分驗證",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-08-14T08:31:39.477908+08:00"
+    },
+    {
+      "id": "volume-focus",
+      "title": "量能異常與擴散",
+      "summary": "有放量，但高分結構承接不足，訊號品質仍待確認。 量比大於等於 1.5 的樣本共 5 檔，占全體約 10%；前段平均量比約 1.14，制度量能標記為「未提供」。",
+      "confidence": "medium",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "volume_anomaly",
+        "score_distribution"
+      ],
+      "source_type": "volume_anomaly+score_distribution",
+      "themes": [
+        "量能擴張",
+        "結構分化"
+      ],
+      "reasoning_chain": [
+        "訊號 A：放量樣本主要落在 金融2項、電線電纜1項，共 5 檔，占全體約 10%。",
+        "訊號 B：放量樣本中有 2 檔同時位於 A/B 區，而整體 breadth 仍是 A/B 29 對 C/D 21，代表量能不是只落在弱勢端。",
+        "訊號 C：steady_v5 的量能欄位標記為「未提供」，前段平均量比約 1.14，可用來確認放量是否只是零星雜訊。",
+        "交叉判讀：量能雖有變化，但廣度或制度層尚未完全接手，所以目前只能算弱訊號。"
+      ],
+      "priority_score": 9,
+      "priority_rank": 4,
+      "priority_reasons": [
+        "訊號來源 2 類",
+        "confidence=medium",
+        "技術面中性",
+        "無制度層支持",
+        "量能與廣度交叉驗證成立",
         "reasoning_chain=strong"
       ],
       "is_fallback": false,
