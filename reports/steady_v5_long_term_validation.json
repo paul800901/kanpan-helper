@@ -1,9 +1,9 @@
 {
   "report_version": "v28-steady-v5-long-term-validation",
-  "generated_at": "2026-08-20T08:19:16.832633+08:00",
+  "generated_at": "2026-08-21T08:20:34.355490+08:00",
   "evaluation_horizon": "next_available_report",
-  "evaluated_days": 197,
-  "candidate_samples": 3572,
+  "evaluated_days": 198,
+  "candidate_samples": 3590,
   "validation_target": {
     "strategy": "steady_v5",
     "base_strategy": "steady_v4",
@@ -62,31 +62,31 @@
       "steady_v4_ma20_distance",
       "steady_v5_pullback_limit"
     ],
-    "hit_count": 50,
-    "sample_count": 50,
-    "avg_return_pct": 0.8522,
-    "win_rate_pct": 66.0,
-    "avg_return_edge_vs_best_single_factor": 0.9182,
+    "hit_count": 51,
+    "sample_count": 51,
+    "avg_return_pct": 0.8491,
+    "win_rate_pct": 66.6667,
+    "avg_return_edge_vs_best_single_factor": 0.9127,
     "beats_constituent_single_factors": true,
     "best_single_factor": {
       "factor": "low_k_turn_up",
       "label": "KD 低檔翻揚",
       "positive_group_label": "低檔翻揚組",
-      "sample_count": 237,
-      "avg_return_pct": -0.066,
-      "win_rate_pct": 55.2743
+      "sample_count": 241,
+      "avg_return_pct": -0.0636,
+      "win_rate_pct": 55.1867
     },
     "verdict": "優於單因子"
   },
   "strategy_alpha_baseline_snapshot": {
     "group": "steady_v5",
     "label": "steady_v5 alpha 組",
-    "sample_count": 50,
-    "avg_return_pct": 0.8522,
-    "avg_market_return_pct": 0.219,
-    "avg_alpha_pct": 0.6333,
-    "win_rate_pct": 66.0,
-    "outperform_rate_pct": 58.0,
+    "sample_count": 51,
+    "avg_return_pct": 0.8491,
+    "avg_market_return_pct": 0.2241,
+    "avg_alpha_pct": 0.6251,
+    "win_rate_pct": 66.6667,
+    "outperform_rate_pct": 58.8235,
     "samples": [
       {
         "symbol": "2303",
@@ -563,6 +563,26 @@
         "abs_ma20_gap_pct": 1.9509,
         "volume_ratio": 0.91,
         "prior_pullback_pct": 1.7452,
+        "close_above_ma20": false,
+        "has_sharp_drop": false,
+        "outperform_market": true,
+        "underperform_market": false
+      },
+      {
+        "symbol": "5876",
+        "name": "上海商銀",
+        "date": "2026-08-19",
+        "next_report_date": "2026-08-20",
+        "priority_rank": 15,
+        "hit_count": 2,
+        "next_day_return_pct": 0.6944,
+        "market_return_pct": 0.4794,
+        "alpha_pct": 0.215,
+        "k_value": 29.77,
+        "ma20_gap_pct": -1.8851,
+        "abs_ma20_gap_pct": 1.8851,
+        "volume_ratio": 0.59,
+        "prior_pullback_pct": 2.0071,
         "close_above_ma20": false,
         "has_sharp_drop": false,
         "outperform_market": true,
@@ -1091,51 +1111,51 @@
     ],
     "metrics": {
       "priority_rank": {
-        "sample_count": 50,
-        "avg_value": 13.0,
+        "sample_count": 51,
+        "avg_value": 13.0392,
         "min_value": 1.0,
         "max_value": 26.0
       },
       "hit_count": {
-        "sample_count": 50,
-        "avg_value": 2.16,
+        "sample_count": 51,
+        "avg_value": 2.1569,
         "min_value": 1.0,
         "max_value": 4.0
       },
       "k_value": {
-        "sample_count": 50,
-        "avg_value": 26.9326,
+        "sample_count": 51,
+        "avg_value": 26.9882,
         "min_value": 24.1,
         "max_value": 29.94
       },
       "abs_ma20_gap_pct": {
-        "sample_count": 50,
-        "avg_value": 1.0167,
+        "sample_count": 51,
+        "avg_value": 1.0337,
         "min_value": 0.0473,
         "max_value": 2.0619
       },
       "volume_ratio": {
-        "sample_count": 50,
-        "avg_value": 0.8744,
+        "sample_count": 51,
+        "avg_value": 0.8688,
         "min_value": 0.35,
         "max_value": 1.88
       },
       "prior_pullback_pct": {
-        "sample_count": 50,
-        "avg_value": 0.5554,
+        "sample_count": 51,
+        "avg_value": 0.5839,
         "min_value": -0.7505,
         "max_value": 2.0619
       },
       "close_above_ma20": {
-        "sample_count": 50,
+        "sample_count": 51,
         "true_count": 5,
-        "false_count": 45,
-        "true_rate_pct": 10.0
+        "false_count": 46,
+        "true_rate_pct": 9.8039
       },
       "has_sharp_drop": {
-        "sample_count": 50,
+        "sample_count": 51,
         "true_count": 0,
-        "false_count": 50,
+        "false_count": 51,
         "true_rate_pct": 0.0
       }
     }
@@ -1145,21 +1165,21 @@
       "window_days": 60,
       "is_ready": true,
       "observed_days": 60,
-      "total_hits": 7,
-      "avg_market_return_pct": -0.0022,
-      "avg_alpha_pct": 0.3346,
+      "total_hits": 8,
+      "avg_market_return_pct": 0.058,
+      "avg_alpha_pct": 0.3196,
       "alpha_positive": true,
-      "summary": "最近 60 個可評估交易日內，steady_v5 命中 7 檔 / 7 天，平均隔日報酬 0.3323%、平均市場報酬 -0.0022%、平均 alpha 0.3346%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
+      "summary": "最近 60 個可評估交易日內，steady_v5 命中 8 檔 / 8 天，平均隔日報酬 0.3776%、平均市場報酬 0.058%、平均 alpha 0.3196%、勝率 75.0%，alpha 維持為正、沒有崩壞。"
     },
     "120d": {
       "window_days": 120,
       "is_ready": true,
       "observed_days": 120,
       "total_hits": 21,
-      "avg_market_return_pct": 0.645,
-      "avg_alpha_pct": 0.5794,
+      "avg_market_return_pct": 0.6355,
+      "avg_alpha_pct": 0.5803,
       "alpha_positive": true,
-      "summary": "最近 120 個可評估交易日內，steady_v5 命中 21 檔 / 20 天，平均隔日報酬 1.2244%、平均市場報酬 0.645%、平均 alpha 0.5794%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
+      "summary": "最近 120 個可評估交易日內，steady_v5 命中 21 檔 / 20 天，平均隔日報酬 1.2157%、平均市場報酬 0.6355%、平均 alpha 0.5803%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
     }
   },
   "overall_winrate": {
@@ -1167,21 +1187,21 @@
       "window_days": 60,
       "is_ready": true,
       "observed_days": 60,
-      "total_hits": 7,
-      "avg_return_pct": 0.3323,
-      "win_rate_pct": 71.4286,
+      "total_hits": 8,
+      "avg_return_pct": 0.3776,
+      "win_rate_pct": 75.0,
       "has_not_broken": true,
-      "summary": "最近 60 個可評估交易日內，steady_v5 命中 7 檔 / 7 天，平均隔日報酬 0.3323%、平均市場報酬 -0.0022%、平均 alpha 0.3346%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
+      "summary": "最近 60 個可評估交易日內，steady_v5 命中 8 檔 / 8 天，平均隔日報酬 0.3776%、平均市場報酬 0.058%、平均 alpha 0.3196%、勝率 75.0%，alpha 維持為正、沒有崩壞。"
     },
     "120d": {
       "window_days": 120,
       "is_ready": true,
       "observed_days": 120,
       "total_hits": 21,
-      "avg_return_pct": 1.2244,
+      "avg_return_pct": 1.2157,
       "win_rate_pct": 71.4286,
       "has_not_broken": true,
-      "summary": "最近 120 個可評估交易日內，steady_v5 命中 21 檔 / 20 天，平均隔日報酬 1.2244%、平均市場報酬 0.645%、平均 alpha 0.5794%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
+      "summary": "最近 120 個可評估交易日內，steady_v5 命中 21 檔 / 20 天，平均隔日報酬 1.2157%、平均市場報酬 0.6355%、平均 alpha 0.5803%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
     }
   },
   "segmented_alpha": {
@@ -1194,8 +1214,8 @@
           {
             "segment_index": 1,
             "label": "前30天",
-            "start_date": "2026-05-06",
-            "end_date": "2026-06-24",
+            "start_date": "2026-05-07",
+            "end_date": "2026-06-25",
             "observed_days": 30,
             "hit_days": 4,
             "total_hits": 4,
@@ -1206,14 +1226,14 @@
           {
             "segment_index": 2,
             "label": "後30天",
-            "start_date": "2026-06-25",
-            "end_date": "2026-08-18",
+            "start_date": "2026-06-29",
+            "end_date": "2026-08-19",
             "observed_days": 30,
-            "hit_days": 3,
-            "total_hits": 3,
-            "avg_alpha_pct": 1.6329,
+            "hit_days": 4,
+            "total_hits": 4,
+            "avg_alpha_pct": 1.2784,
             "alpha_positive": true,
-            "summary": "後30天命中 3 檔 / 3 天，平均 alpha 1.6329%、勝率 66.6667%、平均隔日報酬 -0.3193%。"
+            "summary": "後30天命中 4 檔 / 4 天，平均 alpha 1.2784%、勝率 75.0%、平均隔日報酬 -0.0659%。"
           }
         ],
         "assessment": {
@@ -1232,20 +1252,20 @@
           {
             "segment_index": 1,
             "label": "第1段（前30天）",
-            "start_date": "2026-01-22",
-            "end_date": "2026-03-16",
+            "start_date": "2026-01-23",
+            "end_date": "2026-03-17",
             "observed_days": 30,
-            "hit_days": 5,
-            "total_hits": 6,
-            "avg_alpha_pct": -0.3398,
+            "hit_days": 4,
+            "total_hits": 5,
+            "avg_alpha_pct": -0.4472,
             "alpha_positive": false,
-            "summary": "第1段（前30天）命中 6 檔 / 5 天，平均 alpha -0.3398%、勝率 50.0%、平均隔日報酬 0.3439%。"
+            "summary": "第1段（前30天）命中 5 檔 / 4 天，平均 alpha -0.4472%、勝率 40.0%、平均隔日報酬 0.2375%。"
           },
           {
             "segment_index": 2,
             "label": "第2段",
-            "start_date": "2026-03-17",
-            "end_date": "2026-05-05",
+            "start_date": "2026-03-18",
+            "end_date": "2026-05-06",
             "observed_days": 30,
             "hit_days": 8,
             "total_hits": 8,
@@ -1256,8 +1276,8 @@
           {
             "segment_index": 3,
             "label": "第3段",
-            "start_date": "2026-05-06",
-            "end_date": "2026-06-24",
+            "start_date": "2026-05-07",
+            "end_date": "2026-06-25",
             "observed_days": 30,
             "hit_days": 4,
             "total_hits": 4,
@@ -1268,14 +1288,14 @@
           {
             "segment_index": 4,
             "label": "第4段（後30天）",
-            "start_date": "2026-06-25",
-            "end_date": "2026-08-18",
+            "start_date": "2026-06-29",
+            "end_date": "2026-08-19",
             "observed_days": 30,
-            "hit_days": 3,
-            "total_hits": 3,
-            "avg_alpha_pct": 1.6329,
+            "hit_days": 4,
+            "total_hits": 4,
+            "avg_alpha_pct": 1.2784,
             "alpha_positive": true,
-            "summary": "第4段（後30天）命中 3 檔 / 3 天，平均 alpha 1.6329%、勝率 66.6667%、平均隔日報酬 -0.3193%。"
+            "summary": "第4段（後30天）命中 4 檔 / 4 天，平均 alpha 1.2784%、勝率 75.0%、平均隔日報酬 -0.0659%。"
           }
         ],
         "assessment": {
@@ -1299,8 +1319,8 @@
           {
             "segment_index": 1,
             "label": "前30天",
-            "start_date": "2026-05-06",
-            "end_date": "2026-06-24",
+            "start_date": "2026-05-07",
+            "end_date": "2026-06-25",
             "observed_days": 30,
             "hit_days": 4,
             "total_hits": 4,
@@ -1312,15 +1332,15 @@
           {
             "segment_index": 2,
             "label": "後30天",
-            "start_date": "2026-06-25",
-            "end_date": "2026-08-18",
+            "start_date": "2026-06-29",
+            "end_date": "2026-08-19",
             "observed_days": 30,
-            "hit_days": 3,
-            "total_hits": 3,
-            "avg_return_pct": -0.3193,
-            "win_rate_pct": 66.6667,
+            "hit_days": 4,
+            "total_hits": 4,
+            "avg_return_pct": -0.0659,
+            "win_rate_pct": 75.0,
             "has_not_broken": false,
-            "summary": "後30天命中 3 檔 / 3 天，平均 alpha 1.6329%、勝率 66.6667%、平均隔日報酬 -0.3193%。"
+            "summary": "後30天命中 4 檔 / 4 天，平均 alpha 1.2784%、勝率 75.0%、平均隔日報酬 -0.0659%。"
           }
         ],
         "assessment": {
@@ -1339,21 +1359,21 @@
           {
             "segment_index": 1,
             "label": "第1段（前30天）",
-            "start_date": "2026-01-22",
-            "end_date": "2026-03-16",
+            "start_date": "2026-01-23",
+            "end_date": "2026-03-17",
             "observed_days": 30,
-            "hit_days": 5,
-            "total_hits": 6,
-            "avg_return_pct": 0.3439,
-            "win_rate_pct": 50.0,
+            "hit_days": 4,
+            "total_hits": 5,
+            "avg_return_pct": 0.2375,
+            "win_rate_pct": 40.0,
             "has_not_broken": false,
-            "summary": "第1段（前30天）命中 6 檔 / 5 天，平均 alpha -0.3398%、勝率 50.0%、平均隔日報酬 0.3439%。"
+            "summary": "第1段（前30天）命中 5 檔 / 4 天，平均 alpha -0.4472%、勝率 40.0%、平均隔日報酬 0.2375%。"
           },
           {
             "segment_index": 2,
             "label": "第2段",
-            "start_date": "2026-03-17",
-            "end_date": "2026-05-05",
+            "start_date": "2026-03-18",
+            "end_date": "2026-05-06",
             "observed_days": 30,
             "hit_days": 8,
             "total_hits": 8,
@@ -1365,8 +1385,8 @@
           {
             "segment_index": 3,
             "label": "第3段",
-            "start_date": "2026-05-06",
-            "end_date": "2026-06-24",
+            "start_date": "2026-05-07",
+            "end_date": "2026-06-25",
             "observed_days": 30,
             "hit_days": 4,
             "total_hits": 4,
@@ -1378,15 +1398,15 @@
           {
             "segment_index": 4,
             "label": "第4段（後30天）",
-            "start_date": "2026-06-25",
-            "end_date": "2026-08-18",
+            "start_date": "2026-06-29",
+            "end_date": "2026-08-19",
             "observed_days": 30,
-            "hit_days": 3,
-            "total_hits": 3,
-            "avg_return_pct": -0.3193,
-            "win_rate_pct": 66.6667,
+            "hit_days": 4,
+            "total_hits": 4,
+            "avg_return_pct": -0.0659,
+            "win_rate_pct": 75.0,
             "has_not_broken": false,
-            "summary": "第4段（後30天）命中 3 檔 / 3 天，平均 alpha 1.6329%、勝率 66.6667%、平均隔日報酬 -0.3193%。"
+            "summary": "第4段（後30天）命中 4 檔 / 4 天，平均 alpha 1.2784%、勝率 75.0%、平均隔日報酬 -0.0659%。"
           }
         ],
         "assessment": {
@@ -1410,30 +1430,30 @@
         "rolling_windows": [
           {
             "window_index": 1,
-            "start_date": "2026-05-06",
-            "end_date": "2026-05-19",
-            "observed_days": 10,
-            "hit_days": 1,
-            "total_hits": 1,
-            "avg_alpha_pct": 1.004,
-            "alpha_positive": true,
-            "summary": "第1 個 10 天 rolling 視窗，平均 alpha 1.004%、勝率 100.0%、平均隔日報酬 0.2174%。"
-          },
-          {
-            "window_index": 2,
-            "start_date": "2026-05-20",
-            "end_date": "2026-06-04",
+            "start_date": "2026-05-07",
+            "end_date": "2026-05-20",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
-            "avg_alpha_pct": -1.0468,
+            "avg_alpha_pct": -0.7473,
             "alpha_positive": false,
-            "summary": "第2 個 10 天 rolling 視窗，平均 alpha -1.0468%、勝率 100.0%、平均隔日報酬 1.6264%。"
+            "summary": "第1 個 10 天 rolling 視窗，平均 alpha -0.7473%、勝率 100.0%、平均隔日報酬 0.5427%。"
+          },
+          {
+            "window_index": 2,
+            "start_date": "2026-05-21",
+            "end_date": "2026-06-08",
+            "observed_days": 10,
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_alpha_pct": 0.4051,
+            "alpha_positive": true,
+            "summary": "第2 個 10 天 rolling 視窗，平均 alpha 0.4051%、勝率 100.0%、平均隔日報酬 2.3847%。"
           },
           {
             "window_index": 3,
-            "start_date": "2026-06-08",
-            "end_date": "2026-06-24",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-25",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1443,8 +1463,8 @@
           },
           {
             "window_index": 4,
-            "start_date": "2026-06-25",
-            "end_date": "2026-07-14",
+            "start_date": "2026-06-29",
+            "end_date": "2026-07-15",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1454,8 +1474,8 @@
           },
           {
             "window_index": 5,
-            "start_date": "2026-07-15",
-            "end_date": "2026-07-30",
+            "start_date": "2026-07-16",
+            "end_date": "2026-08-03",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
@@ -1465,23 +1485,23 @@
           },
           {
             "window_index": 6,
-            "start_date": "2026-08-03",
-            "end_date": "2026-08-18",
+            "start_date": "2026-08-04",
+            "end_date": "2026-08-19",
             "observed_days": 10,
-            "hit_days": 0,
-            "total_hits": 0,
-            "avg_alpha_pct": null,
-            "alpha_positive": null,
-            "summary": "第6 個 10 天 rolling 視窗沒有 steady_v5 命中。"
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_alpha_pct": 0.215,
+            "alpha_positive": true,
+            "summary": "第6 個 10 天 rolling 視窗，平均 alpha 0.215%、勝率 100.0%、平均隔日報酬 0.6944%。"
           }
         ],
         "assessment": {
           "window_count": 6,
-          "windows_with_hits_count": 5,
+          "windows_with_hits_count": 6,
           "negative_window_count": 3,
-          "longest_negative_streak": 3,
-          "has_no_long_negative_streak": false,
-          "summary": "60 天視窗共有 5 個有命中的 10 天 rolling 視窗，其中 3 個 alpha 為負，最長連續負 alpha 3 窗。"
+          "longest_negative_streak": 2,
+          "has_no_long_negative_streak": true,
+          "summary": "60 天視窗共有 6 個有命中的 10 天 rolling 視窗，其中 3 個 alpha 為負，最長連續負 alpha 2 窗。"
         }
       },
       "120d": {
@@ -1490,19 +1510,19 @@
         "rolling_windows": [
           {
             "window_index": 1,
-            "start_date": "2026-01-22",
-            "end_date": "2026-02-04",
+            "start_date": "2026-01-23",
+            "end_date": "2026-02-05",
             "observed_days": 10,
-            "hit_days": 3,
-            "total_hits": 4,
-            "avg_alpha_pct": 1.2528,
+            "hit_days": 2,
+            "total_hits": 3,
+            "avg_alpha_pct": 1.6047,
             "alpha_positive": true,
-            "summary": "第1 個 10 天 rolling 視窗，平均 alpha 1.2528%、勝率 75.0%、平均隔日報酬 0.7393%。"
+            "summary": "第1 個 10 天 rolling 視窗，平均 alpha 1.6047%、勝率 66.6667%、平均隔日報酬 0.6938%。"
           },
           {
             "window_index": 2,
-            "start_date": "2026-02-05",
-            "end_date": "2026-03-02",
+            "start_date": "2026-02-06",
+            "end_date": "2026-03-03",
             "observed_days": 10,
             "hit_days": 0,
             "total_hits": 0,
@@ -1512,8 +1532,8 @@
           },
           {
             "window_index": 3,
-            "start_date": "2026-03-03",
-            "end_date": "2026-03-16",
+            "start_date": "2026-03-04",
+            "end_date": "2026-03-17",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
@@ -1523,30 +1543,30 @@
           },
           {
             "window_index": 4,
-            "start_date": "2026-03-17",
-            "end_date": "2026-03-30",
+            "start_date": "2026-03-18",
+            "end_date": "2026-03-31",
             "observed_days": 10,
-            "hit_days": 1,
-            "total_hits": 1,
-            "avg_alpha_pct": -0.5704,
+            "hit_days": 2,
+            "total_hits": 2,
+            "avg_alpha_pct": -1.4355,
             "alpha_positive": false,
-            "summary": "第4 個 10 天 rolling 視窗，平均 alpha -0.5704%、勝率 100.0%、平均隔日報酬 1.9651%。"
+            "summary": "第4 個 10 天 rolling 視窗，平均 alpha -1.4355%、勝率 100.0%、平均隔日報酬 2.1205%。"
           },
           {
             "window_index": 5,
-            "start_date": "2026-03-31",
-            "end_date": "2026-04-16",
+            "start_date": "2026-04-01",
+            "end_date": "2026-04-20",
             "observed_days": 10,
-            "hit_days": 3,
-            "total_hits": 3,
-            "avg_alpha_pct": 0.4887,
+            "hit_days": 2,
+            "total_hits": 2,
+            "avg_alpha_pct": 1.8833,
             "alpha_positive": true,
-            "summary": "第5 個 10 天 rolling 視窗，平均 alpha 0.4887%、勝率 100.0%、平均隔日報酬 2.9453%。"
+            "summary": "第5 個 10 天 rolling 視窗，平均 alpha 1.8833%、勝率 100.0%、平均隔日報酬 3.2799%。"
           },
           {
             "window_index": 6,
-            "start_date": "2026-04-20",
-            "end_date": "2026-05-05",
+            "start_date": "2026-04-21",
+            "end_date": "2026-05-06",
             "observed_days": 10,
             "hit_days": 4,
             "total_hits": 4,
@@ -1556,30 +1576,30 @@
           },
           {
             "window_index": 7,
-            "start_date": "2026-05-06",
-            "end_date": "2026-05-19",
-            "observed_days": 10,
-            "hit_days": 1,
-            "total_hits": 1,
-            "avg_alpha_pct": 1.004,
-            "alpha_positive": true,
-            "summary": "第7 個 10 天 rolling 視窗，平均 alpha 1.004%、勝率 100.0%、平均隔日報酬 0.2174%。"
-          },
-          {
-            "window_index": 8,
-            "start_date": "2026-05-20",
-            "end_date": "2026-06-04",
+            "start_date": "2026-05-07",
+            "end_date": "2026-05-20",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
-            "avg_alpha_pct": -1.0468,
+            "avg_alpha_pct": -0.7473,
             "alpha_positive": false,
-            "summary": "第8 個 10 天 rolling 視窗，平均 alpha -1.0468%、勝率 100.0%、平均隔日報酬 1.6264%。"
+            "summary": "第7 個 10 天 rolling 視窗，平均 alpha -0.7473%、勝率 100.0%、平均隔日報酬 0.5427%。"
+          },
+          {
+            "window_index": 8,
+            "start_date": "2026-05-21",
+            "end_date": "2026-06-08",
+            "observed_days": 10,
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_alpha_pct": 0.4051,
+            "alpha_positive": true,
+            "summary": "第8 個 10 天 rolling 視窗，平均 alpha 0.4051%、勝率 100.0%、平均隔日報酬 2.3847%。"
           },
           {
             "window_index": 9,
-            "start_date": "2026-06-08",
-            "end_date": "2026-06-24",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-25",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1589,8 +1609,8 @@
           },
           {
             "window_index": 10,
-            "start_date": "2026-06-25",
-            "end_date": "2026-07-14",
+            "start_date": "2026-06-29",
+            "end_date": "2026-07-15",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1600,8 +1620,8 @@
           },
           {
             "window_index": 11,
-            "start_date": "2026-07-15",
-            "end_date": "2026-07-30",
+            "start_date": "2026-07-16",
+            "end_date": "2026-08-03",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
@@ -1611,23 +1631,23 @@
           },
           {
             "window_index": 12,
-            "start_date": "2026-08-03",
-            "end_date": "2026-08-18",
+            "start_date": "2026-08-04",
+            "end_date": "2026-08-19",
             "observed_days": 10,
-            "hit_days": 0,
-            "total_hits": 0,
-            "avg_alpha_pct": null,
-            "alpha_positive": null,
-            "summary": "第12 個 10 天 rolling 視窗沒有 steady_v5 命中。"
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_alpha_pct": 0.215,
+            "alpha_positive": true,
+            "summary": "第12 個 10 天 rolling 視窗，平均 alpha 0.215%、勝率 100.0%、平均隔日報酬 0.6944%。"
           }
         ],
         "assessment": {
           "window_count": 12,
-          "windows_with_hits_count": 10,
+          "windows_with_hits_count": 11,
           "negative_window_count": 5,
-          "longest_negative_streak": 3,
-          "has_no_long_negative_streak": false,
-          "summary": "120 天視窗共有 10 個有命中的 10 天 rolling 視窗，其中 5 個 alpha 為負，最長連續負 alpha 3 窗。"
+          "longest_negative_streak": 2,
+          "has_no_long_negative_streak": true,
+          "summary": "120 天視窗共有 11 個有命中的 10 天 rolling 視窗，其中 5 個 alpha 為負，最長連續負 alpha 2 窗。"
         }
       }
     }
@@ -1642,32 +1662,32 @@
         "rolling_windows": [
           {
             "window_index": 1,
-            "start_date": "2026-05-06",
-            "end_date": "2026-05-19",
-            "observed_days": 10,
-            "hit_days": 1,
-            "total_hits": 1,
-            "avg_return_pct": 0.2174,
-            "win_rate_pct": 100.0,
-            "has_not_broken": true,
-            "summary": "第1 個 10 天 rolling 視窗，平均 alpha 1.004%、勝率 100.0%、平均隔日報酬 0.2174%。"
-          },
-          {
-            "window_index": 2,
-            "start_date": "2026-05-20",
-            "end_date": "2026-06-04",
+            "start_date": "2026-05-07",
+            "end_date": "2026-05-20",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
-            "avg_return_pct": 1.6264,
+            "avg_return_pct": 0.5427,
             "win_rate_pct": 100.0,
             "has_not_broken": true,
-            "summary": "第2 個 10 天 rolling 視窗，平均 alpha -1.0468%、勝率 100.0%、平均隔日報酬 1.6264%。"
+            "summary": "第1 個 10 天 rolling 視窗，平均 alpha -0.7473%、勝率 100.0%、平均隔日報酬 0.5427%。"
+          },
+          {
+            "window_index": 2,
+            "start_date": "2026-05-21",
+            "end_date": "2026-06-08",
+            "observed_days": 10,
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_return_pct": 2.3847,
+            "win_rate_pct": 100.0,
+            "has_not_broken": true,
+            "summary": "第2 個 10 天 rolling 視窗，平均 alpha 0.4051%、勝率 100.0%、平均隔日報酬 2.3847%。"
           },
           {
             "window_index": 3,
-            "start_date": "2026-06-08",
-            "end_date": "2026-06-24",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-25",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1678,8 +1698,8 @@
           },
           {
             "window_index": 4,
-            "start_date": "2026-06-25",
-            "end_date": "2026-07-14",
+            "start_date": "2026-06-29",
+            "end_date": "2026-07-15",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1690,8 +1710,8 @@
           },
           {
             "window_index": 5,
-            "start_date": "2026-07-15",
-            "end_date": "2026-07-30",
+            "start_date": "2026-07-16",
+            "end_date": "2026-08-03",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
@@ -1702,25 +1722,25 @@
           },
           {
             "window_index": 6,
-            "start_date": "2026-08-03",
-            "end_date": "2026-08-18",
+            "start_date": "2026-08-04",
+            "end_date": "2026-08-19",
             "observed_days": 10,
-            "hit_days": 0,
-            "total_hits": 0,
-            "avg_return_pct": null,
-            "win_rate_pct": null,
-            "has_not_broken": null,
-            "summary": "第6 個 10 天 rolling 視窗沒有 steady_v5 命中。"
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_return_pct": 0.6944,
+            "win_rate_pct": 100.0,
+            "has_not_broken": true,
+            "summary": "第6 個 10 天 rolling 視窗，平均 alpha 0.215%、勝率 100.0%、平均隔日報酬 0.6944%。"
           }
         ],
         "assessment": {
           "window_count": 6,
-          "windows_with_hits_count": 5,
-          "stable_window_count": 3,
+          "windows_with_hits_count": 6,
+          "stable_window_count": 4,
           "unstable_window_count": 2,
           "longest_unstable_streak": 2,
           "has_no_long_instability_streak": true,
-          "summary": "60 天視窗共有 5 個有命中的 10 天 rolling 視窗，其中 3 窗沒有崩壞、2 窗穩定性不足，最長連續不穩定 2 窗。"
+          "summary": "60 天視窗共有 6 個有命中的 10 天 rolling 視窗，其中 4 窗沒有崩壞、2 窗穩定性不足，最長連續不穩定 2 窗。"
         }
       },
       "120d": {
@@ -1729,20 +1749,20 @@
         "rolling_windows": [
           {
             "window_index": 1,
-            "start_date": "2026-01-22",
-            "end_date": "2026-02-04",
+            "start_date": "2026-01-23",
+            "end_date": "2026-02-05",
             "observed_days": 10,
-            "hit_days": 3,
-            "total_hits": 4,
-            "avg_return_pct": 0.7393,
-            "win_rate_pct": 75.0,
+            "hit_days": 2,
+            "total_hits": 3,
+            "avg_return_pct": 0.6938,
+            "win_rate_pct": 66.6667,
             "has_not_broken": true,
-            "summary": "第1 個 10 天 rolling 視窗，平均 alpha 1.2528%、勝率 75.0%、平均隔日報酬 0.7393%。"
+            "summary": "第1 個 10 天 rolling 視窗，平均 alpha 1.6047%、勝率 66.6667%、平均隔日報酬 0.6938%。"
           },
           {
             "window_index": 2,
-            "start_date": "2026-02-05",
-            "end_date": "2026-03-02",
+            "start_date": "2026-02-06",
+            "end_date": "2026-03-03",
             "observed_days": 10,
             "hit_days": 0,
             "total_hits": 0,
@@ -1753,8 +1773,8 @@
           },
           {
             "window_index": 3,
-            "start_date": "2026-03-03",
-            "end_date": "2026-03-16",
+            "start_date": "2026-03-04",
+            "end_date": "2026-03-17",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
@@ -1765,32 +1785,32 @@
           },
           {
             "window_index": 4,
-            "start_date": "2026-03-17",
-            "end_date": "2026-03-30",
+            "start_date": "2026-03-18",
+            "end_date": "2026-03-31",
             "observed_days": 10,
-            "hit_days": 1,
-            "total_hits": 1,
-            "avg_return_pct": 1.9651,
+            "hit_days": 2,
+            "total_hits": 2,
+            "avg_return_pct": 2.1205,
             "win_rate_pct": 100.0,
             "has_not_broken": true,
-            "summary": "第4 個 10 天 rolling 視窗，平均 alpha -0.5704%、勝率 100.0%、平均隔日報酬 1.9651%。"
+            "summary": "第4 個 10 天 rolling 視窗，平均 alpha -1.4355%、勝率 100.0%、平均隔日報酬 2.1205%。"
           },
           {
             "window_index": 5,
-            "start_date": "2026-03-31",
-            "end_date": "2026-04-16",
+            "start_date": "2026-04-01",
+            "end_date": "2026-04-20",
             "observed_days": 10,
-            "hit_days": 3,
-            "total_hits": 3,
-            "avg_return_pct": 2.9453,
+            "hit_days": 2,
+            "total_hits": 2,
+            "avg_return_pct": 3.2799,
             "win_rate_pct": 100.0,
             "has_not_broken": true,
-            "summary": "第5 個 10 天 rolling 視窗，平均 alpha 0.4887%、勝率 100.0%、平均隔日報酬 2.9453%。"
+            "summary": "第5 個 10 天 rolling 視窗，平均 alpha 1.8833%、勝率 100.0%、平均隔日報酬 3.2799%。"
           },
           {
             "window_index": 6,
-            "start_date": "2026-04-20",
-            "end_date": "2026-05-05",
+            "start_date": "2026-04-21",
+            "end_date": "2026-05-06",
             "observed_days": 10,
             "hit_days": 4,
             "total_hits": 4,
@@ -1801,32 +1821,32 @@
           },
           {
             "window_index": 7,
-            "start_date": "2026-05-06",
-            "end_date": "2026-05-19",
-            "observed_days": 10,
-            "hit_days": 1,
-            "total_hits": 1,
-            "avg_return_pct": 0.2174,
-            "win_rate_pct": 100.0,
-            "has_not_broken": true,
-            "summary": "第7 個 10 天 rolling 視窗，平均 alpha 1.004%、勝率 100.0%、平均隔日報酬 0.2174%。"
-          },
-          {
-            "window_index": 8,
-            "start_date": "2026-05-20",
-            "end_date": "2026-06-04",
+            "start_date": "2026-05-07",
+            "end_date": "2026-05-20",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
-            "avg_return_pct": 1.6264,
+            "avg_return_pct": 0.5427,
             "win_rate_pct": 100.0,
             "has_not_broken": true,
-            "summary": "第8 個 10 天 rolling 視窗，平均 alpha -1.0468%、勝率 100.0%、平均隔日報酬 1.6264%。"
+            "summary": "第7 個 10 天 rolling 視窗，平均 alpha -0.7473%、勝率 100.0%、平均隔日報酬 0.5427%。"
+          },
+          {
+            "window_index": 8,
+            "start_date": "2026-05-21",
+            "end_date": "2026-06-08",
+            "observed_days": 10,
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_return_pct": 2.3847,
+            "win_rate_pct": 100.0,
+            "has_not_broken": true,
+            "summary": "第8 個 10 天 rolling 視窗，平均 alpha 0.4051%、勝率 100.0%、平均隔日報酬 2.3847%。"
           },
           {
             "window_index": 9,
-            "start_date": "2026-06-08",
-            "end_date": "2026-06-24",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-25",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1837,8 +1857,8 @@
           },
           {
             "window_index": 10,
-            "start_date": "2026-06-25",
-            "end_date": "2026-07-14",
+            "start_date": "2026-06-29",
+            "end_date": "2026-07-15",
             "observed_days": 10,
             "hit_days": 1,
             "total_hits": 1,
@@ -1849,8 +1869,8 @@
           },
           {
             "window_index": 11,
-            "start_date": "2026-07-15",
-            "end_date": "2026-07-30",
+            "start_date": "2026-07-16",
+            "end_date": "2026-08-03",
             "observed_days": 10,
             "hit_days": 2,
             "total_hits": 2,
@@ -1861,25 +1881,25 @@
           },
           {
             "window_index": 12,
-            "start_date": "2026-08-03",
-            "end_date": "2026-08-18",
+            "start_date": "2026-08-04",
+            "end_date": "2026-08-19",
             "observed_days": 10,
-            "hit_days": 0,
-            "total_hits": 0,
-            "avg_return_pct": null,
-            "win_rate_pct": null,
-            "has_not_broken": null,
-            "summary": "第12 個 10 天 rolling 視窗沒有 steady_v5 命中。"
+            "hit_days": 1,
+            "total_hits": 1,
+            "avg_return_pct": 0.6944,
+            "win_rate_pct": 100.0,
+            "has_not_broken": true,
+            "summary": "第12 個 10 天 rolling 視窗，平均 alpha 0.215%、勝率 100.0%、平均隔日報酬 0.6944%。"
           }
         ],
         "assessment": {
           "window_count": 12,
-          "windows_with_hits_count": 10,
-          "stable_window_count": 7,
+          "windows_with_hits_count": 11,
+          "stable_window_count": 8,
           "unstable_window_count": 3,
           "longest_unstable_streak": 2,
           "has_no_long_instability_streak": true,
-          "summary": "120 天視窗共有 10 個有命中的 10 天 rolling 視窗，其中 7 窗沒有崩壞、3 窗穩定性不足，最長連續不穩定 2 窗。"
+          "summary": "120 天視窗共有 11 個有命中的 10 天 rolling 視窗，其中 8 窗沒有崩壞、3 窗穩定性不足，最長連續不穩定 2 窗。"
         }
       }
     }
@@ -1889,34 +1909,34 @@
       "window_days": 60,
       "is_ready": true,
       "observed_days": 60,
-      "start_date": "2026-05-06",
-      "end_date": "2026-08-18",
-      "hit_days": 7,
-      "hit_day_rate_pct": 11.6667,
-      "positive_alpha_day_count": 4,
-      "positive_alpha_day_rate_pct": 57.1429,
-      "positive_return_day_count": 5,
-      "positive_return_day_rate_pct": 71.4286,
-      "total_hits": 7,
-      "avg_daily_hit_count": 0.1167,
-      "avg_return_pct": 0.3323,
-      "win_rate_pct": 71.4286,
-      "avg_market_return_pct": -0.0022,
-      "avg_alpha_pct": 0.3346,
-      "outperform_rate_pct": 57.1429,
-      "avg_return_delta_vs_strategy_baseline": -0.5199,
-      "win_rate_delta_vs_strategy_baseline": 5.4286,
-      "avg_alpha_delta_vs_strategy_baseline": -0.2987,
+      "start_date": "2026-05-07",
+      "end_date": "2026-08-19",
+      "hit_days": 8,
+      "hit_day_rate_pct": 13.3333,
+      "positive_alpha_day_count": 5,
+      "positive_alpha_day_rate_pct": 62.5,
+      "positive_return_day_count": 6,
+      "positive_return_day_rate_pct": 75.0,
+      "total_hits": 8,
+      "avg_daily_hit_count": 0.1333,
+      "avg_return_pct": 0.3776,
+      "win_rate_pct": 75.0,
+      "avg_market_return_pct": 0.058,
+      "avg_alpha_pct": 0.3196,
+      "outperform_rate_pct": 62.5,
+      "avg_return_delta_vs_strategy_baseline": -0.4715,
+      "win_rate_delta_vs_strategy_baseline": 8.3333,
+      "avg_alpha_delta_vs_strategy_baseline": -0.3055,
       "alpha_positive": true,
       "has_not_broken": true,
-      "summary": "最近 60 個可評估交易日內，steady_v5 命中 7 檔 / 7 天，平均隔日報酬 0.3323%、平均市場報酬 -0.0022%、平均 alpha 0.3346%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
+      "summary": "最近 60 個可評估交易日內，steady_v5 命中 8 檔 / 8 天，平均隔日報酬 0.3776%、平均市場報酬 0.058%、平均 alpha 0.3196%、勝率 75.0%，alpha 維持為正、沒有崩壞。"
     },
     "120d": {
       "window_days": 120,
       "is_ready": true,
       "observed_days": 120,
-      "start_date": "2026-01-22",
-      "end_date": "2026-08-18",
+      "start_date": "2026-01-23",
+      "end_date": "2026-08-19",
       "hit_days": 20,
       "hit_day_rate_pct": 16.6667,
       "positive_alpha_day_count": 11,
@@ -1925,17 +1945,17 @@
       "positive_return_day_rate_pct": 70.0,
       "total_hits": 21,
       "avg_daily_hit_count": 0.175,
-      "avg_return_pct": 1.2244,
+      "avg_return_pct": 1.2157,
       "win_rate_pct": 71.4286,
-      "avg_market_return_pct": 0.645,
-      "avg_alpha_pct": 0.5794,
+      "avg_market_return_pct": 0.6355,
+      "avg_alpha_pct": 0.5803,
       "outperform_rate_pct": 57.1429,
-      "avg_return_delta_vs_strategy_baseline": 0.3722,
-      "win_rate_delta_vs_strategy_baseline": 5.4286,
-      "avg_alpha_delta_vs_strategy_baseline": -0.0539,
+      "avg_return_delta_vs_strategy_baseline": 0.3666,
+      "win_rate_delta_vs_strategy_baseline": 4.7619,
+      "avg_alpha_delta_vs_strategy_baseline": -0.0448,
       "alpha_positive": true,
       "has_not_broken": true,
-      "summary": "最近 120 個可評估交易日內，steady_v5 命中 21 檔 / 20 天，平均隔日報酬 1.2244%、平均市場報酬 0.645%、平均 alpha 0.5794%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
+      "summary": "最近 120 個可評估交易日內，steady_v5 命中 21 檔 / 20 天，平均隔日報酬 1.2157%、平均市場報酬 0.6355%、平均 alpha 0.5803%、勝率 71.4286%，alpha 維持為正、沒有崩壞。"
     }
   },
   "latest_assessment": {
@@ -1945,7 +1965,7 @@
     "stability_confirmed": true,
     "segmented_alpha_confirmed": false,
     "segmented_stability_confirmed": false,
-    "rolling_alpha_confirmed": false,
+    "rolling_alpha_confirmed": true,
     "rolling_winrate_confirmed": true,
     "not_overfit": false,
     "long_window_ready": true,
@@ -6442,6 +6462,46 @@
       "hit_symbols": [],
       "steady_v5_hits": [],
       "summary": "2026-08-18 steady_v5 0 檔，當天沒有可用樣本驗證 alpha 與穩定性。"
+    },
+    {
+      "date": "2026-08-19",
+      "next_report_date": "2026-08-20",
+      "candidate_count": 18,
+      "market_return_pct": 0.4794,
+      "steady_v5_hit_count": 1,
+      "steady_v5_hit_rate_pct": 5.5556,
+      "avg_return_pct": 0.6944,
+      "win_rate_pct": 100.0,
+      "avg_alpha_pct": 0.215,
+      "outperform_rate_pct": 100.0,
+      "has_positive_alpha": true,
+      "has_not_broken": true,
+      "hit_symbols": [
+        "5876"
+      ],
+      "steady_v5_hits": [
+        {
+          "symbol": "5876",
+          "name": "上海商銀",
+          "date": "2026-08-19",
+          "next_report_date": "2026-08-20",
+          "priority_rank": 15,
+          "hit_count": 2,
+          "next_day_return_pct": 0.6944,
+          "market_return_pct": 0.4794,
+          "alpha_pct": 0.215,
+          "k_value": 29.77,
+          "ma20_gap_pct": -1.8851,
+          "abs_ma20_gap_pct": 1.8851,
+          "volume_ratio": 0.59,
+          "prior_pullback_pct": 2.0071,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        }
+      ],
+      "summary": "2026-08-19 steady_v5 命中 1 檔（5876），平均隔日報酬 0.6944%、平均 alpha 0.215%、勝率 100.0%。"
     }
   ],
   "summary": "60 天與 120 天 overall 指標仍為正，但分段或 rolling 驗證沒有完全延續相同結論。"
