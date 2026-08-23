@@ -1,0 +1,919 @@
+{
+  "report_version": "v9-context",
+  "date": "2026-08-23",
+  "generated_at": "2026-08-23T08:20:40.843341+08:00",
+  "trace_catalog": {
+    "keyword_dictionary_version": "context-keywords-v1",
+    "theme_taxonomy_version": "context-themes-v1",
+    "event_trace_version": "context-events-v1",
+    "keyword_dictionary": {
+      "breadth_positive": "中高分占優",
+      "breadth_cautious": "中低分偏多",
+      "front_concentration": "前段集中",
+      "volume_overlap": "放量重疊",
+      "sector_concentration": "族群集中",
+      "volume_resonance": "量能共振",
+      "volume_cluster": "放量群聚",
+      "limited_diffusion": "擴散有限",
+      "volume_validation": "量能驗證",
+      "signal_convergence": "弱訊號收斂",
+      "signal_divergence": "弱訊號分歧",
+      "ai_bullish": "AI偏多",
+      "ai_neutral": "AI中性",
+      "ai_cautious": "AI偏保守",
+      "technical_bullish": "技術偏多",
+      "technical_neutral": "技術中性",
+      "technical_cautious": "技術偏保守",
+      "sector_electronics": "電子",
+      "sector_semiconductor": "半導體",
+      "sector_finance": "金融",
+      "sector_materials": "原物料",
+      "sector_transport": "航運",
+      "sector_other": "其他族群",
+      "data_shortage": "資料不足",
+      "ui_fallback": "頁面保底"
+    },
+    "theme_taxonomy": {
+      "market_breadth": {
+        "label": "盤面廣度",
+        "family": "market_structure"
+      },
+      "electronics_axis": {
+        "label": "電子主軸",
+        "family": "industry_axis"
+      },
+      "semiconductor_axis": {
+        "label": "半導體主軸",
+        "family": "industry_axis"
+      },
+      "finance_axis": {
+        "label": "金融主軸",
+        "family": "industry_axis"
+      },
+      "materials_axis": {
+        "label": "原物料主軸",
+        "family": "industry_axis"
+      },
+      "transport_axis": {
+        "label": "航運主軸",
+        "family": "industry_axis"
+      },
+      "other_axis": {
+        "label": "其他族群主軸",
+        "family": "industry_axis"
+      },
+      "rotation_concentration": {
+        "label": "集中輪動",
+        "family": "market_structure"
+      },
+      "volume_focus": {
+        "label": "量能聚焦",
+        "family": "flow_structure"
+      },
+      "ai_overlay": {
+        "label": "AI摘要對照",
+        "family": "overlay"
+      },
+      "trace_convergence": {
+        "label": "情境收斂",
+        "family": "overlay"
+      },
+      "trace_divergence": {
+        "label": "情境分歧",
+        "family": "overlay"
+      },
+      "technical_overlay": {
+        "label": "技術對照",
+        "family": "overlay"
+      },
+      "system_fallback": {
+        "label": "系統保底",
+        "family": "fallback"
+      },
+      "trace_pending": {
+        "label": "情境待補",
+        "family": "fallback"
+      }
+    },
+    "event_trace_map": {
+      "breadth_axis_overlap": {
+        "keywords": [
+          "{breadth_signal}",
+          "front_concentration",
+          "volume_overlap",
+          "{primary_sector_keyword}"
+        ],
+        "themes": [
+          "market_breadth",
+          "{primary_sector_theme}",
+          "{secondary_sector_theme}"
+        ]
+      },
+      "sector_axis_convergence": {
+        "keywords": [
+          "sector_concentration",
+          "volume_resonance",
+          "{primary_sector_keyword}",
+          "{secondary_sector_keyword}"
+        ],
+        "themes": [
+          "{primary_sector_theme}",
+          "{secondary_sector_theme}",
+          "rotation_concentration"
+        ]
+      },
+      "volume_focus_limited_diffusion": {
+        "keywords": [
+          "volume_cluster",
+          "limited_diffusion",
+          "{primary_sector_keyword}",
+          "{secondary_sector_keyword}"
+        ],
+        "themes": [
+          "volume_focus",
+          "{primary_sector_theme}",
+          "{secondary_sector_theme}"
+        ]
+      },
+      "ai_technical_overlay": {
+        "keywords": [
+          "{ai_direction_keyword}",
+          "{technical_direction_keyword}",
+          "volume_validation",
+          "{alignment_keyword}"
+        ],
+        "themes": [
+          "ai_overlay",
+          "{alignment_theme}",
+          "{primary_sector_theme}",
+          "{secondary_sector_theme}"
+        ]
+      },
+      "context_unavailable": {
+        "keywords": [
+          "data_shortage",
+          "ui_fallback"
+        ],
+        "themes": [
+          "system_fallback",
+          "trace_pending"
+        ]
+      }
+    }
+  },
+  "stock_mapping_catalog": {
+    "theme_stock_mapping_version": "context-theme-stocks-v1",
+    "theme_stock_rules": {
+      "market_breadth": {
+        "selector": "none",
+        "categories": [],
+        "description": "盤面廣度屬於市場結構層，不直接映射股票。"
+      },
+      "electronics_axis": {
+        "selector": "category",
+        "categories": [
+          "電子"
+        ],
+        "description": "電子主軸固定映射到當日 universe 中 category=電子 的全量股票池。"
+      },
+      "semiconductor_axis": {
+        "selector": "category",
+        "categories": [
+          "半導體"
+        ],
+        "description": "半導體主軸固定映射到當日 universe 中 category=半導體 的全量股票池。"
+      },
+      "finance_axis": {
+        "selector": "category",
+        "categories": [
+          "金融",
+          "金融保險",
+          "銀行保險"
+        ],
+        "description": "金融主軸固定映射到當日 universe 中的金融類別股票池。"
+      },
+      "materials_axis": {
+        "selector": "category",
+        "categories": [
+          "鋼鐵",
+          "水泥",
+          "塑膠",
+          "化工"
+        ],
+        "description": "原物料主軸固定映射到當日 universe 中的原物料相關類別股票池。"
+      },
+      "transport_axis": {
+        "selector": "category",
+        "categories": [
+          "航運"
+        ],
+        "description": "航運主軸固定映射到當日 universe 中 category=航運 的全量股票池。"
+      },
+      "other_axis": {
+        "selector": "category",
+        "categories": [
+          "其他"
+        ],
+        "description": "其他族群主軸固定映射到當日 universe 中未歸類為既有主題的股票池。"
+      },
+      "rotation_concentration": {
+        "selector": "none",
+        "categories": [],
+        "description": "集中輪動屬於市場結構層，不直接映射股票。"
+      },
+      "volume_focus": {
+        "selector": "none",
+        "categories": [],
+        "description": "量能聚焦屬於量能結構層，不直接映射股票。"
+      },
+      "ai_overlay": {
+        "selector": "none",
+        "categories": [],
+        "description": "AI摘要對照屬於覆蓋層，不直接映射股票。"
+      },
+      "trace_convergence": {
+        "selector": "none",
+        "categories": [],
+        "description": "情境收斂屬於覆蓋層，不直接映射股票。"
+      },
+      "trace_divergence": {
+        "selector": "none",
+        "categories": [],
+        "description": "情境分歧屬於覆蓋層，不直接映射股票。"
+      },
+      "technical_overlay": {
+        "selector": "none",
+        "categories": [],
+        "description": "技術對照屬於覆蓋層，不直接映射股票。"
+      },
+      "system_fallback": {
+        "selector": "none",
+        "categories": [],
+        "description": "系統保底不直接映射股票。"
+      },
+      "trace_pending": {
+        "selector": "none",
+        "categories": [],
+        "description": "情境待補不直接映射股票。"
+      }
+    },
+    "themes_to_stocks": {
+      "market_breadth": [],
+      "electronics_axis": [
+        "2395",
+        "2301",
+        "2357",
+        "2308",
+        "2382",
+        "2327",
+        "2317"
+      ],
+      "semiconductor_axis": [
+        "3034",
+        "2408",
+        "2330",
+        "3711",
+        "2454",
+        "2303",
+        "2363"
+      ],
+      "finance_axis": [
+        "2881",
+        "5876",
+        "2883",
+        "2887",
+        "2884",
+        "2891",
+        "2882",
+        "2886",
+        "2892",
+        "2890",
+        "5880",
+        "2880",
+        "2885"
+      ],
+      "materials_axis": [
+        "1101",
+        "1102",
+        "2002",
+        "1326"
+      ],
+      "transport_axis": [
+        "2617",
+        "2603",
+        "2615",
+        "2609",
+        "2606"
+      ],
+      "other_axis": [],
+      "rotation_concentration": [],
+      "volume_focus": [],
+      "ai_overlay": [],
+      "trace_convergence": [],
+      "trace_divergence": [],
+      "technical_overlay": [],
+      "system_fallback": [],
+      "trace_pending": []
+    }
+  },
+  "card_count": 4,
+  "cards": [
+    {
+      "id": "breadth-balance",
+      "title": "盤面廣度與主軸",
+      "event": "中高分樣本占優，前段族群與放量區域彼此重疊，盤面主軸可被描述。",
+      "anomaly": "A/B 合計 31 檔、C/D 合計 19 檔，前兩大類別占前段樣本約 40%，放量樣本 8 檔。",
+      "keywords": [
+        "中高分占優",
+        "前段集中",
+        "放量重疊",
+        "原物料"
+      ],
+      "themes": [
+        "盤面廣度",
+        "原物料主軸",
+        "航運主軸"
+      ],
+      "trace": {
+        "event": "breadth_axis_overlap",
+        "keywords": [
+          "breadth_positive",
+          "front_concentration",
+          "volume_overlap",
+          "sector_materials"
+        ],
+        "themes": [
+          "market_breadth",
+          "materials_axis",
+          "transport_axis"
+        ]
+      },
+      "candidate_stocks": [
+        {
+          "symbol": "1101",
+          "from_theme": "materials_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1101 在當日 universe 的類別為 水泥，因此納入此股票池。"
+        },
+        {
+          "symbol": "1102",
+          "from_theme": "materials_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1102 在當日 universe 的類別為 水泥，因此納入此股票池。"
+        },
+        {
+          "symbol": "2002",
+          "from_theme": "materials_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；2002 在當日 universe 的類別為 鋼鐵，因此納入此股票池。"
+        },
+        {
+          "symbol": "1326",
+          "from_theme": "materials_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1326 在當日 universe 的類別為 化工，因此納入此股票池。"
+        },
+        {
+          "symbol": "2617",
+          "from_theme": "transport_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2617 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2603",
+          "from_theme": "transport_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2603 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2615",
+          "from_theme": "transport_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2615 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2609",
+          "from_theme": "transport_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2609 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2606",
+          "from_theme": "transport_axis",
+          "trace_event": "breadth_axis_overlap",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2606 在當日 universe 的類別為 航運，因此納入此股票池。"
+        }
+      ],
+      "reasoning_chain": [
+        "分數分布上，A/B 合計 31 檔高於 C/D 的 19 檔，平均分數約 62.0。",
+        "前段 10 筆樣本集中在 水泥2項、航運2項，前兩大類別占比約 40%。",
+        "量比異常樣本共有 8 檔，主要落在 航運5項、金融1項，沒有脫離前段主軸。",
+        "既有市場總覽語氣偏向「偏多」，可與上述橫截面結果互相驗證。"
+      ],
+      "confidence": "medium",
+      "relation_to_technical": "aligned",
+      "source_type": "score_distribution+sector_concentration+volume_cluster+market_overview",
+      "generated_at": "2026-08-23T08:20:40.843341+08:00"
+    },
+    {
+      "id": "sector-concentration",
+      "title": "主軸題材收斂",
+      "event": "前段類別與放量類別有交集，盤面不是全面輪動，而是局部主軸共振。",
+      "anomaly": "前 10 筆樣本中以 水泥 最集中，共 2 筆；前兩大類別合計 4 筆，占比約 40%。",
+      "keywords": [
+        "族群集中",
+        "量能共振",
+        "航運"
+      ],
+      "themes": [
+        "航運主軸",
+        "集中輪動"
+      ],
+      "trace": {
+        "event": "sector_axis_convergence",
+        "keywords": [
+          "sector_concentration",
+          "volume_resonance",
+          "sector_transport"
+        ],
+        "themes": [
+          "transport_axis",
+          "rotation_concentration"
+        ]
+      },
+      "candidate_stocks": [
+        {
+          "symbol": "2617",
+          "from_theme": "transport_axis",
+          "trace_event": "sector_axis_convergence",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2617 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2603",
+          "from_theme": "transport_axis",
+          "trace_event": "sector_axis_convergence",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2603 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2615",
+          "from_theme": "transport_axis",
+          "trace_event": "sector_axis_convergence",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2615 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2609",
+          "from_theme": "transport_axis",
+          "trace_event": "sector_axis_convergence",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2609 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2606",
+          "from_theme": "transport_axis",
+          "trace_event": "sector_axis_convergence",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2606 在當日 universe 的類別為 航運，因此納入此股票池。"
+        }
+      ],
+      "reasoning_chain": [
+        "前段樣本類別以 水泥2項、航運2項 為主，主軸集中度偏高。",
+        "放量樣本則主要落在 航運5項、金融1項，與前段類別重疊在 航運。",
+        "若只有分數靠前而量能不跟，主軸說服力會下降；目前至少存在局部共振。",
+        "平均分數約 62.0，代表這不是單一異常點，而是有橫截面支撐的題材聚焦。"
+      ],
+      "confidence": "medium",
+      "relation_to_technical": "aligned",
+      "source_type": "sector_concentration+volume_cluster+score_distribution",
+      "generated_at": "2026-08-23T08:20:40.843341+08:00"
+    },
+    {
+      "id": "volume-cluster",
+      "title": "量能聚焦與擴散",
+      "event": "量能異常集中，但擴散率仍有限，市場注意力偏向少數區域。",
+      "anomaly": "量比大於等於 1.5 的樣本共有 8 筆，占全體約 16%；其中 8 筆同時落在中高分區。",
+      "keywords": [
+        "放量群聚",
+        "擴散有限",
+        "航運",
+        "金融"
+      ],
+      "themes": [
+        "量能聚焦",
+        "航運主軸",
+        "金融主軸"
+      ],
+      "trace": {
+        "event": "volume_focus_limited_diffusion",
+        "keywords": [
+          "volume_cluster",
+          "limited_diffusion",
+          "sector_transport",
+          "sector_finance"
+        ],
+        "themes": [
+          "volume_focus",
+          "transport_axis",
+          "finance_axis"
+        ]
+      },
+      "candidate_stocks": [
+        {
+          "symbol": "2617",
+          "from_theme": "transport_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2617 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2603",
+          "from_theme": "transport_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2603 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2615",
+          "from_theme": "transport_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2615 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2609",
+          "from_theme": "transport_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2609 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2606",
+          "from_theme": "transport_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2606 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2881",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2881 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "5876",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；5876 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2883",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2883 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2887",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2887 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2884",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2884 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2891",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2891 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2882",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2882 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2886",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2886 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2892",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2892 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2890",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2890 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "5880",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；5880 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2880",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2880 在當日 universe 的類別為 金融，因此納入此股票池。"
+        },
+        {
+          "symbol": "2885",
+          "from_theme": "finance_axis",
+          "trace_event": "volume_focus_limited_diffusion",
+          "reason": "金融主軸 依固定 mapping 對應類別 金融, 金融保險, 銀行保險；2885 在當日 universe 的類別為 金融，因此納入此股票池。"
+        }
+      ],
+      "reasoning_chain": [
+        "放量樣本占全體約 16%，表示資金注意力不是全面擴散，而是局部聚焦。",
+        "其中 8 筆同時位於 A/B 區，顯示放量並非單純低分雜訊。",
+        "放量類別主要在 航運5項、金融1項，且與前段類別 水泥2項、航運2項 仍有交集。",
+        "因此這張卡描述的是局部關注度升高，而不是全面行情已經成形。"
+      ],
+      "confidence": "high",
+      "relation_to_technical": "aligned",
+      "source_type": "volume_cluster+score_distribution+sector_concentration",
+      "generated_at": "2026-08-23T08:20:40.843341+08:00"
+    },
+    {
+      "id": "ai-market-alignment",
+      "title": "AI 方向與橫截面對照",
+      "event": "AI 摘要提供方向感，但橫截面資料仍保留中性空間。",
+      "anomaly": "AI 摘要偏向「偏多」，技術橫截面偏向「中性」，放量樣本占比約 16%。",
+      "keywords": [
+        "AI偏多",
+        "技術中性",
+        "量能驗證",
+        "弱訊號分歧"
+      ],
+      "themes": [
+        "AI摘要對照",
+        "情境分歧",
+        "原物料主軸",
+        "航運主軸"
+      ],
+      "trace": {
+        "event": "ai_technical_overlay",
+        "keywords": [
+          "ai_bullish",
+          "technical_neutral",
+          "volume_validation",
+          "signal_divergence"
+        ],
+        "themes": [
+          "ai_overlay",
+          "trace_divergence",
+          "materials_axis",
+          "transport_axis"
+        ]
+      },
+      "candidate_stocks": [
+        {
+          "symbol": "1101",
+          "from_theme": "materials_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1101 在當日 universe 的類別為 水泥，因此納入此股票池。"
+        },
+        {
+          "symbol": "1102",
+          "from_theme": "materials_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1102 在當日 universe 的類別為 水泥，因此納入此股票池。"
+        },
+        {
+          "symbol": "2002",
+          "from_theme": "materials_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；2002 在當日 universe 的類別為 鋼鐵，因此納入此股票池。"
+        },
+        {
+          "symbol": "1326",
+          "from_theme": "materials_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1326 在當日 universe 的類別為 化工，因此納入此股票池。"
+        },
+        {
+          "symbol": "2617",
+          "from_theme": "transport_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2617 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2603",
+          "from_theme": "transport_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2603 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2615",
+          "from_theme": "transport_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2615 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2609",
+          "from_theme": "transport_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2609 在當日 universe 的類別為 航運，因此納入此股票池。"
+        },
+        {
+          "symbol": "2606",
+          "from_theme": "transport_axis",
+          "trace_event": "ai_technical_overlay",
+          "reason": "航運主軸 依固定 mapping 對應類別 航運；2606 在當日 universe 的類別為 航運，因此納入此股票池。"
+        }
+      ],
+      "reasoning_chain": [
+        "AI market overview 只作為情境方向補充，不參與單一標的結論。",
+        "技術橫截面平均分數約 62.0，A/B 合計 31 筆，C/D 合計 19 筆。",
+        "量能異常樣本占比約 16%，可用來檢查 AI 方向是否有成交量承接。",
+        "當 AI 方向與橫截面一致時，情境可信度提高；若不一致，則維持保留而不外推。"
+      ],
+      "confidence": "medium",
+      "relation_to_technical": "neutral",
+      "source_type": "ai_market_overview+score_distribution+volume_cluster",
+      "generated_at": "2026-08-23T08:20:40.843341+08:00"
+    }
+  ],
+  "scenario_cards_v9_schema_version": "scenario-cards-v9",
+  "scenario_cards_v9": [
+    {
+      "id": "volume-focus",
+      "title": "量能異常與擴散",
+      "summary": "量能擴散與高分結構同步，市場注意力不是孤點放量。 量比大於等於 1.5 的樣本共 8 檔，占全體約 16%；前段平均量比約 1.77，制度量能標記為「放量」。",
+      "confidence": "high",
+      "relation_to_technical": "aligned",
+      "source_types": [
+        "volume_anomaly",
+        "score_distribution",
+        "strategy_activation"
+      ],
+      "source_type": "volume_anomaly+score_distribution+strategy_activation",
+      "themes": [
+        "量能擴張",
+        "結構分化"
+      ],
+      "reasoning_chain": [
+        "訊號 A：放量樣本主要落在 航運5項、金融1項，共 8 檔，占全體約 16%。",
+        "訊號 B：放量樣本中有 8 檔同時位於 A/B 區，而整體 breadth 仍是 A/B 31 對 C/D 19，代表量能不是只落在弱勢端。",
+        "訊號 C：steady_v5 的量能欄位標記為「放量」，前段平均量比約 1.77，可用來確認放量是否只是零星雜訊。",
+        "交叉判讀：量能、廣度與制度量能同向，這層訊號比較像市場注意力已開始擴散。"
+      ],
+      "priority_score": 15,
+      "priority_rank": 1,
+      "priority_reasons": [
+        "訊號來源 3 類",
+        "confidence=high",
+        "技術面一致",
+        "有制度層支持",
+        "量能與廣度交叉驗證成立",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-08-23T08:19:52.467065+08:00"
+    },
+    {
+      "id": "regime-activation",
+      "title": "steady_v5 啟用環境",
+      "summary": "steady_v5 適用環境完整，制度層與市場結構同向。 大盤趨勢 上升、資金集中度 分散、量能 放量；A/B 31 對 C/D 19，前兩大類別占比約 40%。",
+      "confidence": "high",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "strategy_activation",
+        "score_distribution",
+        "sector_concentration",
+        "volume_anomaly"
+      ],
+      "source_type": "strategy_activation+score_distribution+sector_concentration+volume_anomaly",
+      "themes": [
+        "制度環境",
+        "策略適配"
+      ],
+      "reasoning_chain": [
+        "訊號 A：steady_v5 目前通過 3/3 項條件，未通過的主要缺口是 無。",
+        "訊號 B：同一批市場橫截面資料裡，平均分數約 62.0，A/B 31 對 C/D 19，代表風險承擔是否還撐得住。",
+        "訊號 C：前兩大類別占比約 40%，而量能標記為「放量」，可用來判斷是分散輪動還是集中衝刺。",
+        "同日校準：這張卡與目前日期對齊，所以可以拿來當制度背景。",
+        "限制：這張卡只保留制度與市場結構的交叉判讀，不轉成股票清單或操作指令。"
+      ],
+      "priority_score": 14,
+      "priority_rank": 2,
+      "priority_reasons": [
+        "訊號來源 4 類",
+        "confidence=high",
+        "技術面中性",
+        "有制度層支持",
+        "量能與廣度交叉驗證成立",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-08-23T08:20:40.748604+08:00"
+    },
+    {
+      "id": "ai-overlay",
+      "title": "AI 摘要與技術面對照",
+      "summary": "AI 敘事提供方向，但橫截面或制度訊號仍只做到部分驗證。 AI 方向「偏多」，技術結構「中性」，steady_v5 通過 3/3 項。",
+      "confidence": "medium",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "ai_market_overview",
+        "score_distribution",
+        "volume_anomaly",
+        "strategy_activation"
+      ],
+      "source_type": "ai_market_overview+score_distribution+volume_anomaly+strategy_activation",
+      "themes": [
+        "情緒校準",
+        "敘事驗證"
+      ],
+      "reasoning_chain": [
+        "訊號 A：AI 只提供市場方向，這裡先把它壓縮成「偏多」，不帶入任何股票敘事。",
+        "訊號 B：橫截面目前平均分數約 62.0，放量樣本占比約 16%，用來檢查敘事是否有結構支撐。",
+        "訊號 C：steady_v5 目前通過 3/3 項條件，狀態為「啟用」，可用來判斷制度面是否同意這個方向。",
+        "交叉判讀：AI 有方向，但橫截面或制度面還沒完全跟上，所以只能當補充線索。"
+      ],
+      "priority_score": 13,
+      "priority_rank": 3,
+      "priority_reasons": [
+        "訊號來源 4 類",
+        "confidence=medium",
+        "技術面中性",
+        "有制度層支持",
+        "量能與廣度交叉驗證成立",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-08-23T08:20:08.318105+08:00"
+    },
+    {
+      "id": "sector-concentration",
+      "title": "主軸集中度",
+      "summary": "前段類別仍偏分散，主題輪動尚未沉澱成穩定弱訊號。 前 10 名樣本中，前兩大類別占比約 40%，放量重疊類別為 航運、金融。",
+      "confidence": "low",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "sector_concentration",
+        "volume_anomaly",
+        "strategy_activation"
+      ],
+      "source_type": "sector_concentration+volume_anomaly+strategy_activation",
+      "themes": [
+        "資金輪動",
+        "主流收斂"
+      ],
+      "reasoning_chain": [
+        "訊號 A：前 10 名樣本裡，主軸目前集中在 水泥2項、航運2項，代表資金注意力開始收斂。",
+        "訊號 B：放量樣本與前段主軸重疊在 航運、金融，用來確認主題不是只有排名集中，還有量能呼應。",
+        "訊號 C：steady_v5 的資金集中度欄位目前標記為「分散」，制度層也把這個結構納入環境判讀。",
+        "交叉判讀：集中度或量能其中一邊尚未到位，所以只能先視為題材輪動線索。"
+      ],
+      "priority_score": 11,
+      "priority_rank": 4,
+      "priority_reasons": [
+        "訊號來源 3 類",
+        "confidence=low",
+        "技術面中性",
+        "有制度層支持",
+        "量能與廣度交叉驗證成立",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-08-23T08:19:52.467065+08:00"
+    },
+    {
+      "id": "breadth-balance",
+      "title": "盤面廣度與強弱分布",
+      "summary": "盤面廣度與 AI 方向不同步，這層偏強訊號暫時只算待確認。 市場總覽約 85 分，強勢樣本約 5 檔，A/B 31 檔、C/D 19 檔。",
+      "confidence": "medium",
+      "relation_to_technical": "neutral",
+      "source_types": [
+        "market_overview",
+        "score_distribution",
+        "ai_market_overview"
+      ],
+      "source_type": "market_overview+score_distribution+ai_market_overview",
+      "themes": [
+        "市場廣度",
+        "情緒校準"
+      ],
+      "reasoning_chain": [
+        "訊號 A：市場總覽顯示平均強度約 85 分，強勢樣本約 5 檔，代表風險承擔沒有快速收縮。",
+        "訊號 B：A/B 比 C/D 多 12 檔，平均分數約 62.0，盤面不是只靠少數極端樣本撐住。",
+        "交叉判讀：AI 方向目前為「偏多」，與橫截面不同向，情緒端還沒有完全接球。",
+        "限制：這張卡只保留市場層推理，不延伸到任何股票與操作結論。"
+      ],
+      "priority_score": 9,
+      "priority_rank": 5,
+      "priority_reasons": [
+        "訊號來源 3 類",
+        "confidence=medium",
+        "技術面中性",
+        "無制度層支持",
+        "量能或廣度部分驗證",
+        "reasoning_chain=strong"
+      ],
+      "is_fallback": false,
+      "generated_at": "2026-08-23T08:19:52.467065+08:00"
+    }
+  ]
+}
