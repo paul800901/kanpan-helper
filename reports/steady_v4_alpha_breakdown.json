@@ -1,9 +1,9 @@
 {
   "report_version": "v26-steady-v4-alpha-breakdown",
-  "generated_at": "2026-09-09T08:43:37.042737+08:00",
+  "generated_at": "2026-09-10T08:41:24.653646+08:00",
   "evaluation_horizon": "next_available_report",
-  "evaluated_days": 208,
-  "candidate_samples": 3801,
+  "evaluated_days": 209,
+  "candidate_samples": 3826,
   "strategy_target": {
     "strategy": "steady_v4",
     "family": "steady",
@@ -21,20 +21,20 @@
     "description": "以 steady_v4 命中當天對應的 next_report_date 大盤報酬作為比較基準"
   },
   "sample_partition": {
-    "steady_v4_hit_count": 56,
+    "steady_v4_hit_count": 57,
     "outperform_market_count": 31,
-    "underperform_market_count": 25,
+    "underperform_market_count": 26,
     "market_neutral_count": 0
   },
   "benchmark_comparison": {
-    "sample_count": 56,
-    "steady_v4_avg_return_pct": 0.5434,
-    "market_avg_return_pct": 0.0877,
-    "avg_alpha_pct": 0.4557,
+    "sample_count": 57,
+    "steady_v4_avg_return_pct": 0.5097,
+    "market_avg_return_pct": 0.0891,
+    "avg_alpha_pct": 0.4207,
     "outperform_market_count": 31,
-    "underperform_market_count": 25,
-    "outperform_rate_pct": 55.3571,
-    "underperform_rate_pct": 44.6429,
+    "underperform_market_count": 26,
+    "outperform_rate_pct": 54.386,
+    "underperform_rate_pct": 45.614,
     "market_stronger": false,
     "strongest_alpha_samples": [
       {
@@ -64,18 +64,18 @@
         "alpha_pct": -2.9702
       }
     ],
-    "summary": "steady_v4 平均隔日報酬 0.5434%，高於同期市場平均 0.0877%，平均 alpha 0.4557%。"
+    "summary": "steady_v4 平均隔日報酬 0.5097%，高於同期市場平均 0.0891%，平均 alpha 0.4207%。"
   },
   "groups": {
     "all_steady_v4": {
       "group": "all_steady_v4",
       "label": "steady_v4 全部樣本",
-      "sample_count": 56,
-      "avg_return_pct": 0.5434,
-      "avg_market_return_pct": 0.0877,
-      "avg_alpha_pct": 0.4557,
-      "win_rate_pct": 62.5,
-      "outperform_rate_pct": 55.3571,
+      "sample_count": 57,
+      "avg_return_pct": 0.5097,
+      "avg_market_return_pct": 0.0891,
+      "avg_alpha_pct": 0.4207,
+      "win_rate_pct": 61.4035,
+      "outperform_rate_pct": 54.386,
       "samples": [
         {
           "symbol": "2303",
@@ -1058,6 +1058,26 @@
           "underperform_market": true
         },
         {
+          "symbol": "2609",
+          "name": "陽明",
+          "date": "2026-09-08",
+          "next_report_date": "2026-09-09",
+          "priority_rank": 23,
+          "hit_count": 1,
+          "next_day_return_pct": -1.3769,
+          "market_return_pct": 0.1647,
+          "alpha_pct": -1.5416,
+          "k_value": 24.16,
+          "ma20_gap_pct": 1.0962,
+          "abs_ma20_gap_pct": 1.0962,
+          "volume_ratio": 0.18,
+          "prior_pullback_pct": -0.1718,
+          "close_above_ma20": true,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        },
+        {
           "symbol": "2882",
           "name": "國泰金",
           "date": "2026-03-31",
@@ -1200,51 +1220,51 @@
       ],
       "metrics": {
         "priority_rank": {
-          "sample_count": 56,
-          "avg_value": 13.3393,
+          "sample_count": 57,
+          "avg_value": 13.5088,
           "min_value": 1.0,
           "max_value": 26.0
         },
         "hit_count": {
-          "sample_count": 56,
-          "avg_value": 2.0536,
+          "sample_count": 57,
+          "avg_value": 2.0351,
           "min_value": 1.0,
           "max_value": 4.0
         },
         "k_value": {
-          "sample_count": 56,
-          "avg_value": 26.9748,
+          "sample_count": 57,
+          "avg_value": 26.9254,
           "min_value": 24.08,
           "max_value": 29.94
         },
         "abs_ma20_gap_pct": {
-          "sample_count": 56,
-          "avg_value": 1.0329,
+          "sample_count": 57,
+          "avg_value": 1.034,
           "min_value": 0.0473,
           "max_value": 2.0619
         },
         "volume_ratio": {
-          "sample_count": 56,
-          "avg_value": 0.893,
-          "min_value": 0.35,
+          "sample_count": 57,
+          "avg_value": 0.8805,
+          "min_value": 0.18,
           "max_value": 1.88
         },
         "prior_pullback_pct": {
-          "sample_count": 56,
-          "avg_value": 0.7882,
+          "sample_count": 57,
+          "avg_value": 0.7714,
           "min_value": -0.7505,
           "max_value": 3.5587
         },
         "close_above_ma20": {
-          "sample_count": 56,
-          "true_count": 6,
+          "sample_count": 57,
+          "true_count": 7,
           "false_count": 50,
-          "true_rate_pct": 10.7143
+          "true_rate_pct": 12.2807
         },
         "has_sharp_drop": {
-          "sample_count": 56,
+          "sample_count": 57,
           "true_count": 0,
-          "false_count": 56,
+          "false_count": 57,
           "true_rate_pct": 0.0
         }
       }
@@ -1934,11 +1954,11 @@
     "underperform_market": {
       "group": "underperform_market",
       "label": "落後市場樣本",
-      "sample_count": 25,
-      "avg_return_pct": -0.646,
-      "avg_market_return_pct": 0.7333,
-      "avg_alpha_pct": -1.3793,
-      "win_rate_pct": 32.0,
+      "sample_count": 26,
+      "avg_return_pct": -0.6741,
+      "avg_market_return_pct": 0.7114,
+      "avg_alpha_pct": -1.3856,
+      "win_rate_pct": 30.7692,
       "outperform_rate_pct": 0.0,
       "samples": [
         {
@@ -2302,6 +2322,26 @@
           "underperform_market": true
         },
         {
+          "symbol": "2609",
+          "name": "陽明",
+          "date": "2026-09-08",
+          "next_report_date": "2026-09-09",
+          "priority_rank": 23,
+          "hit_count": 1,
+          "next_day_return_pct": -1.3769,
+          "market_return_pct": 0.1647,
+          "alpha_pct": -1.5416,
+          "k_value": 24.16,
+          "ma20_gap_pct": 1.0962,
+          "abs_ma20_gap_pct": 1.0962,
+          "volume_ratio": 0.18,
+          "prior_pullback_pct": -0.1718,
+          "close_above_ma20": true,
+          "has_sharp_drop": false,
+          "outperform_market": false,
+          "underperform_market": true
+        },
+        {
           "symbol": "2882",
           "name": "國泰金",
           "date": "2026-03-31",
@@ -2444,51 +2484,51 @@
       ],
       "metrics": {
         "priority_rank": {
-          "sample_count": 25,
-          "avg_value": 14.0,
+          "sample_count": 26,
+          "avg_value": 14.3462,
           "min_value": 3.0,
           "max_value": 26.0
         },
         "hit_count": {
-          "sample_count": 25,
-          "avg_value": 1.96,
+          "sample_count": 26,
+          "avg_value": 1.9231,
           "min_value": 1.0,
           "max_value": 4.0
         },
         "k_value": {
-          "sample_count": 25,
-          "avg_value": 26.6204,
+          "sample_count": 26,
+          "avg_value": 26.5258,
           "min_value": 24.08,
           "max_value": 29.94
         },
         "abs_ma20_gap_pct": {
-          "sample_count": 25,
-          "avg_value": 1.0859,
+          "sample_count": 26,
+          "avg_value": 1.0863,
           "min_value": 0.1568,
           "max_value": 2.0619
         },
         "volume_ratio": {
-          "sample_count": 25,
-          "avg_value": 0.8876,
-          "min_value": 0.35,
+          "sample_count": 26,
+          "avg_value": 0.8604,
+          "min_value": 0.18,
           "max_value": 1.74
         },
         "prior_pullback_pct": {
-          "sample_count": 25,
-          "avg_value": 0.736,
+          "sample_count": 26,
+          "avg_value": 0.7011,
           "min_value": -0.4249,
           "max_value": 3.5587
         },
         "close_above_ma20": {
-          "sample_count": 25,
-          "true_count": 2,
+          "sample_count": 26,
+          "true_count": 3,
           "false_count": 23,
-          "true_rate_pct": 8.0
+          "true_rate_pct": 11.5385
         },
         "has_sharp_drop": {
-          "sample_count": 25,
+          "sample_count": 26,
           "true_count": 0,
-          "false_count": 25,
+          "false_count": 26,
           "true_rate_pct": 0.0
         }
       }
@@ -2924,6 +2964,20 @@
       "underperform_count": 1
     },
     {
+      "symbol": "2609",
+      "name": "陽明",
+      "sample_count": 1,
+      "hit_dates": [
+        "2026-09-08"
+      ],
+      "avg_return_pct": -1.3769,
+      "avg_market_return_pct": 0.1647,
+      "avg_alpha_pct": -1.5416,
+      "win_rate_pct": 0.0,
+      "outperform_count": 0,
+      "underperform_count": 1
+    },
+    {
       "symbol": "2882",
       "name": "國泰金",
       "sample_count": 2,
@@ -3320,6 +3374,20 @@
       "underperform_count": 1
     },
     {
+      "symbol": "2609",
+      "name": "陽明",
+      "sample_count": 1,
+      "hit_dates": [
+        "2026-09-08"
+      ],
+      "avg_return_pct": -1.3769,
+      "avg_market_return_pct": 0.1647,
+      "avg_alpha_pct": -1.5416,
+      "win_rate_pct": 0.0,
+      "outperform_count": 0,
+      "underperform_count": 1
+    },
+    {
       "symbol": "2882",
       "name": "國泰金",
       "sample_count": 2,
@@ -3363,18 +3431,18 @@
         "max_value": 25.0
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "avg_value": 14.0,
+        "sample_count": 26,
+        "avg_value": 14.3462,
         "min_value": 3.0,
         "max_value": 26.0
       },
       "focus_avg_value": 12.8065,
-      "comparison_avg_value": 14.0,
-      "avg_delta": -1.1935,
+      "comparison_avg_value": 14.3462,
+      "avg_delta": -1.5397,
       "direction": "focus_lower",
-      "gap_score": 0.0477,
+      "gap_score": 0.0616,
       "signature_label": "排序名次較前",
-      "summary": "跑贏市場樣本平均排序名次為 12.8065，落後市場樣本為 14.0，差異 -1.1935。"
+      "summary": "跑贏市場樣本平均排序名次為 12.8065，落後市場樣本為 14.3462，差異 -1.5397。"
     },
     "hit_count": {
       "metric": "hit_count",
@@ -3389,18 +3457,18 @@
         "max_value": 3.0
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "avg_value": 1.96,
+        "sample_count": 26,
+        "avg_value": 1.9231,
         "min_value": 1.0,
         "max_value": 4.0
       },
       "focus_avg_value": 2.129,
-      "comparison_avg_value": 1.96,
-      "avg_delta": 0.169,
+      "comparison_avg_value": 1.9231,
+      "avg_delta": 0.2059,
       "direction": "focus_higher",
-      "gap_score": 0.0563,
+      "gap_score": 0.0686,
       "signature_label": "題材共振較多",
-      "summary": "跑贏市場樣本平均題材命中數為 2.129，落後市場樣本為 1.96，差異 0.169。"
+      "summary": "跑贏市場樣本平均題材命中數為 2.129，落後市場樣本為 1.9231，差異 0.2059。"
     },
     "k_value": {
       "metric": "k_value",
@@ -3415,18 +3483,18 @@
         "max_value": 29.77
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "avg_value": 26.6204,
+        "sample_count": 26,
+        "avg_value": 26.5258,
         "min_value": 24.08,
         "max_value": 29.94
       },
       "focus_avg_value": 27.2606,
-      "comparison_avg_value": 26.6204,
-      "avg_delta": 0.6402,
+      "comparison_avg_value": 26.5258,
+      "avg_delta": 0.7348,
       "direction": "focus_higher",
-      "gap_score": 0.1092,
+      "gap_score": 0.1254,
       "signature_label": "K 值較高",
-      "summary": "跑贏市場樣本平均K 值為 27.2606，落後市場樣本為 26.6204，差異 0.6402。"
+      "summary": "跑贏市場樣本平均K 值為 27.2606，落後市場樣本為 26.5258，差異 0.7348。"
     },
     "abs_ma20_gap_pct": {
       "metric": "abs_ma20_gap_pct",
@@ -3441,18 +3509,18 @@
         "max_value": 2.0234
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "avg_value": 1.0859,
+        "sample_count": 26,
+        "avg_value": 1.0863,
         "min_value": 0.1568,
         "max_value": 2.0619
       },
       "focus_avg_value": 0.9901,
-      "comparison_avg_value": 1.0859,
-      "avg_delta": -0.0958,
+      "comparison_avg_value": 1.0863,
+      "avg_delta": -0.0962,
       "direction": "focus_lower",
-      "gap_score": 0.0476,
+      "gap_score": 0.0478,
       "signature_label": "更貼近 MA20",
-      "summary": "跑贏市場樣本平均距 MA20為 0.9901，落後市場樣本為 1.0859，差異 -0.0958。"
+      "summary": "跑贏市場樣本平均距 MA20為 0.9901，落後市場樣本為 1.0863，差異 -0.0962。"
     },
     "volume_ratio": {
       "metric": "volume_ratio",
@@ -3467,18 +3535,18 @@
         "max_value": 1.88
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "avg_value": 0.8876,
-        "min_value": 0.35,
+        "sample_count": 26,
+        "avg_value": 0.8604,
+        "min_value": 0.18,
         "max_value": 1.74
       },
       "focus_avg_value": 0.8974,
-      "comparison_avg_value": 0.8876,
-      "avg_delta": 0.0098,
+      "comparison_avg_value": 0.8604,
+      "avg_delta": 0.037,
       "direction": "focus_higher",
-      "gap_score": 0.0064,
+      "gap_score": 0.0218,
       "signature_label": "量比更高",
-      "summary": "跑贏市場樣本平均volume_ratio為 0.8974，落後市場樣本為 0.8876，差異 0.0098。"
+      "summary": "跑贏市場樣本平均volume_ratio為 0.8974，落後市場樣本為 0.8604，差異 0.037。"
     },
     "prior_pullback_pct": {
       "metric": "prior_pullback_pct",
@@ -3493,18 +3561,18 @@
         "max_value": 2.5271
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "avg_value": 0.736,
+        "sample_count": 26,
+        "avg_value": 0.7011,
         "min_value": -0.4249,
         "max_value": 3.5587
       },
       "focus_avg_value": 0.8303,
-      "comparison_avg_value": 0.736,
-      "avg_delta": 0.0943,
+      "comparison_avg_value": 0.7011,
+      "avg_delta": 0.1292,
       "direction": "focus_higher",
-      "gap_score": 0.0219,
+      "gap_score": 0.03,
       "signature_label": "前段回落較淺",
-      "summary": "跑贏市場樣本平均之前跌幅為 0.8303，落後市場樣本為 0.736，差異 0.0943。"
+      "summary": "跑贏市場樣本平均之前跌幅為 0.8303，落後市場樣本為 0.7011，差異 0.1292。"
     },
     "close_above_ma20": {
       "metric": "close_above_ma20",
@@ -3519,16 +3587,16 @@
         "true_rate_pct": 12.9032
       },
       "comparison_summary": {
-        "sample_count": 25,
-        "true_count": 2,
+        "sample_count": 26,
+        "true_count": 3,
         "false_count": 23,
-        "true_rate_pct": 8.0
+        "true_rate_pct": 11.5385
       },
-      "rate_diff_pct": 4.9032,
+      "rate_diff_pct": 1.3647,
       "direction": "focus_higher",
-      "gap_score": 0.049,
+      "gap_score": 0.0136,
       "signature_label": "更常站上 MA20",
-      "summary": "跑贏市場樣本的站上 MA20為 12.9032%，落後市場樣本為 8.0%，差異 4.9032 個百分點。"
+      "summary": "跑贏市場樣本的站上 MA20為 12.9032%，落後市場樣本為 11.5385%，差異 1.3647 個百分點。"
     },
     "has_sharp_drop": {
       "metric": "has_sharp_drop",
@@ -3543,9 +3611,9 @@
         "true_rate_pct": 0.0
       },
       "comparison_summary": {
-        "sample_count": 25,
+        "sample_count": 26,
         "true_count": 0,
-        "false_count": 25,
+        "false_count": 26,
         "true_rate_pct": 0.0
       },
       "rate_diff_pct": 0.0,
@@ -3563,8 +3631,8 @@
       "metric_type": "numeric",
       "feature_key": "priority_rank",
       "focus_summary": {
-        "sample_count": 25,
-        "avg_value": 14.0,
+        "sample_count": 26,
+        "avg_value": 14.3462,
         "min_value": 3.0,
         "max_value": 26.0
       },
@@ -3574,13 +3642,13 @@
         "min_value": 1.0,
         "max_value": 25.0
       },
-      "focus_avg_value": 14.0,
+      "focus_avg_value": 14.3462,
       "comparison_avg_value": 12.8065,
-      "avg_delta": 1.1935,
+      "avg_delta": 1.5397,
       "direction": "focus_higher",
-      "gap_score": 0.0477,
+      "gap_score": 0.0616,
       "signature_label": "排序名次較後",
-      "summary": "落後市場樣本平均排序名次為 14.0，跑贏市場樣本為 12.8065，差異 1.1935。"
+      "summary": "落後市場樣本平均排序名次為 14.3462，跑贏市場樣本為 12.8065，差異 1.5397。"
     },
     "hit_count": {
       "metric": "hit_count",
@@ -3589,8 +3657,8 @@
       "metric_type": "numeric",
       "feature_key": "hit_count",
       "focus_summary": {
-        "sample_count": 25,
-        "avg_value": 1.96,
+        "sample_count": 26,
+        "avg_value": 1.9231,
         "min_value": 1.0,
         "max_value": 4.0
       },
@@ -3600,13 +3668,13 @@
         "min_value": 1.0,
         "max_value": 3.0
       },
-      "focus_avg_value": 1.96,
+      "focus_avg_value": 1.9231,
       "comparison_avg_value": 2.129,
-      "avg_delta": -0.169,
+      "avg_delta": -0.2059,
       "direction": "focus_lower",
-      "gap_score": 0.0563,
+      "gap_score": 0.0686,
       "signature_label": "題材共振較少",
-      "summary": "落後市場樣本平均題材命中數為 1.96，跑贏市場樣本為 2.129，差異 -0.169。"
+      "summary": "落後市場樣本平均題材命中數為 1.9231，跑贏市場樣本為 2.129，差異 -0.2059。"
     },
     "k_value": {
       "metric": "k_value",
@@ -3615,8 +3683,8 @@
       "metric_type": "numeric",
       "feature_key": "k_level",
       "focus_summary": {
-        "sample_count": 25,
-        "avg_value": 26.6204,
+        "sample_count": 26,
+        "avg_value": 26.5258,
         "min_value": 24.08,
         "max_value": 29.94
       },
@@ -3626,13 +3694,13 @@
         "min_value": 24.11,
         "max_value": 29.77
       },
-      "focus_avg_value": 26.6204,
+      "focus_avg_value": 26.5258,
       "comparison_avg_value": 27.2606,
-      "avg_delta": -0.6402,
+      "avg_delta": -0.7348,
       "direction": "focus_lower",
-      "gap_score": 0.1092,
+      "gap_score": 0.1254,
       "signature_label": "K 值較低",
-      "summary": "落後市場樣本平均K 值為 26.6204，跑贏市場樣本為 27.2606，差異 -0.6402。"
+      "summary": "落後市場樣本平均K 值為 26.5258，跑贏市場樣本為 27.2606，差異 -0.7348。"
     },
     "abs_ma20_gap_pct": {
       "metric": "abs_ma20_gap_pct",
@@ -3641,8 +3709,8 @@
       "metric_type": "numeric",
       "feature_key": "ma20_distance",
       "focus_summary": {
-        "sample_count": 25,
-        "avg_value": 1.0859,
+        "sample_count": 26,
+        "avg_value": 1.0863,
         "min_value": 0.1568,
         "max_value": 2.0619
       },
@@ -3652,13 +3720,13 @@
         "min_value": 0.0473,
         "max_value": 2.0234
       },
-      "focus_avg_value": 1.0859,
+      "focus_avg_value": 1.0863,
       "comparison_avg_value": 0.9901,
-      "avg_delta": 0.0958,
+      "avg_delta": 0.0962,
       "direction": "focus_higher",
-      "gap_score": 0.0476,
+      "gap_score": 0.0478,
       "signature_label": "距 MA20 較遠",
-      "summary": "落後市場樣本平均距 MA20為 1.0859，跑贏市場樣本為 0.9901，差異 0.0958。"
+      "summary": "落後市場樣本平均距 MA20為 1.0863，跑贏市場樣本為 0.9901，差異 0.0962。"
     },
     "volume_ratio": {
       "metric": "volume_ratio",
@@ -3667,9 +3735,9 @@
       "metric_type": "numeric",
       "feature_key": "volume_ratio",
       "focus_summary": {
-        "sample_count": 25,
-        "avg_value": 0.8876,
-        "min_value": 0.35,
+        "sample_count": 26,
+        "avg_value": 0.8604,
+        "min_value": 0.18,
         "max_value": 1.74
       },
       "comparison_summary": {
@@ -3678,13 +3746,13 @@
         "min_value": 0.38,
         "max_value": 1.88
       },
-      "focus_avg_value": 0.8876,
+      "focus_avg_value": 0.8604,
       "comparison_avg_value": 0.8974,
-      "avg_delta": -0.0098,
+      "avg_delta": -0.037,
       "direction": "focus_lower",
-      "gap_score": 0.0064,
+      "gap_score": 0.0218,
       "signature_label": "量比更低",
-      "summary": "落後市場樣本平均volume_ratio為 0.8876，跑贏市場樣本為 0.8974，差異 -0.0098。"
+      "summary": "落後市場樣本平均volume_ratio為 0.8604，跑贏市場樣本為 0.8974，差異 -0.037。"
     },
     "prior_pullback_pct": {
       "metric": "prior_pullback_pct",
@@ -3693,8 +3761,8 @@
       "metric_type": "numeric",
       "feature_key": "pullback",
       "focus_summary": {
-        "sample_count": 25,
-        "avg_value": 0.736,
+        "sample_count": 26,
+        "avg_value": 0.7011,
         "min_value": -0.4249,
         "max_value": 3.5587
       },
@@ -3704,13 +3772,13 @@
         "min_value": -0.7505,
         "max_value": 2.5271
       },
-      "focus_avg_value": 0.736,
+      "focus_avg_value": 0.7011,
       "comparison_avg_value": 0.8303,
-      "avg_delta": -0.0943,
+      "avg_delta": -0.1292,
       "direction": "focus_lower",
-      "gap_score": 0.0219,
+      "gap_score": 0.03,
       "signature_label": "前段回落較深",
-      "summary": "落後市場樣本平均之前跌幅為 0.736，跑贏市場樣本為 0.8303，差異 -0.0943。"
+      "summary": "落後市場樣本平均之前跌幅為 0.7011，跑贏市場樣本為 0.8303，差異 -0.1292。"
     },
     "close_above_ma20": {
       "metric": "close_above_ma20",
@@ -3719,10 +3787,10 @@
       "metric_type": "boolean",
       "feature_key": "ma20_side",
       "focus_summary": {
-        "sample_count": 25,
-        "true_count": 2,
+        "sample_count": 26,
+        "true_count": 3,
         "false_count": 23,
-        "true_rate_pct": 8.0
+        "true_rate_pct": 11.5385
       },
       "comparison_summary": {
         "sample_count": 31,
@@ -3730,11 +3798,11 @@
         "false_count": 27,
         "true_rate_pct": 12.9032
       },
-      "rate_diff_pct": -4.9032,
+      "rate_diff_pct": -1.3647,
       "direction": "focus_lower",
-      "gap_score": 0.049,
+      "gap_score": 0.0136,
       "signature_label": "更常在 MA20 下方",
-      "summary": "落後市場樣本的站上 MA20為 8.0%，跑贏市場樣本為 12.9032%，差異 -4.9032 個百分點。"
+      "summary": "落後市場樣本的站上 MA20為 11.5385%，跑贏市場樣本為 12.9032%，差異 -1.3647 個百分點。"
     },
     "has_sharp_drop": {
       "metric": "has_sharp_drop",
@@ -3743,9 +3811,9 @@
       "metric_type": "boolean",
       "feature_key": "selloff",
       "focus_summary": {
-        "sample_count": 25,
+        "sample_count": 26,
         "true_count": 0,
-        "false_count": 25,
+        "false_count": 26,
         "true_rate_pct": 0.0
       },
       "comparison_summary": {
@@ -3768,8 +3836,8 @@
       "label": "K 值",
       "signature_label": "K 值較高",
       "direction": "focus_higher",
-      "gap_score": 0.1092,
-      "summary": "跑贏市場樣本平均K 值為 27.2606，落後市場樣本為 26.6204，差異 0.6402。"
+      "gap_score": 0.1254,
+      "summary": "跑贏市場樣本平均K 值為 27.2606，落後市場樣本為 26.5258，差異 0.7348。"
     },
     {
       "feature_key": "hit_count",
@@ -3777,8 +3845,8 @@
       "label": "題材命中數",
       "signature_label": "題材共振較多",
       "direction": "focus_higher",
-      "gap_score": 0.0563,
-      "summary": "跑贏市場樣本平均題材命中數為 2.129，落後市場樣本為 1.96，差異 0.169。"
+      "gap_score": 0.0686,
+      "summary": "跑贏市場樣本平均題材命中數為 2.129，落後市場樣本為 1.9231，差異 0.2059。"
     }
   ],
   "key_drag_signatures": [
@@ -3788,8 +3856,8 @@
       "label": "K 值",
       "signature_label": "K 值較低",
       "direction": "focus_lower",
-      "gap_score": 0.1092,
-      "summary": "落後市場樣本平均K 值為 26.6204，跑贏市場樣本為 27.2606，差異 -0.6402。"
+      "gap_score": 0.1254,
+      "summary": "落後市場樣本平均K 值為 26.5258，跑贏市場樣本為 27.2606，差異 -0.7348。"
     },
     {
       "feature_key": "hit_count",
@@ -3797,11 +3865,11 @@
       "label": "題材命中數",
       "signature_label": "題材共振較少",
       "direction": "focus_lower",
-      "gap_score": 0.0563,
-      "summary": "落後市場樣本平均題材命中數為 1.96，跑贏市場樣本為 2.129，差異 -0.169。"
+      "gap_score": 0.0686,
+      "summary": "落後市場樣本平均題材命中數為 1.9231，跑贏市場樣本為 2.129，差異 -0.2059。"
     }
   ],
-  "alpha_summary": "跑贏市場樣本的 31 個樣本，相較 落後市場樣本的 25 個樣本，最明顯的共同特徵是 K 值較高 與 題材共振較多。",
-  "drag_summary": "落後市場樣本的 25 個樣本，相較 跑贏市場樣本的 31 個樣本，最明顯的共同特徵是 K 值較低 與 題材共振較少。",
-  "summary": "steady_v4 平均隔日報酬 0.5434%，高於同期市場平均 0.0877%，平均 alpha 0.4557%。"
+  "alpha_summary": "跑贏市場樣本的 31 個樣本，相較 落後市場樣本的 26 個樣本，最明顯的共同特徵是 K 值較高 與 題材共振較多。",
+  "drag_summary": "落後市場樣本的 26 個樣本，相較 跑贏市場樣本的 31 個樣本，最明顯的共同特徵是 K 值較低 與 題材共振較少。",
+  "summary": "steady_v4 平均隔日報酬 0.5097%，高於同期市場平均 0.0891%，平均 alpha 0.4207%。"
 }
