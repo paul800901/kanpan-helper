@@ -424,8 +424,8 @@ class AIAnalyzer:
 
     def _check_duplicates(self, ai_stocks: List[Dict]) -> None:
         """
-        若 why_selected_ai 或 risk_ai 有超過 2 對相似，視為生成失敗，直接 raise。
-        相似度以字元集 Jaccard 係數 > 0.7 判定。
+        若 why_selected_ai 或 risk_ai 有超過 1 對相似，視為生成失敗，直接 raise。
+        相似度以字元集 Jaccard 係數 > 0.75 判定，避免因共享市場條件用語造成誤判。
         """
         def jaccard(a: str, b: str) -> float:
             if not a or not b:
@@ -442,12 +442,12 @@ class AIAnalyzer:
         why_dupes = sum(
             1 for i in range(len(why_texts))
             for j in range(i + 1, len(why_texts))
-            if jaccard(why_texts[i], why_texts[j]) > 0.70
+            if jaccard(why_texts[i], why_texts[j]) > 0.75
         )
         risk_dupes = sum(
             1 for i in range(len(risk_texts))
             for j in range(i + 1, len(risk_texts))
-            if jaccard(risk_texts[i], risk_texts[j]) > 0.70
+            if jaccard(risk_texts[i], risk_texts[j]) > 0.75
         )
 
         if why_dupes > 1:
