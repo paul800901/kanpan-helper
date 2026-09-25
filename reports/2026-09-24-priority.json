@@ -1,9 +1,9 @@
 {
   "report_version": "v12-priority-validation",
   "date": "2026-09-24",
-  "generated_at": "2026-09-24T08:42:08.343109+08:00",
+  "generated_at": "2026-09-25T08:42:34.061510+08:00",
   "evaluation_horizon": "next_available_report",
-  "next_report_date": null,
+  "next_report_date": "2026-09-25",
   "sort_rule": {
     "description": "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。",
     "keys": [
@@ -16,7 +16,7 @@
   "source_reports": {
     "context": "2026-09-24-context.json",
     "universe": "2026-09-24-universe.json",
-    "next_universe": null
+    "next_universe": "2026-09-25-universe.json"
   },
   "candidate_count": 11,
   "top1_symbols": [
@@ -35,18 +35,18 @@
     "2330"
   ],
   "evaluation": {
-    "evaluated_candidate_count": 0,
-    "top1_evaluated_count": 0,
-    "top3_evaluated_count": 0,
-    "top5_evaluated_count": 0,
-    "all_avg_return_pct": null,
-    "top1_avg_return_pct": null,
-    "top3_avg_return_pct": null,
-    "top5_avg_return_pct": null,
-    "all_win_rate_pct": null,
-    "top1_win_rate_pct": null,
-    "top3_win_rate_pct": null,
-    "top5_win_rate_pct": null
+    "evaluated_candidate_count": 11,
+    "top1_evaluated_count": 1,
+    "top3_evaluated_count": 3,
+    "top5_evaluated_count": 5,
+    "all_avg_return_pct": -0.4823,
+    "top1_avg_return_pct": -0.6954,
+    "top3_avg_return_pct": -0.7516,
+    "top5_avg_return_pct": -0.1617,
+    "all_win_rate_pct": 27.2727,
+    "top1_win_rate_pct": 0.0,
+    "top3_win_rate_pct": 0.0,
+    "top5_win_rate_pct": 20.0
   },
   "candidates": [
     {
@@ -97,7 +97,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 4 個情境; 技術面: 可偏多觀察",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 35.95,
+        "next_close": 35.7,
+        "return_pct": -0.6954,
+        "next_rank": 5,
+        "next_score": 73,
+        "next_action_bias": "可留意"
+      }
     },
     {
       "priority_rank": 2,
@@ -147,7 +156,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 4 個情境; 技術面: 強勢續看",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 25.65,
+        "next_close": 25.25,
+        "return_pct": -1.5595,
+        "next_rank": 9,
+        "next_score": 68,
+        "next_action_bias": "可留意"
+      }
     },
     {
       "priority_rank": 3,
@@ -197,7 +215,16 @@
         "is_weak_blocked": true
       },
       "priority_explanation": "命中 4 個情境; 技術面: 暫不考慮",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 18.65,
+        "next_close": 18.65,
+        "return_pct": 0.0,
+        "next_rank": 36,
+        "next_score": 46,
+        "next_action_bias": "暫不考慮"
+      }
     },
     {
       "priority_rank": 4,
@@ -247,7 +274,16 @@
         "is_weak_blocked": true
       },
       "priority_explanation": "命中 4 個情境; 技術面: 暫不考慮",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 65.4,
+        "next_close": 67.0,
+        "return_pct": 2.4465,
+        "next_rank": 18,
+        "next_score": 57,
+        "next_action_bias": "偏保守"
+      }
     },
     {
       "priority_rank": 5,
@@ -293,7 +329,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 可偏多觀察",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 2500.0,
+        "next_close": 2475.0,
+        "return_pct": -1.0,
+        "next_rank": 13,
+        "next_score": 58,
+        "next_action_bias": "偏保守"
+      }
     },
     {
       "priority_rank": 6,
@@ -339,7 +384,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 先觀望",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 693.0,
+        "next_close": 699.0,
+        "return_pct": 0.8658,
+        "next_rank": 8,
+        "next_score": 68,
+        "next_action_bias": "可留意"
+      }
     },
     {
       "priority_rank": 7,
@@ -385,7 +439,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 先觀望",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 5185.0,
+        "next_close": 5285.0,
+        "return_pct": 1.9286,
+        "next_rank": 1,
+        "next_score": 78,
+        "next_action_bias": "可留意"
+      }
     },
     {
       "priority_rank": 8,
@@ -431,7 +494,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 先觀望",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 515.0,
+        "next_close": 503.0,
+        "return_pct": -2.3301,
+        "next_rank": 14,
+        "next_score": 58,
+        "next_action_bias": "偏保守"
+      }
     },
     {
       "priority_rank": 9,
@@ -477,7 +549,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 先觀望",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 160.0,
+        "next_close": 154.0,
+        "return_pct": -3.75,
+        "next_rank": 25,
+        "next_score": 48,
+        "next_action_bias": "暫不考慮"
+      }
     },
     {
       "priority_rank": 10,
@@ -523,7 +604,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 先觀望",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 545.0,
+        "next_close": 543.0,
+        "return_pct": -0.367,
+        "next_rank": 20,
+        "next_score": 53,
+        "next_action_bias": "偏保守"
+      }
     },
     {
       "priority_rank": 11,
@@ -569,7 +659,16 @@
         "is_weak_blocked": false
       },
       "priority_explanation": "命中 2 個情境; 技術面: 強勢續看",
-      "next_report_validation": null
+      "next_report_validation": {
+        "next_report_date": "2026-09-25",
+        "found": true,
+        "current_close": 59.2,
+        "next_close": 58.7,
+        "return_pct": -0.8446,
+        "next_rank": 7,
+        "next_score": 71,
+        "next_action_bias": "可留意"
+      }
     }
   ],
   "priority_validation_v10_1_schema_version": "priority-validation-v10.1",
@@ -581,7 +680,7 @@
     "leader_state": "strong_leaders",
     "validation_summary": "市場狀態: balanced; 廣度: mixed_breadth; 量能: neutral; 領漲: strong_leaders; 候選數: 11",
     "confidence": "high",
-    "generated_at": "2026-09-24T08:42:08.343109+08:00"
+    "generated_at": "2026-09-25T08:42:34.061510+08:00"
   },
   "priority_candidates_v10_1": [
     {
