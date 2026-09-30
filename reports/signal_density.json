@@ -1,7 +1,7 @@
 {
   "report_version": "v17-signal-density-analysis",
-  "generated_at": "2026-09-29T08:46:13.645419+08:00",
-  "latest_date": "2026-09-29",
+  "generated_at": "2026-09-30T08:47:13.125702+08:00",
+  "latest_date": "2026-09-30",
   "strategy_names": [
     "sniper",
     "steady"
@@ -49671,6 +49671,171 @@
         "is_zero_hit_day": true,
         "summary": "今天 14 檔候選中，MA20 條件 0 檔、KD 條件 0 檔、低位條件 6 檔，因此兩條策略都沒有命中。 最嚴條件為 MA20 條件、KD 條件。"
       }
+    },
+    {
+      "date": "2026-09-30",
+      "previous_date": "2026-09-29",
+      "previous_universe_available": true,
+      "candidate_count": 14,
+      "strategy_hits": {
+        "sniper": 1,
+        "steady": 0
+      },
+      "any_strategy_hit_count": 1,
+      "conditions": {
+        "ma20_break": {
+          "condition": "ma20_break",
+          "label": "MA20 條件",
+          "description": "剛跌破 MA20",
+          "candidate_count": 14,
+          "pass_count": 1,
+          "fail_count": 13,
+          "pass_rate_pct": 7.1429
+        },
+        "kd_low_turn_up": {
+          "condition": "kd_low_turn_up",
+          "label": "KD 條件",
+          "description": "KD 低檔翻揚",
+          "candidate_count": 14,
+          "pass_count": 0,
+          "fail_count": 14,
+          "pass_rate_pct": 0.0
+        },
+        "low_position": {
+          "condition": "low_position",
+          "label": "低位條件",
+          "description": "低位因子",
+          "candidate_count": 14,
+          "pass_count": 7,
+          "fail_count": 7,
+          "pass_rate_pct": 50.0
+        }
+      },
+      "ranking_by_strictness": [
+        {
+          "condition": "kd_low_turn_up",
+          "label": "KD 條件",
+          "description": "KD 低檔翻揚",
+          "candidate_count": 14,
+          "pass_count": 0,
+          "fail_count": 14,
+          "pass_rate_pct": 0.0
+        },
+        {
+          "condition": "ma20_break",
+          "label": "MA20 條件",
+          "description": "剛跌破 MA20",
+          "candidate_count": 14,
+          "pass_count": 1,
+          "fail_count": 13,
+          "pass_rate_pct": 7.1429
+        },
+        {
+          "condition": "low_position",
+          "label": "低位條件",
+          "description": "低位因子",
+          "candidate_count": 14,
+          "pass_count": 7,
+          "fail_count": 7,
+          "pass_rate_pct": 50.0
+        }
+      ],
+      "strictest_condition": {
+        "condition": "kd_low_turn_up",
+        "label": "KD 條件",
+        "description": "KD 低檔翻揚",
+        "candidate_count": 14,
+        "pass_count": 0,
+        "fail_count": 14,
+        "pass_rate_pct": 0.0
+      },
+      "strictest_conditions": [
+        {
+          "condition": "kd_low_turn_up",
+          "label": "KD 條件",
+          "description": "KD 低檔翻揚",
+          "candidate_count": 14,
+          "pass_count": 0,
+          "fail_count": 14,
+          "pass_rate_pct": 0.0
+        }
+      ],
+      "strategy_blockers": {
+        "sniper": {
+          "strategy": "sniper",
+          "label": "狙擊型",
+          "description": "剛跌破 MA20 + 低位因子",
+          "hit_count": 1,
+          "required_conditions": [
+            "ma20_break",
+            "low_position"
+          ],
+          "condition_pass_counts": {
+            "ma20_break": 1,
+            "low_position": 7
+          },
+          "strictest_condition": {
+            "condition": "ma20_break",
+            "label": "MA20 條件",
+            "description": "剛跌破 MA20",
+            "candidate_count": 14,
+            "pass_count": 1,
+            "fail_count": 13,
+            "pass_rate_pct": 7.1429
+          },
+          "strictest_conditions": [
+            {
+              "condition": "ma20_break",
+              "label": "MA20 條件",
+              "description": "剛跌破 MA20",
+              "candidate_count": 14,
+              "pass_count": 1,
+              "fail_count": 13,
+              "pass_rate_pct": 7.1429
+            }
+          ],
+          "summary": "狙擊型當天命中 1 檔。"
+        },
+        "steady": {
+          "strategy": "steady",
+          "label": "穩定型",
+          "description": "KD 低檔翻揚 + 低位因子",
+          "hit_count": 0,
+          "required_conditions": [
+            "kd_low_turn_up",
+            "low_position"
+          ],
+          "condition_pass_counts": {
+            "kd_low_turn_up": 0,
+            "low_position": 7
+          },
+          "strictest_condition": {
+            "condition": "kd_low_turn_up",
+            "label": "KD 條件",
+            "description": "KD 低檔翻揚",
+            "candidate_count": 14,
+            "pass_count": 0,
+            "fail_count": 14,
+            "pass_rate_pct": 0.0
+          },
+          "strictest_conditions": [
+            {
+              "condition": "kd_low_turn_up",
+              "label": "KD 條件",
+              "description": "KD 低檔翻揚",
+              "candidate_count": 14,
+              "pass_count": 0,
+              "fail_count": 14,
+              "pass_rate_pct": 0.0
+            }
+          ],
+          "summary": "穩定型當天 0 檔，KD 條件通過 0 檔、低位條件通過 7 檔。"
+        }
+      },
+      "zero_hit_diagnosis": {
+        "is_zero_hit_day": false,
+        "summary": "今天 14 檔候選中，MA20 條件 1 檔、KD 條件 0 檔、低位條件 7 檔；狙擊型 1 檔、穩定型 0 檔。 最嚴條件為 KD 條件。"
+      }
     }
   ],
   "weekly_hit_counts": [
@@ -50544,50 +50709,50 @@
     {
       "week": "2026-W40",
       "start_date": "2026-09-28",
-      "end_date": "2026-09-29",
-      "day_count": 2,
-      "candidate_count": 28,
+      "end_date": "2026-09-30",
+      "day_count": 3,
+      "candidate_count": 42,
       "strategy_hits": {
-        "sniper": 0,
+        "sniper": 1,
         "steady": 0
       },
-      "any_strategy_hit_count": 0,
-      "days_with_any_strategy_hit": 0,
+      "any_strategy_hit_count": 1,
+      "days_with_any_strategy_hit": 1,
       "days_with_strategy_hits": {
-        "sniper": 0,
+        "sniper": 1,
         "steady": 0
       }
     }
   ],
   "overall_condition_density": {
-    "candidate_samples": 5255,
+    "candidate_samples": 5269,
     "conditions": {
       "ma20_break": {
         "condition": "ma20_break",
         "label": "MA20 條件",
         "description": "剛跌破 MA20",
-        "candidate_count": 5255,
-        "pass_count": 211,
-        "fail_count": 5044,
-        "pass_rate_pct": 4.0152
+        "candidate_count": 5269,
+        "pass_count": 212,
+        "fail_count": 5057,
+        "pass_rate_pct": 4.0235
       },
       "kd_low_turn_up": {
         "condition": "kd_low_turn_up",
         "label": "KD 條件",
         "description": "KD 低檔翻揚",
-        "candidate_count": 5255,
+        "candidate_count": 5269,
         "pass_count": 289,
-        "fail_count": 4966,
-        "pass_rate_pct": 5.4995
+        "fail_count": 4980,
+        "pass_rate_pct": 5.4849
       },
       "low_position": {
         "condition": "low_position",
         "label": "低位條件",
         "description": "低位因子",
-        "candidate_count": 5255,
-        "pass_count": 1626,
-        "fail_count": 3629,
-        "pass_rate_pct": 30.942
+        "candidate_count": 5269,
+        "pass_count": 1633,
+        "fail_count": 3636,
+        "pass_rate_pct": 30.9926
       }
     },
     "ranking_by_strictness": [
@@ -50595,70 +50760,70 @@
         "condition": "ma20_break",
         "label": "MA20 條件",
         "description": "剛跌破 MA20",
-        "candidate_count": 5255,
-        "pass_count": 211,
-        "fail_count": 5044,
-        "pass_rate_pct": 4.0152
+        "candidate_count": 5269,
+        "pass_count": 212,
+        "fail_count": 5057,
+        "pass_rate_pct": 4.0235
       },
       {
         "condition": "kd_low_turn_up",
         "label": "KD 條件",
         "description": "KD 低檔翻揚",
-        "candidate_count": 5255,
+        "candidate_count": 5269,
         "pass_count": 289,
-        "fail_count": 4966,
-        "pass_rate_pct": 5.4995
+        "fail_count": 4980,
+        "pass_rate_pct": 5.4849
       },
       {
         "condition": "low_position",
         "label": "低位條件",
         "description": "低位因子",
-        "candidate_count": 5255,
-        "pass_count": 1626,
-        "fail_count": 3629,
-        "pass_rate_pct": 30.942
+        "candidate_count": 5269,
+        "pass_count": 1633,
+        "fail_count": 3636,
+        "pass_rate_pct": 30.9926
       }
     ],
     "strictest_condition": {
       "condition": "ma20_break",
       "label": "MA20 條件",
       "description": "剛跌破 MA20",
-      "candidate_count": 5255,
-      "pass_count": 211,
-      "fail_count": 5044,
-      "pass_rate_pct": 4.0152
+      "candidate_count": 5269,
+      "pass_count": 212,
+      "fail_count": 5057,
+      "pass_rate_pct": 4.0235
     },
     "strictest_conditions": [
       {
         "condition": "ma20_break",
         "label": "MA20 條件",
         "description": "剛跌破 MA20",
-        "candidate_count": 5255,
-        "pass_count": 211,
-        "fail_count": 5044,
-        "pass_rate_pct": 4.0152
+        "candidate_count": 5269,
+        "pass_count": 212,
+        "fail_count": 5057,
+        "pass_rate_pct": 4.0235
       }
     ]
   },
   "latest_day_summary": {
-    "date": "2026-09-29",
-    "previous_date": "2026-09-28",
+    "date": "2026-09-30",
+    "previous_date": "2026-09-29",
     "previous_universe_available": true,
     "candidate_count": 14,
     "strategy_hits": {
-      "sniper": 0,
+      "sniper": 1,
       "steady": 0
     },
-    "any_strategy_hit_count": 0,
+    "any_strategy_hit_count": 1,
     "conditions": {
       "ma20_break": {
         "condition": "ma20_break",
         "label": "MA20 條件",
         "description": "剛跌破 MA20",
         "candidate_count": 14,
-        "pass_count": 0,
-        "fail_count": 14,
-        "pass_rate_pct": 0.0
+        "pass_count": 1,
+        "fail_count": 13,
+        "pass_rate_pct": 7.1429
       },
       "kd_low_turn_up": {
         "condition": "kd_low_turn_up",
@@ -50674,21 +50839,12 @@
         "label": "低位條件",
         "description": "低位因子",
         "candidate_count": 14,
-        "pass_count": 6,
-        "fail_count": 8,
-        "pass_rate_pct": 42.8571
+        "pass_count": 7,
+        "fail_count": 7,
+        "pass_rate_pct": 50.0
       }
     },
     "ranking_by_strictness": [
-      {
-        "condition": "ma20_break",
-        "label": "MA20 條件",
-        "description": "剛跌破 MA20",
-        "candidate_count": 14,
-        "pass_count": 0,
-        "fail_count": 14,
-        "pass_rate_pct": 0.0
-      },
       {
         "condition": "kd_low_turn_up",
         "label": "KD 條件",
@@ -50699,34 +50855,34 @@
         "pass_rate_pct": 0.0
       },
       {
+        "condition": "ma20_break",
+        "label": "MA20 條件",
+        "description": "剛跌破 MA20",
+        "candidate_count": 14,
+        "pass_count": 1,
+        "fail_count": 13,
+        "pass_rate_pct": 7.1429
+      },
+      {
         "condition": "low_position",
         "label": "低位條件",
         "description": "低位因子",
         "candidate_count": 14,
-        "pass_count": 6,
-        "fail_count": 8,
-        "pass_rate_pct": 42.8571
+        "pass_count": 7,
+        "fail_count": 7,
+        "pass_rate_pct": 50.0
       }
     ],
     "strictest_condition": {
-      "condition": "ma20_break",
-      "label": "MA20 條件",
-      "description": "剛跌破 MA20",
+      "condition": "kd_low_turn_up",
+      "label": "KD 條件",
+      "description": "KD 低檔翻揚",
       "candidate_count": 14,
       "pass_count": 0,
       "fail_count": 14,
       "pass_rate_pct": 0.0
     },
     "strictest_conditions": [
-      {
-        "condition": "ma20_break",
-        "label": "MA20 條件",
-        "description": "剛跌破 MA20",
-        "candidate_count": 14,
-        "pass_count": 0,
-        "fail_count": 14,
-        "pass_rate_pct": 0.0
-      },
       {
         "condition": "kd_low_turn_up",
         "label": "KD 條件",
@@ -50742,23 +50898,23 @@
         "strategy": "sniper",
         "label": "狙擊型",
         "description": "剛跌破 MA20 + 低位因子",
-        "hit_count": 0,
+        "hit_count": 1,
         "required_conditions": [
           "ma20_break",
           "low_position"
         ],
         "condition_pass_counts": {
-          "ma20_break": 0,
-          "low_position": 6
+          "ma20_break": 1,
+          "low_position": 7
         },
         "strictest_condition": {
           "condition": "ma20_break",
           "label": "MA20 條件",
           "description": "剛跌破 MA20",
           "candidate_count": 14,
-          "pass_count": 0,
-          "fail_count": 14,
-          "pass_rate_pct": 0.0
+          "pass_count": 1,
+          "fail_count": 13,
+          "pass_rate_pct": 7.1429
         },
         "strictest_conditions": [
           {
@@ -50766,12 +50922,12 @@
             "label": "MA20 條件",
             "description": "剛跌破 MA20",
             "candidate_count": 14,
-            "pass_count": 0,
-            "fail_count": 14,
-            "pass_rate_pct": 0.0
+            "pass_count": 1,
+            "fail_count": 13,
+            "pass_rate_pct": 7.1429
           }
         ],
-        "summary": "狙擊型當天 0 檔，MA20 條件通過 0 檔、低位條件通過 6 檔。"
+        "summary": "狙擊型當天命中 1 檔。"
       },
       "steady": {
         "strategy": "steady",
@@ -50784,7 +50940,7 @@
         ],
         "condition_pass_counts": {
           "kd_low_turn_up": 0,
-          "low_position": 6
+          "low_position": 7
         },
         "strictest_condition": {
           "condition": "kd_low_turn_up",
@@ -50806,28 +50962,28 @@
             "pass_rate_pct": 0.0
           }
         ],
-        "summary": "穩定型當天 0 檔，KD 條件通過 0 檔、低位條件通過 6 檔。"
+        "summary": "穩定型當天 0 檔，KD 條件通過 0 檔、低位條件通過 7 檔。"
       }
     },
     "zero_hit_diagnosis": {
-      "is_zero_hit_day": true,
-      "summary": "今天 14 檔候選中，MA20 條件 0 檔、KD 條件 0 檔、低位條件 6 檔，因此兩條策略都沒有命中。 最嚴條件為 MA20 條件、KD 條件。"
+      "is_zero_hit_day": false,
+      "summary": "今天 14 檔候選中，MA20 條件 1 檔、KD 條件 0 檔、低位條件 7 檔；狙擊型 1 檔、穩定型 0 檔。 最嚴條件為 KD 條件。"
     }
   },
   "current_week_summary": {
     "week": "2026-W40",
     "start_date": "2026-09-28",
-    "end_date": "2026-09-29",
-    "day_count": 2,
-    "candidate_count": 28,
+    "end_date": "2026-09-30",
+    "day_count": 3,
+    "candidate_count": 42,
     "strategy_hits": {
-      "sniper": 0,
+      "sniper": 1,
       "steady": 0
     },
-    "any_strategy_hit_count": 0,
-    "days_with_any_strategy_hit": 0,
+    "any_strategy_hit_count": 1,
+    "days_with_any_strategy_hit": 1,
     "days_with_strategy_hits": {
-      "sniper": 0,
+      "sniper": 1,
       "steady": 0
     }
   }
