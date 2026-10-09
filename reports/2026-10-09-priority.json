@@ -1,0 +1,313 @@
+{
+  "report_version": "v12-priority-validation",
+  "date": "2026-10-09",
+  "generated_at": "2026-10-09T08:48:47.471637+08:00",
+  "evaluation_horizon": "next_available_report",
+  "next_report_date": null,
+  "sort_rule": {
+    "description": "先比命中情境數，再比技術面狀態，最後比區間位置（試單區優先）；同分保留原出現順序。",
+    "keys": [
+      "hit_count desc",
+      "advice_priority desc",
+      "zone_priority desc",
+      "first_seen_order asc"
+    ]
+  },
+  "source_reports": {
+    "context": "2026-10-09-context.json",
+    "universe": "2026-10-09-universe.json",
+    "next_universe": null
+  },
+  "candidate_count": 4,
+  "top1_symbols": [
+    "1326"
+  ],
+  "top3_symbols": [
+    "1326",
+    "1101",
+    "2002"
+  ],
+  "top5_symbols": [
+    "1326",
+    "1101",
+    "2002",
+    "1102"
+  ],
+  "evaluation": {
+    "evaluated_candidate_count": 0,
+    "top1_evaluated_count": 0,
+    "top3_evaluated_count": 0,
+    "top5_evaluated_count": 0,
+    "all_avg_return_pct": null,
+    "top1_avg_return_pct": null,
+    "top3_avg_return_pct": null,
+    "top5_avg_return_pct": null,
+    "all_win_rate_pct": null,
+    "top1_win_rate_pct": null,
+    "top3_win_rate_pct": null,
+    "top5_win_rate_pct": null
+  },
+  "candidates": [
+    {
+      "priority_rank": 1,
+      "symbol": "1326",
+      "name": "1326",
+      "primary_theme": "materials_axis",
+      "primary_theme_label": "原物料主軸",
+      "themes": [
+        "materials_axis"
+      ],
+      "theme_labels": [
+        "原物料主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 1,
+      "reasons": [
+        "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1326 在當日 universe 的類別為 化工，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 83.0,
+        "close": 77.6,
+        "ma5": 73.94,
+        "ma20": 69.52,
+        "k": 85.23,
+        "volume_ratio": 2.78,
+        "institutional": "連2買",
+        "advice": "可偏多觀察",
+        "advice_priority": 3,
+        "reason": "結構仍偏多，但量能或過熱需要再確認",
+        "risk": "縮量或高檔過熱時，續攻失敗容易回檔",
+        "zone_label": "區間外",
+        "zone_priority": 1,
+        "in_pilot_zone": false,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 4 個情境; 技術面: 可偏多觀察",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 2,
+      "symbol": "1101",
+      "name": "1101",
+      "primary_theme": "materials_axis",
+      "primary_theme_label": "原物料主軸",
+      "themes": [
+        "materials_axis"
+      ],
+      "theme_labels": [
+        "原物料主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 2,
+      "reasons": [
+        "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1101 在當日 universe 的類別為 水泥，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 68.0,
+        "close": 25.7,
+        "ma5": 25.35,
+        "ma20": 24.91,
+        "k": 46.49,
+        "volume_ratio": 0.9,
+        "institutional": "連2買",
+        "advice": "先觀望",
+        "advice_priority": 1,
+        "reason": "偏多條件存在，但量能或過熱需要先消化",
+        "risk": "追價後若量縮或高檔反轉，容易回落",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 4 個情境; 技術面: 先觀望",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 3,
+      "symbol": "2002",
+      "name": "2002",
+      "primary_theme": "materials_axis",
+      "primary_theme_label": "原物料主軸",
+      "themes": [
+        "materials_axis"
+      ],
+      "theme_labels": [
+        "原物料主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 3,
+      "reasons": [
+        "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；2002 在當日 universe 的類別為 鋼鐵，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 65.0,
+        "close": 18.95,
+        "ma5": 18.95,
+        "ma20": 18.85,
+        "k": 52.76,
+        "volume_ratio": 0.9,
+        "institutional": "連1買",
+        "advice": "先觀望",
+        "advice_priority": 1,
+        "reason": "偏多條件存在，但量能或過熱需要先消化",
+        "risk": "追價後若量縮或高檔反轉，容易回落",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 4 個情境; 技術面: 先觀望",
+      "next_report_validation": null
+    },
+    {
+      "priority_rank": 4,
+      "symbol": "1102",
+      "name": "1102",
+      "primary_theme": "materials_axis",
+      "primary_theme_label": "原物料主軸",
+      "themes": [
+        "materials_axis"
+      ],
+      "theme_labels": [
+        "原物料主軸"
+      ],
+      "events": [
+        "breadth_axis_overlap",
+        "sector_axis_convergence",
+        "volume_focus_limited_diffusion",
+        "ai_technical_overlay"
+      ],
+      "event_labels": [
+        "盤面廣度與主軸",
+        "主軸題材收斂",
+        "量能聚焦與擴散",
+        "AI 方向與橫截面對照"
+      ],
+      "hit_count": 4,
+      "first_seen_order": 0,
+      "reasons": [
+        "原物料主軸 依固定 mapping 對應類別 鋼鐵, 水泥, 塑膠, 化工；1102 在當日 universe 的類別為 水泥，因此納入此股票池。"
+      ],
+      "technical_state": {
+        "score": 85.0,
+        "close": 36.35,
+        "ma5": 35.69,
+        "ma20": 35.46,
+        "k": 74.23,
+        "volume_ratio": 1.44,
+        "institutional": "連2買",
+        "advice": "強勢續看",
+        "advice_priority": 0,
+        "reason": "評分高且結構偏強",
+        "risk": "短線過熱時不宜追價",
+        "zone_label": "試單區優先",
+        "zone_priority": 3,
+        "in_pilot_zone": true,
+        "in_observe_zone": false,
+        "is_weak_blocked": false
+      },
+      "priority_explanation": "命中 4 個情境; 技術面: 強勢續看",
+      "next_report_validation": null
+    }
+  ],
+  "priority_validation_v10_1_schema_version": "priority-validation-v10.1",
+  "priority_snapshot_v10_1": {
+    "as_of_date": "2026-10-09",
+    "market_regime": "trending",
+    "breadth_state": "mixed_breadth",
+    "volume_state": "neutral",
+    "leader_state": "strong_leaders",
+    "validation_summary": "市場狀態: trending; 廣度: mixed_breadth; 量能: neutral; 領漲: strong_leaders; 候選數: 4",
+    "confidence": "low",
+    "generated_at": "2026-10-09T08:48:47.471637+08:00"
+  },
+  "priority_candidates_v10_1": [
+    {
+      "symbol": "1326",
+      "name": "台化",
+      "score": 83,
+      "rank": 1,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "materials_axis",
+      "validation_reason": "命中 4 情境; 技術面: 可偏多觀察",
+      "risk_note": "縮量或高檔過熱時，續攻失敗容易回檔",
+      "trace_ref": null
+    },
+    {
+      "symbol": "1101",
+      "name": "台泥",
+      "score": 68,
+      "rank": 2,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "materials_axis",
+      "validation_reason": "命中 4 情境; 技術面: 先觀望; 位置: 試單區優先",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "2002",
+      "name": "中鋼",
+      "score": 65,
+      "rank": 3,
+      "score_grade": "B",
+      "category": "其他",
+      "theme": "materials_axis",
+      "validation_reason": "命中 4 情境; 技術面: 先觀望; 位置: 試單區優先",
+      "risk_note": "追價後若量縮或高檔反轉，容易回落",
+      "trace_ref": null
+    },
+    {
+      "symbol": "1102",
+      "name": "亞泥",
+      "score": 85,
+      "rank": 4,
+      "score_grade": "A",
+      "category": "其他",
+      "theme": "materials_axis",
+      "validation_reason": "命中 4 情境; 技術面: 強勢續看; 位置: 試單區優先",
+      "risk_note": "短線過熱時不宜追價",
+      "trace_ref": null
+    }
+  ]
+}

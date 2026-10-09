@@ -1,9 +1,9 @@
 {
   "report_version": "v27-strategy-analysis",
-  "generated_at": "2026-10-08T08:47:00.170796+08:00",
+  "generated_at": "2026-10-09T08:48:55.661961+08:00",
   "evaluation_horizon": "next_available_report",
-  "evaluated_days": 223,
-  "candidate_samples": 4059,
+  "evaluated_days": 224,
+  "candidate_samples": 4086,
   "strategy_names": [
     "sniper",
     "steady"
@@ -37,7 +37,7 @@
   "low_position_definition": {
     "metric": "(close - ma20) / ma20",
     "positive_group": "lower_third",
-    "lower_third_cutoff": 0.002274
+    "lower_third_cutoff": 0.002028
   },
   "strategies": {
     "sniper": {
@@ -53,19 +53,19 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "sample_count": 183,
-      "hit_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "sample_count": 184,
+      "hit_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
     },
@@ -82,19 +82,19 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "sample_count": 236,
-      "hit_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "sample_count": 243,
+      "hit_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     }
@@ -113,19 +113,19 @@
         "ma20_v2",
         "low_position_ma20"
       ],
-      "sample_count": 812,
-      "hit_count": 812,
-      "avg_return_pct": 0.1663,
-      "win_rate_pct": 47.5369,
-      "avg_return_edge_vs_best_single_factor": -0.0467,
+      "sample_count": 819,
+      "hit_count": 819,
+      "avg_return_pct": 0.1739,
+      "win_rate_pct": 48.1074,
+      "avg_return_edge_vs_best_single_factor": -0.046,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -142,19 +142,19 @@
         "ma20_v2",
         "low_k_turn_up"
       ],
-      "sample_count": 115,
-      "hit_count": 115,
-      "avg_return_pct": 0.2133,
-      "win_rate_pct": 50.4348,
-      "avg_return_edge_vs_best_single_factor": 0.0126,
+      "sample_count": 121,
+      "hit_count": 121,
+      "avg_return_pct": 0.2709,
+      "win_rate_pct": 52.8926,
+      "avg_return_edge_vs_best_single_factor": 0.0667,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "ma20_v2",
         "label": "接近 MA20 區間",
         "positive_group_label": "接近 MA20 / 3 日內跌破組",
-        "sample_count": 1508,
-        "avg_return_pct": 0.2007,
-        "win_rate_pct": 49.4695
+        "sample_count": 1522,
+        "avg_return_pct": 0.2042,
+        "win_rate_pct": 49.7372
       },
       "verdict": "優於單因子"
     }
@@ -172,19 +172,19 @@
       "factor_names": [
         "low_k_turn_up"
       ],
-      "sample_count": 248,
-      "hit_count": 248,
-      "avg_return_pct": -0.0888,
-      "win_rate_pct": 54.0323,
+      "sample_count": 255,
+      "hit_count": 255,
+      "avg_return_pct": -0.0474,
+      "win_rate_pct": 55.2941,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": null,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "單因子基準"
     }
@@ -204,19 +204,19 @@
         "steady_v4_k_band",
         "steady_v4_ma20_distance"
       ],
-      "sample_count": 57,
-      "hit_count": 57,
-      "avg_return_pct": 0.5097,
-      "win_rate_pct": 61.4035,
-      "avg_return_edge_vs_best_single_factor": 0.5985,
+      "sample_count": 59,
+      "hit_count": 59,
+      "avg_return_pct": 0.5848,
+      "win_rate_pct": 62.7119,
+      "avg_return_edge_vs_best_single_factor": 0.6322,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     }
@@ -237,19 +237,19 @@
         "steady_v4_ma20_distance",
         "steady_v5_pullback_limit"
       ],
-      "sample_count": 52,
-      "hit_count": 52,
-      "avg_return_pct": 0.8063,
-      "win_rate_pct": 65.3846,
-      "avg_return_edge_vs_best_single_factor": 0.8951,
+      "sample_count": 54,
+      "hit_count": 54,
+      "avg_return_pct": 0.8774,
+      "win_rate_pct": 66.6667,
+      "avg_return_edge_vs_best_single_factor": 0.9248,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     }
@@ -272,15 +272,15 @@
       "hit_count": 15,
       "avg_return_pct": 0.2589,
       "win_rate_pct": 60.0,
-      "avg_return_edge_vs_best_single_factor": -0.3301,
+      "avg_return_edge_vs_best_single_factor": -0.3239,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "volume_expand_after_shrink",
         "label": "量縮後放量",
         "positive_group_label": "量縮後放量組",
-        "sample_count": 372,
-        "avg_return_pct": 0.589,
-        "win_rate_pct": 56.9892
+        "sample_count": 373,
+        "avg_return_pct": 0.5828,
+        "win_rate_pct": 56.8365
       },
       "verdict": "未優於單因子"
     }
@@ -289,12 +289,12 @@
     "steady_v4": {
       "group": "steady_v4",
       "label": "steady_v4 alpha 組",
-      "sample_count": 57,
-      "avg_return_pct": 0.5097,
-      "avg_market_return_pct": 0.0891,
-      "avg_alpha_pct": 0.4207,
-      "win_rate_pct": 61.4035,
-      "outperform_rate_pct": 54.386,
+      "sample_count": 59,
+      "avg_return_pct": 0.5848,
+      "avg_market_return_pct": 0.0525,
+      "avg_alpha_pct": 0.5323,
+      "win_rate_pct": 62.7119,
+      "outperform_rate_pct": 55.9322,
       "samples": [
         {
           "symbol": "2303",
@@ -377,6 +377,26 @@
           "underperform_market": false
         },
         {
+          "symbol": "2880",
+          "name": "華南金",
+          "date": "2026-10-07",
+          "next_report_date": "2026-10-08",
+          "priority_rank": 15,
+          "hit_count": 2,
+          "next_day_return_pct": 3.1903,
+          "market_return_pct": -0.9897,
+          "alpha_pct": 4.18,
+          "k_value": 29.7,
+          "ma20_gap_pct": -0.7425,
+          "abs_ma20_gap_pct": 0.7425,
+          "volume_ratio": 0.51,
+          "prior_pullback_pct": 1.3378,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
           "symbol": "2892",
           "name": "第一金",
           "date": "2025-11-20",
@@ -391,6 +411,26 @@
           "abs_ma20_gap_pct": 0.5272,
           "volume_ratio": 0.9,
           "prior_pullback_pct": 1.6158,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
+          "symbol": "2883",
+          "name": "開發金",
+          "date": "2026-10-07",
+          "next_report_date": "2026-10-08",
+          "priority_rank": 16,
+          "hit_count": 2,
+          "next_day_return_pct": 2.2576,
+          "market_return_pct": -0.9897,
+          "alpha_pct": 3.2473,
+          "k_value": 27.55,
+          "ma20_gap_pct": -1.7228,
+          "abs_ma20_gap_pct": 1.7228,
+          "volume_ratio": 0.64,
+          "prior_pullback_pct": 0.8032,
           "close_above_ma20": false,
           "has_sharp_drop": false,
           "outperform_market": true,
@@ -1439,51 +1479,51 @@
       ],
       "metrics": {
         "priority_rank": {
-          "sample_count": 57,
-          "avg_value": 13.5088,
+          "sample_count": 59,
+          "avg_value": 13.5763,
           "min_value": 1.0,
           "max_value": 26.0
         },
         "hit_count": {
-          "sample_count": 57,
-          "avg_value": 2.0351,
+          "sample_count": 59,
+          "avg_value": 2.0339,
           "min_value": 1.0,
           "max_value": 4.0
         },
         "k_value": {
-          "sample_count": 57,
-          "avg_value": 26.9254,
+          "sample_count": 59,
+          "avg_value": 26.9831,
           "min_value": 24.08,
           "max_value": 29.94
         },
         "abs_ma20_gap_pct": {
-          "sample_count": 57,
-          "avg_value": 1.034,
+          "sample_count": 59,
+          "avg_value": 1.0407,
           "min_value": 0.0473,
           "max_value": 2.0619
         },
         "volume_ratio": {
-          "sample_count": 57,
-          "avg_value": 0.8805,
+          "sample_count": 59,
+          "avg_value": 0.8702,
           "min_value": 0.18,
           "max_value": 1.88
         },
         "prior_pullback_pct": {
-          "sample_count": 57,
-          "avg_value": 0.7714,
+          "sample_count": 59,
+          "avg_value": 0.7815,
           "min_value": -0.7505,
           "max_value": 3.5587
         },
         "close_above_ma20": {
-          "sample_count": 57,
+          "sample_count": 59,
           "true_count": 7,
-          "false_count": 50,
-          "true_rate_pct": 12.2807
+          "false_count": 52,
+          "true_rate_pct": 11.8644
         },
         "has_sharp_drop": {
-          "sample_count": 57,
+          "sample_count": 59,
           "true_count": 0,
-          "false_count": 57,
+          "false_count": 59,
           "true_rate_pct": 0.0
         }
       }
@@ -1491,12 +1531,12 @@
     "steady_v5": {
       "group": "steady_v5",
       "label": "steady_v5 alpha 組",
-      "sample_count": 52,
-      "avg_return_pct": 0.8063,
-      "avg_market_return_pct": 0.2229,
-      "avg_alpha_pct": 0.5834,
-      "win_rate_pct": 65.3846,
-      "outperform_rate_pct": 57.6923,
+      "sample_count": 54,
+      "avg_return_pct": 0.8774,
+      "avg_market_return_pct": 0.178,
+      "avg_alpha_pct": 0.6994,
+      "win_rate_pct": 66.6667,
+      "outperform_rate_pct": 59.2593,
       "samples": [
         {
           "symbol": "2303",
@@ -1579,6 +1619,26 @@
           "underperform_market": false
         },
         {
+          "symbol": "2880",
+          "name": "華南金",
+          "date": "2026-10-07",
+          "next_report_date": "2026-10-08",
+          "priority_rank": 15,
+          "hit_count": 2,
+          "next_day_return_pct": 3.1903,
+          "market_return_pct": -0.9897,
+          "alpha_pct": 4.18,
+          "k_value": 29.7,
+          "ma20_gap_pct": -0.7425,
+          "abs_ma20_gap_pct": 0.7425,
+          "volume_ratio": 0.51,
+          "prior_pullback_pct": 1.3378,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
           "symbol": "2892",
           "name": "第一金",
           "date": "2025-11-20",
@@ -1593,6 +1653,26 @@
           "abs_ma20_gap_pct": 0.5272,
           "volume_ratio": 0.9,
           "prior_pullback_pct": 1.6158,
+          "close_above_ma20": false,
+          "has_sharp_drop": false,
+          "outperform_market": true,
+          "underperform_market": false
+        },
+        {
+          "symbol": "2883",
+          "name": "開發金",
+          "date": "2026-10-07",
+          "next_report_date": "2026-10-08",
+          "priority_rank": 16,
+          "hit_count": 2,
+          "next_day_return_pct": 2.2576,
+          "market_return_pct": -0.9897,
+          "alpha_pct": 3.2473,
+          "k_value": 27.55,
+          "ma20_gap_pct": -1.7228,
+          "abs_ma20_gap_pct": 1.7228,
+          "volume_ratio": 0.64,
+          "prior_pullback_pct": 0.8032,
           "close_above_ma20": false,
           "has_sharp_drop": false,
           "outperform_market": true,
@@ -2541,51 +2621,51 @@
       ],
       "metrics": {
         "priority_rank": {
-          "sample_count": 52,
-          "avg_value": 13.2308,
+          "sample_count": 54,
+          "avg_value": 13.3148,
           "min_value": 1.0,
           "max_value": 26.0
         },
         "hit_count": {
-          "sample_count": 52,
-          "avg_value": 2.1346,
+          "sample_count": 54,
+          "avg_value": 2.1296,
           "min_value": 1.0,
           "max_value": 4.0
         },
         "k_value": {
-          "sample_count": 52,
-          "avg_value": 26.9338,
+          "sample_count": 54,
+          "avg_value": 26.9965,
           "min_value": 24.1,
           "max_value": 29.94
         },
         "abs_ma20_gap_pct": {
-          "sample_count": 52,
-          "avg_value": 1.0349,
+          "sample_count": 54,
+          "avg_value": 1.0423,
           "min_value": 0.0473,
           "max_value": 2.0619
         },
         "volume_ratio": {
-          "sample_count": 52,
-          "avg_value": 0.8556,
+          "sample_count": 54,
+          "avg_value": 0.8452,
           "min_value": 0.18,
           "max_value": 1.88
         },
         "prior_pullback_pct": {
-          "sample_count": 52,
-          "avg_value": 0.5693,
+          "sample_count": 54,
+          "avg_value": 0.5879,
           "min_value": -0.7505,
           "max_value": 2.0619
         },
         "close_above_ma20": {
-          "sample_count": 52,
+          "sample_count": 54,
           "true_count": 6,
-          "false_count": 46,
-          "true_rate_pct": 11.5385
+          "false_count": 48,
+          "true_rate_pct": 11.1111
         },
         "has_sharp_drop": {
-          "sample_count": 52,
+          "sample_count": 54,
           "true_count": 0,
-          "false_count": 52,
+          "false_count": 54,
           "true_rate_pct": 0.0
         }
       }
@@ -2605,19 +2685,19 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "sample_count": 183,
-      "hit_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "sample_count": 184,
+      "hit_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
     },
@@ -2634,19 +2714,19 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "sample_count": 236,
-      "hit_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "sample_count": 243,
+      "hit_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -2663,19 +2743,19 @@
         "ma20_v2",
         "low_position_ma20"
       ],
-      "sample_count": 812,
-      "hit_count": 812,
-      "avg_return_pct": 0.1663,
-      "win_rate_pct": 47.5369,
-      "avg_return_edge_vs_best_single_factor": -0.0467,
+      "sample_count": 819,
+      "hit_count": 819,
+      "avg_return_pct": 0.1739,
+      "win_rate_pct": 48.1074,
+      "avg_return_edge_vs_best_single_factor": -0.046,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -2692,19 +2772,19 @@
         "ma20_v2",
         "low_k_turn_up"
       ],
-      "sample_count": 115,
-      "hit_count": 115,
-      "avg_return_pct": 0.2133,
-      "win_rate_pct": 50.4348,
-      "avg_return_edge_vs_best_single_factor": 0.0126,
+      "sample_count": 121,
+      "hit_count": 121,
+      "avg_return_pct": 0.2709,
+      "win_rate_pct": 52.8926,
+      "avg_return_edge_vs_best_single_factor": 0.0667,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "ma20_v2",
         "label": "接近 MA20 區間",
         "positive_group_label": "接近 MA20 / 3 日內跌破組",
-        "sample_count": 1508,
-        "avg_return_pct": 0.2007,
-        "win_rate_pct": 49.4695
+        "sample_count": 1522,
+        "avg_return_pct": 0.2042,
+        "win_rate_pct": 49.7372
       },
       "verdict": "優於單因子"
     },
@@ -2720,19 +2800,19 @@
       "factor_names": [
         "low_k_turn_up"
       ],
-      "sample_count": 248,
-      "hit_count": 248,
-      "avg_return_pct": -0.0888,
-      "win_rate_pct": 54.0323,
+      "sample_count": 255,
+      "hit_count": 255,
+      "avg_return_pct": -0.0474,
+      "win_rate_pct": 55.2941,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": null,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "單因子基準"
     },
@@ -2750,19 +2830,19 @@
         "steady_v4_k_band",
         "steady_v4_ma20_distance"
       ],
-      "sample_count": 57,
-      "hit_count": 57,
-      "avg_return_pct": 0.5097,
-      "win_rate_pct": 61.4035,
-      "avg_return_edge_vs_best_single_factor": 0.5985,
+      "sample_count": 59,
+      "hit_count": 59,
+      "avg_return_pct": 0.5848,
+      "win_rate_pct": 62.7119,
+      "avg_return_edge_vs_best_single_factor": 0.6322,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     },
@@ -2781,19 +2861,19 @@
         "steady_v4_ma20_distance",
         "steady_v5_pullback_limit"
       ],
-      "sample_count": 52,
-      "hit_count": 52,
-      "avg_return_pct": 0.8063,
-      "win_rate_pct": 65.3846,
-      "avg_return_edge_vs_best_single_factor": 0.8951,
+      "sample_count": 54,
+      "hit_count": 54,
+      "avg_return_pct": 0.8774,
+      "win_rate_pct": 66.6667,
+      "avg_return_edge_vs_best_single_factor": 0.9248,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     },
@@ -2814,15 +2894,15 @@
       "hit_count": 15,
       "avg_return_pct": 0.2589,
       "win_rate_pct": 60.0,
-      "avg_return_edge_vs_best_single_factor": -0.3301,
+      "avg_return_edge_vs_best_single_factor": -0.3239,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "volume_expand_after_shrink",
         "label": "量縮後放量",
         "positive_group_label": "量縮後放量組",
-        "sample_count": 372,
-        "avg_return_pct": 0.589,
-        "win_rate_pct": 56.9892
+        "sample_count": 373,
+        "avg_return_pct": 0.5828,
+        "win_rate_pct": 56.8365
       },
       "verdict": "未優於單因子"
     }
@@ -2840,19 +2920,19 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "hit_count": 183,
-      "sample_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "hit_count": 184,
+      "sample_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
     },
@@ -2868,19 +2948,19 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "hit_count": 236,
-      "sample_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "hit_count": 243,
+      "sample_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     }
@@ -2898,19 +2978,19 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "hit_count": 236,
-      "sample_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "hit_count": 243,
+      "sample_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -2926,19 +3006,19 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "hit_count": 183,
-      "sample_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "hit_count": 184,
+      "sample_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
     }
@@ -2958,19 +3038,19 @@
         "steady_v4_ma20_distance",
         "steady_v5_pullback_limit"
       ],
-      "hit_count": 52,
-      "sample_count": 52,
-      "avg_return_pct": 0.8063,
-      "win_rate_pct": 65.3846,
-      "avg_return_edge_vs_best_single_factor": 0.8951,
+      "hit_count": 54,
+      "sample_count": 54,
+      "avg_return_pct": 0.8774,
+      "win_rate_pct": 66.6667,
+      "avg_return_edge_vs_best_single_factor": 0.9248,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     },
@@ -2987,19 +3067,47 @@
         "steady_v4_k_band",
         "steady_v4_ma20_distance"
       ],
-      "hit_count": 57,
-      "sample_count": 57,
-      "avg_return_pct": 0.5097,
-      "win_rate_pct": 61.4035,
-      "avg_return_edge_vs_best_single_factor": 0.5985,
+      "hit_count": 59,
+      "sample_count": 59,
+      "avg_return_pct": 0.5848,
+      "win_rate_pct": 62.7119,
+      "avg_return_edge_vs_best_single_factor": 0.6322,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
+      },
+      "verdict": "優於單因子"
+    },
+    {
+      "strategy": "steady_v2",
+      "label": "穩定型 v2",
+      "style_focus": "穩定",
+      "description": "MA20_v2 + KD 低檔翻揚",
+      "selection_hint": "保留 KD 低檔翻揚，但把 MA20 改成區間條件，優先提升可用樣本。",
+      "family": "steady",
+      "generation": "v2",
+      "factor_names": [
+        "ma20_v2",
+        "low_k_turn_up"
+      ],
+      "hit_count": 121,
+      "sample_count": 121,
+      "avg_return_pct": 0.2709,
+      "win_rate_pct": 52.8926,
+      "avg_return_edge_vs_best_single_factor": 0.0667,
+      "beats_constituent_single_factors": true,
+      "best_single_factor": {
+        "factor": "ma20_v2",
+        "label": "接近 MA20 區間",
+        "positive_group_label": "接近 MA20 / 3 日內跌破組",
+        "sample_count": 1522,
+        "avg_return_pct": 0.2042,
+        "win_rate_pct": 49.7372
       },
       "verdict": "優於單因子"
     },
@@ -3019,15 +3127,15 @@
       "sample_count": 15,
       "avg_return_pct": 0.2589,
       "win_rate_pct": 60.0,
-      "avg_return_edge_vs_best_single_factor": -0.3301,
+      "avg_return_edge_vs_best_single_factor": -0.3239,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "volume_expand_after_shrink",
         "label": "量縮後放量",
         "positive_group_label": "量縮後放量組",
-        "sample_count": 372,
-        "avg_return_pct": 0.589,
-        "win_rate_pct": 56.9892
+        "sample_count": 373,
+        "avg_return_pct": 0.5828,
+        "win_rate_pct": 56.8365
       },
       "verdict": "未優於單因子"
     },
@@ -3043,49 +3151,21 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "hit_count": 183,
-      "sample_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "hit_count": 184,
+      "sample_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
-    },
-    {
-      "strategy": "steady_v2",
-      "label": "穩定型 v2",
-      "style_focus": "穩定",
-      "description": "MA20_v2 + KD 低檔翻揚",
-      "selection_hint": "保留 KD 低檔翻揚，但把 MA20 改成區間條件，優先提升可用樣本。",
-      "family": "steady",
-      "generation": "v2",
-      "factor_names": [
-        "ma20_v2",
-        "low_k_turn_up"
-      ],
-      "hit_count": 115,
-      "sample_count": 115,
-      "avg_return_pct": 0.2133,
-      "win_rate_pct": 50.4348,
-      "avg_return_edge_vs_best_single_factor": 0.0126,
-      "beats_constituent_single_factors": true,
-      "best_single_factor": {
-        "factor": "ma20_v2",
-        "label": "接近 MA20 區間",
-        "positive_group_label": "接近 MA20 / 3 日內跌破組",
-        "sample_count": 1508,
-        "avg_return_pct": 0.2007,
-        "win_rate_pct": 49.4695
-      },
-      "verdict": "優於單因子"
     },
     {
       "strategy": "sniper_v2",
@@ -3099,19 +3179,19 @@
         "ma20_v2",
         "low_position_ma20"
       ],
-      "hit_count": 812,
-      "sample_count": 812,
-      "avg_return_pct": 0.1663,
-      "win_rate_pct": 47.5369,
-      "avg_return_edge_vs_best_single_factor": -0.0467,
+      "hit_count": 819,
+      "sample_count": 819,
+      "avg_return_pct": 0.1739,
+      "win_rate_pct": 48.1074,
+      "avg_return_edge_vs_best_single_factor": -0.046,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -3126,19 +3206,19 @@
       "factor_names": [
         "low_k_turn_up"
       ],
-      "hit_count": 248,
-      "sample_count": 248,
-      "avg_return_pct": -0.0888,
-      "win_rate_pct": 54.0323,
+      "hit_count": 255,
+      "sample_count": 255,
+      "avg_return_pct": -0.0474,
+      "win_rate_pct": 55.2941,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": null,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "單因子基準"
     },
@@ -3154,19 +3234,19 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "hit_count": 236,
-      "sample_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "hit_count": 243,
+      "sample_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     }
@@ -3186,19 +3266,19 @@
         "steady_v4_ma20_distance",
         "steady_v5_pullback_limit"
       ],
-      "hit_count": 52,
-      "sample_count": 52,
-      "avg_return_pct": 0.8063,
-      "win_rate_pct": 65.3846,
-      "avg_return_edge_vs_best_single_factor": 0.8951,
+      "hit_count": 54,
+      "sample_count": 54,
+      "avg_return_pct": 0.8774,
+      "win_rate_pct": 66.6667,
+      "avg_return_edge_vs_best_single_factor": 0.9248,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     },
@@ -3215,19 +3295,19 @@
         "steady_v4_k_band",
         "steady_v4_ma20_distance"
       ],
-      "hit_count": 57,
-      "sample_count": 57,
-      "avg_return_pct": 0.5097,
-      "win_rate_pct": 61.4035,
-      "avg_return_edge_vs_best_single_factor": 0.5985,
+      "hit_count": 59,
+      "sample_count": 59,
+      "avg_return_pct": 0.5848,
+      "win_rate_pct": 62.7119,
+      "avg_return_edge_vs_best_single_factor": 0.6322,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "優於單因子"
     },
@@ -3247,15 +3327,15 @@
       "sample_count": 15,
       "avg_return_pct": 0.2589,
       "win_rate_pct": 60.0,
-      "avg_return_edge_vs_best_single_factor": -0.3301,
+      "avg_return_edge_vs_best_single_factor": -0.3239,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "volume_expand_after_shrink",
         "label": "量縮後放量",
         "positive_group_label": "量縮後放量組",
-        "sample_count": 372,
-        "avg_return_pct": 0.589,
-        "win_rate_pct": 56.9892
+        "sample_count": 373,
+        "avg_return_pct": 0.5828,
+        "win_rate_pct": 56.8365
       },
       "verdict": "未優於單因子"
     },
@@ -3271,19 +3351,19 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "hit_count": 236,
-      "sample_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "hit_count": 243,
+      "sample_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -3298,19 +3378,19 @@
       "factor_names": [
         "low_k_turn_up"
       ],
-      "hit_count": 248,
-      "sample_count": 248,
-      "avg_return_pct": -0.0888,
-      "win_rate_pct": 54.0323,
+      "hit_count": 255,
+      "sample_count": 255,
+      "avg_return_pct": -0.0474,
+      "win_rate_pct": 55.2941,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": null,
       "best_single_factor": {
         "factor": "low_k_turn_up",
         "label": "KD 低檔翻揚",
         "positive_group_label": "低檔翻揚組",
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941
       },
       "verdict": "單因子基準"
     },
@@ -3326,19 +3406,19 @@
         "ma20_v2",
         "low_k_turn_up"
       ],
-      "hit_count": 115,
-      "sample_count": 115,
-      "avg_return_pct": 0.2133,
-      "win_rate_pct": 50.4348,
-      "avg_return_edge_vs_best_single_factor": 0.0126,
+      "hit_count": 121,
+      "sample_count": 121,
+      "avg_return_pct": 0.2709,
+      "win_rate_pct": 52.8926,
+      "avg_return_edge_vs_best_single_factor": 0.0667,
       "beats_constituent_single_factors": true,
       "best_single_factor": {
         "factor": "ma20_v2",
         "label": "接近 MA20 區間",
         "positive_group_label": "接近 MA20 / 3 日內跌破組",
-        "sample_count": 1508,
-        "avg_return_pct": 0.2007,
-        "win_rate_pct": 49.4695
+        "sample_count": 1522,
+        "avg_return_pct": 0.2042,
+        "win_rate_pct": 49.7372
       },
       "verdict": "優於單因子"
     },
@@ -3354,19 +3434,19 @@
         "ma20_v2",
         "low_position_ma20"
       ],
-      "hit_count": 812,
-      "sample_count": 812,
-      "avg_return_pct": 0.1663,
-      "win_rate_pct": 47.5369,
-      "avg_return_edge_vs_best_single_factor": -0.0467,
+      "hit_count": 819,
+      "sample_count": 819,
+      "avg_return_pct": 0.1739,
+      "win_rate_pct": 48.1074,
+      "avg_return_edge_vs_best_single_factor": -0.046,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     },
@@ -3382,19 +3462,19 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "hit_count": 183,
-      "sample_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "hit_count": 184,
+      "sample_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
     }
@@ -3412,19 +3492,19 @@
         "just_break_ma20",
         "low_position_ma20"
       ],
-      "hit_count": 183,
-      "sample_count": 183,
-      "avg_return_pct": 0.2283,
-      "win_rate_pct": 46.9945,
+      "hit_count": 184,
+      "sample_count": 184,
+      "avg_return_pct": 0.2308,
+      "win_rate_pct": 47.2826,
       "avg_return_edge_vs_best_single_factor": 0.0,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "just_break_ma20",
         "label": "剛跌破 MA20",
         "positive_group_label": "剛跌破組",
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826
       },
       "verdict": "未優於單因子"
     },
@@ -3440,26 +3520,26 @@
         "low_k_turn_up",
         "low_position_ma20"
       ],
-      "hit_count": 236,
-      "sample_count": 236,
-      "avg_return_pct": -0.1392,
-      "win_rate_pct": 54.661,
-      "avg_return_edge_vs_best_single_factor": -0.3522,
+      "hit_count": 243,
+      "sample_count": 243,
+      "avg_return_pct": -0.0942,
+      "win_rate_pct": 55.9671,
+      "avg_return_edge_vs_best_single_factor": -0.3141,
       "beats_constituent_single_factors": false,
       "best_single_factor": {
         "factor": "low_position_ma20",
         "label": "低位因子",
         "positive_group_label": "低位組",
-        "sample_count": 1354,
-        "avg_return_pct": 0.213,
-        "win_rate_pct": 49.483
+        "sample_count": 1363,
+        "avg_return_pct": 0.2199,
+        "win_rate_pct": 49.8899
       },
       "verdict": "未優於單因子"
     }
   },
   "strategy_difference": {
-    "sniper_minus_steady_avg_return_pct": 0.3675,
-    "steady_minus_sniper_win_rate_pct": 7.6665
+    "sniper_minus_steady_avg_return_pct": 0.325,
+    "steady_minus_sniper_win_rate_pct": 8.6845
   },
   "strategy_variant_comparison": {
     "sniper": {
@@ -3477,19 +3557,19 @@
           "just_break_ma20",
           "low_position_ma20"
         ],
-        "hit_count": 183,
-        "sample_count": 183,
-        "avg_return_pct": 0.2283,
-        "win_rate_pct": 46.9945,
+        "hit_count": 184,
+        "sample_count": 184,
+        "avg_return_pct": 0.2308,
+        "win_rate_pct": 47.2826,
         "avg_return_edge_vs_best_single_factor": 0.0,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "just_break_ma20",
           "label": "剛跌破 MA20",
           "positive_group_label": "剛跌破組",
-          "sample_count": 183,
-          "avg_return_pct": 0.2283,
-          "win_rate_pct": 46.9945
+          "sample_count": 184,
+          "avg_return_pct": 0.2308,
+          "win_rate_pct": 47.2826
         },
         "verdict": "未優於單因子"
       },
@@ -3505,26 +3585,26 @@
           "ma20_v2",
           "low_position_ma20"
         ],
-        "hit_count": 812,
-        "sample_count": 812,
-        "avg_return_pct": 0.1663,
-        "win_rate_pct": 47.5369,
-        "avg_return_edge_vs_best_single_factor": -0.0467,
+        "hit_count": 819,
+        "sample_count": 819,
+        "avg_return_pct": 0.1739,
+        "win_rate_pct": 48.1074,
+        "avg_return_edge_vs_best_single_factor": -0.046,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "low_position_ma20",
           "label": "低位因子",
           "positive_group_label": "低位組",
-          "sample_count": 1354,
-          "avg_return_pct": 0.213,
-          "win_rate_pct": 49.483
+          "sample_count": 1363,
+          "avg_return_pct": 0.2199,
+          "win_rate_pct": 49.8899
         },
         "verdict": "未優於單因子"
       },
-      "hit_count_delta": 629,
-      "hit_count_ratio": 4.4372,
-      "avg_return_delta_pct": -0.062,
-      "win_rate_delta_pct": 0.5424,
+      "hit_count_delta": 635,
+      "hit_count_ratio": 4.4511,
+      "avg_return_delta_pct": -0.0569,
+      "win_rate_delta_pct": 0.8248,
       "v2_hit_count_increase": true,
       "v2_avg_return_positive": true,
       "meets_v19_goal": true
@@ -3544,19 +3624,19 @@
           "low_k_turn_up",
           "low_position_ma20"
         ],
-        "hit_count": 236,
-        "sample_count": 236,
-        "avg_return_pct": -0.1392,
-        "win_rate_pct": 54.661,
-        "avg_return_edge_vs_best_single_factor": -0.3522,
+        "hit_count": 243,
+        "sample_count": 243,
+        "avg_return_pct": -0.0942,
+        "win_rate_pct": 55.9671,
+        "avg_return_edge_vs_best_single_factor": -0.3141,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "low_position_ma20",
           "label": "低位因子",
           "positive_group_label": "低位組",
-          "sample_count": 1354,
-          "avg_return_pct": 0.213,
-          "win_rate_pct": 49.483
+          "sample_count": 1363,
+          "avg_return_pct": 0.2199,
+          "win_rate_pct": 49.8899
         },
         "verdict": "未優於單因子"
       },
@@ -3572,26 +3652,26 @@
           "ma20_v2",
           "low_k_turn_up"
         ],
-        "hit_count": 115,
-        "sample_count": 115,
-        "avg_return_pct": 0.2133,
-        "win_rate_pct": 50.4348,
-        "avg_return_edge_vs_best_single_factor": 0.0126,
+        "hit_count": 121,
+        "sample_count": 121,
+        "avg_return_pct": 0.2709,
+        "win_rate_pct": 52.8926,
+        "avg_return_edge_vs_best_single_factor": 0.0667,
         "beats_constituent_single_factors": true,
         "best_single_factor": {
           "factor": "ma20_v2",
           "label": "接近 MA20 區間",
           "positive_group_label": "接近 MA20 / 3 日內跌破組",
-          "sample_count": 1508,
-          "avg_return_pct": 0.2007,
-          "win_rate_pct": 49.4695
+          "sample_count": 1522,
+          "avg_return_pct": 0.2042,
+          "win_rate_pct": 49.7372
         },
         "verdict": "優於單因子"
       },
-      "hit_count_delta": -121,
-      "hit_count_ratio": 0.4873,
-      "avg_return_delta_pct": 0.3525,
-      "win_rate_delta_pct": -4.2262,
+      "hit_count_delta": -122,
+      "hit_count_ratio": 0.4979,
+      "avg_return_delta_pct": 0.3651,
+      "win_rate_delta_pct": -3.0745,
       "v2_hit_count_increase": false,
       "v2_avg_return_positive": true,
       "meets_v19_goal": false,
@@ -3606,19 +3686,19 @@
         "factor_names": [
           "low_k_turn_up"
         ],
-        "hit_count": 248,
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323,
+        "hit_count": 255,
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941,
         "avg_return_edge_vs_best_single_factor": 0.0,
         "beats_constituent_single_factors": null,
         "best_single_factor": {
           "factor": "low_k_turn_up",
           "label": "KD 低檔翻揚",
           "positive_group_label": "低檔翻揚組",
-          "sample_count": 248,
-          "avg_return_pct": -0.0888,
-          "win_rate_pct": 54.0323
+          "sample_count": 255,
+          "avg_return_pct": -0.0474,
+          "win_rate_pct": 55.2941
         },
         "verdict": "單因子基準"
       },
@@ -3635,19 +3715,19 @@
           "steady_v4_k_band",
           "steady_v4_ma20_distance"
         ],
-        "hit_count": 57,
-        "sample_count": 57,
-        "avg_return_pct": 0.5097,
-        "win_rate_pct": 61.4035,
-        "avg_return_edge_vs_best_single_factor": 0.5985,
+        "hit_count": 59,
+        "sample_count": 59,
+        "avg_return_pct": 0.5848,
+        "win_rate_pct": 62.7119,
+        "avg_return_edge_vs_best_single_factor": 0.6322,
         "beats_constituent_single_factors": true,
         "best_single_factor": {
           "factor": "low_k_turn_up",
           "label": "KD 低檔翻揚",
           "positive_group_label": "低檔翻揚組",
-          "sample_count": 248,
-          "avg_return_pct": -0.0888,
-          "win_rate_pct": 54.0323
+          "sample_count": 255,
+          "avg_return_pct": -0.0474,
+          "win_rate_pct": 55.2941
         },
         "verdict": "優於單因子"
       },
@@ -3665,31 +3745,31 @@
           "steady_v4_ma20_distance",
           "steady_v5_pullback_limit"
         ],
-        "hit_count": 52,
-        "sample_count": 52,
-        "avg_return_pct": 0.8063,
-        "win_rate_pct": 65.3846,
-        "avg_return_edge_vs_best_single_factor": 0.8951,
+        "hit_count": 54,
+        "sample_count": 54,
+        "avg_return_pct": 0.8774,
+        "win_rate_pct": 66.6667,
+        "avg_return_edge_vs_best_single_factor": 0.9248,
         "beats_constituent_single_factors": true,
         "best_single_factor": {
           "factor": "low_k_turn_up",
           "label": "KD 低檔翻揚",
           "positive_group_label": "低檔翻揚組",
-          "sample_count": 248,
-          "avg_return_pct": -0.0888,
-          "win_rate_pct": 54.0323
+          "sample_count": 255,
+          "avg_return_pct": -0.0474,
+          "win_rate_pct": 55.2941
         },
         "verdict": "優於單因子"
       },
       "v4_alpha_profile": {
         "group": "steady_v4",
         "label": "steady_v4 alpha 組",
-        "sample_count": 57,
-        "avg_return_pct": 0.5097,
-        "avg_market_return_pct": 0.0891,
-        "avg_alpha_pct": 0.4207,
-        "win_rate_pct": 61.4035,
-        "outperform_rate_pct": 54.386,
+        "sample_count": 59,
+        "avg_return_pct": 0.5848,
+        "avg_market_return_pct": 0.0525,
+        "avg_alpha_pct": 0.5323,
+        "win_rate_pct": 62.7119,
+        "outperform_rate_pct": 55.9322,
         "samples": [
           {
             "symbol": "2303",
@@ -3772,6 +3852,26 @@
             "underperform_market": false
           },
           {
+            "symbol": "2880",
+            "name": "華南金",
+            "date": "2026-10-07",
+            "next_report_date": "2026-10-08",
+            "priority_rank": 15,
+            "hit_count": 2,
+            "next_day_return_pct": 3.1903,
+            "market_return_pct": -0.9897,
+            "alpha_pct": 4.18,
+            "k_value": 29.7,
+            "ma20_gap_pct": -0.7425,
+            "abs_ma20_gap_pct": 0.7425,
+            "volume_ratio": 0.51,
+            "prior_pullback_pct": 1.3378,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
             "symbol": "2892",
             "name": "第一金",
             "date": "2025-11-20",
@@ -3786,6 +3886,26 @@
             "abs_ma20_gap_pct": 0.5272,
             "volume_ratio": 0.9,
             "prior_pullback_pct": 1.6158,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
+            "symbol": "2883",
+            "name": "開發金",
+            "date": "2026-10-07",
+            "next_report_date": "2026-10-08",
+            "priority_rank": 16,
+            "hit_count": 2,
+            "next_day_return_pct": 2.2576,
+            "market_return_pct": -0.9897,
+            "alpha_pct": 3.2473,
+            "k_value": 27.55,
+            "ma20_gap_pct": -1.7228,
+            "abs_ma20_gap_pct": 1.7228,
+            "volume_ratio": 0.64,
+            "prior_pullback_pct": 0.8032,
             "close_above_ma20": false,
             "has_sharp_drop": false,
             "outperform_market": true,
@@ -4834,51 +4954,51 @@
         ],
         "metrics": {
           "priority_rank": {
-            "sample_count": 57,
-            "avg_value": 13.5088,
+            "sample_count": 59,
+            "avg_value": 13.5763,
             "min_value": 1.0,
             "max_value": 26.0
           },
           "hit_count": {
-            "sample_count": 57,
-            "avg_value": 2.0351,
+            "sample_count": 59,
+            "avg_value": 2.0339,
             "min_value": 1.0,
             "max_value": 4.0
           },
           "k_value": {
-            "sample_count": 57,
-            "avg_value": 26.9254,
+            "sample_count": 59,
+            "avg_value": 26.9831,
             "min_value": 24.08,
             "max_value": 29.94
           },
           "abs_ma20_gap_pct": {
-            "sample_count": 57,
-            "avg_value": 1.034,
+            "sample_count": 59,
+            "avg_value": 1.0407,
             "min_value": 0.0473,
             "max_value": 2.0619
           },
           "volume_ratio": {
-            "sample_count": 57,
-            "avg_value": 0.8805,
+            "sample_count": 59,
+            "avg_value": 0.8702,
             "min_value": 0.18,
             "max_value": 1.88
           },
           "prior_pullback_pct": {
-            "sample_count": 57,
-            "avg_value": 0.7714,
+            "sample_count": 59,
+            "avg_value": 0.7815,
             "min_value": -0.7505,
             "max_value": 3.5587
           },
           "close_above_ma20": {
-            "sample_count": 57,
+            "sample_count": 59,
             "true_count": 7,
-            "false_count": 50,
-            "true_rate_pct": 12.2807
+            "false_count": 52,
+            "true_rate_pct": 11.8644
           },
           "has_sharp_drop": {
-            "sample_count": 57,
+            "sample_count": 59,
             "true_count": 0,
-            "false_count": 57,
+            "false_count": 59,
             "true_rate_pct": 0.0
           }
         }
@@ -4886,12 +5006,12 @@
       "v5_alpha_profile": {
         "group": "steady_v5",
         "label": "steady_v5 alpha 組",
-        "sample_count": 52,
-        "avg_return_pct": 0.8063,
-        "avg_market_return_pct": 0.2229,
-        "avg_alpha_pct": 0.5834,
-        "win_rate_pct": 65.3846,
-        "outperform_rate_pct": 57.6923,
+        "sample_count": 54,
+        "avg_return_pct": 0.8774,
+        "avg_market_return_pct": 0.178,
+        "avg_alpha_pct": 0.6994,
+        "win_rate_pct": 66.6667,
+        "outperform_rate_pct": 59.2593,
         "samples": [
           {
             "symbol": "2303",
@@ -4974,6 +5094,26 @@
             "underperform_market": false
           },
           {
+            "symbol": "2880",
+            "name": "華南金",
+            "date": "2026-10-07",
+            "next_report_date": "2026-10-08",
+            "priority_rank": 15,
+            "hit_count": 2,
+            "next_day_return_pct": 3.1903,
+            "market_return_pct": -0.9897,
+            "alpha_pct": 4.18,
+            "k_value": 29.7,
+            "ma20_gap_pct": -0.7425,
+            "abs_ma20_gap_pct": 0.7425,
+            "volume_ratio": 0.51,
+            "prior_pullback_pct": 1.3378,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
             "symbol": "2892",
             "name": "第一金",
             "date": "2025-11-20",
@@ -4988,6 +5128,26 @@
             "abs_ma20_gap_pct": 0.5272,
             "volume_ratio": 0.9,
             "prior_pullback_pct": 1.6158,
+            "close_above_ma20": false,
+            "has_sharp_drop": false,
+            "outperform_market": true,
+            "underperform_market": false
+          },
+          {
+            "symbol": "2883",
+            "name": "開發金",
+            "date": "2026-10-07",
+            "next_report_date": "2026-10-08",
+            "priority_rank": 16,
+            "hit_count": 2,
+            "next_day_return_pct": 2.2576,
+            "market_return_pct": -0.9897,
+            "alpha_pct": 3.2473,
+            "k_value": 27.55,
+            "ma20_gap_pct": -1.7228,
+            "abs_ma20_gap_pct": 1.7228,
+            "volume_ratio": 0.64,
+            "prior_pullback_pct": 0.8032,
             "close_above_ma20": false,
             "has_sharp_drop": false,
             "outperform_market": true,
@@ -5936,51 +6096,51 @@
         ],
         "metrics": {
           "priority_rank": {
-            "sample_count": 52,
-            "avg_value": 13.2308,
+            "sample_count": 54,
+            "avg_value": 13.3148,
             "min_value": 1.0,
             "max_value": 26.0
           },
           "hit_count": {
-            "sample_count": 52,
-            "avg_value": 2.1346,
+            "sample_count": 54,
+            "avg_value": 2.1296,
             "min_value": 1.0,
             "max_value": 4.0
           },
           "k_value": {
-            "sample_count": 52,
-            "avg_value": 26.9338,
+            "sample_count": 54,
+            "avg_value": 26.9965,
             "min_value": 24.1,
             "max_value": 29.94
           },
           "abs_ma20_gap_pct": {
-            "sample_count": 52,
-            "avg_value": 1.0349,
+            "sample_count": 54,
+            "avg_value": 1.0423,
             "min_value": 0.0473,
             "max_value": 2.0619
           },
           "volume_ratio": {
-            "sample_count": 52,
-            "avg_value": 0.8556,
+            "sample_count": 54,
+            "avg_value": 0.8452,
             "min_value": 0.18,
             "max_value": 1.88
           },
           "prior_pullback_pct": {
-            "sample_count": 52,
-            "avg_value": 0.5693,
+            "sample_count": 54,
+            "avg_value": 0.5879,
             "min_value": -0.7505,
             "max_value": 2.0619
           },
           "close_above_ma20": {
-            "sample_count": 52,
+            "sample_count": 54,
             "true_count": 6,
-            "false_count": 46,
-            "true_rate_pct": 11.5385
+            "false_count": 48,
+            "true_rate_pct": 11.1111
           },
           "has_sharp_drop": {
-            "sample_count": 52,
+            "sample_count": 54,
             "true_count": 0,
-            "false_count": 52,
+            "false_count": 54,
             "true_rate_pct": 0.0
           }
         }
@@ -5998,19 +6158,19 @@
             "low_k_turn_up",
             "low_position_ma20"
           ],
-          "hit_count": 236,
-          "sample_count": 236,
-          "avg_return_pct": -0.1392,
-          "win_rate_pct": 54.661,
-          "avg_return_edge_vs_best_single_factor": -0.3522,
+          "hit_count": 243,
+          "sample_count": 243,
+          "avg_return_pct": -0.0942,
+          "win_rate_pct": 55.9671,
+          "avg_return_edge_vs_best_single_factor": -0.3141,
           "beats_constituent_single_factors": false,
           "best_single_factor": {
             "factor": "low_position_ma20",
             "label": "低位因子",
             "positive_group_label": "低位組",
-            "sample_count": 1354,
-            "avg_return_pct": 0.213,
-            "win_rate_pct": 49.483
+            "sample_count": 1363,
+            "avg_return_pct": 0.2199,
+            "win_rate_pct": 49.8899
           },
           "verdict": "未優於單因子"
         },
@@ -6030,15 +6190,15 @@
           "sample_count": 15,
           "avg_return_pct": 0.2589,
           "win_rate_pct": 60.0,
-          "avg_return_edge_vs_best_single_factor": -0.3301,
+          "avg_return_edge_vs_best_single_factor": -0.3239,
           "beats_constituent_single_factors": false,
           "best_single_factor": {
             "factor": "volume_expand_after_shrink",
             "label": "量縮後放量",
             "positive_group_label": "量縮後放量組",
-            "sample_count": 372,
-            "avg_return_pct": 0.589,
-            "win_rate_pct": 56.9892
+            "sample_count": 373,
+            "avg_return_pct": 0.5828,
+            "win_rate_pct": 56.8365
           },
           "verdict": "未優於單因子"
         }
@@ -6047,37 +6207,37 @@
         "kd_plus_low_position",
         "kd_plus_volume_expand"
       ],
-      "hit_count_delta_v3_vs_v2": 133,
+      "hit_count_delta_v3_vs_v2": 134,
       "hit_count_delta_v3_vs_v1": 12,
-      "hit_count_recovery_share_vs_v1_pct": 105.0847,
-      "avg_return_delta_v3_vs_v2": -0.3021,
-      "win_rate_delta_v3_vs_v2": 3.5975,
+      "hit_count_recovery_share_vs_v1_pct": 104.9383,
+      "avg_return_delta_v3_vs_v2": -0.3183,
+      "win_rate_delta_v3_vs_v2": 2.4015,
       "v3_hit_count_recovered": true,
       "v3_hit_count_reaches_v1": true,
       "v3_avg_return_gt_v2": false,
       "v3_win_rate_ge_v2": true,
       "meets_v22_goal": false,
-      "hit_count_delta_v4_vs_v2": -58,
-      "hit_count_delta_v4_vs_v3": -191,
-      "avg_return_delta_v4_vs_v2": 0.2964,
-      "avg_return_delta_v4_vs_v3": 0.5985,
-      "win_rate_delta_v4_vs_v2": 10.9687,
-      "win_rate_delta_v4_vs_v3": 7.3712,
+      "hit_count_delta_v4_vs_v2": -62,
+      "hit_count_delta_v4_vs_v3": -196,
+      "avg_return_delta_v4_vs_v2": 0.3139,
+      "avg_return_delta_v4_vs_v3": 0.6322,
+      "win_rate_delta_v4_vs_v2": 9.8193,
+      "win_rate_delta_v4_vs_v3": 7.4178,
       "v4_hit_count_gt_v2": false,
-      "v4_avg_return_ratio_vs_v2": 2.3896,
+      "v4_avg_return_ratio_vs_v2": 2.1587,
       "v4_avg_return_close_to_v2": true,
       "v4_win_rate_stable": true,
       "meets_v24_goal": false,
       "hit_count_delta_v5_vs_v4": -5,
-      "avg_return_delta_v5_vs_v4": 0.2966,
-      "avg_market_return_delta_v5_vs_v4": 0.1338,
-      "avg_alpha_delta_v5_vs_v4": 0.1627,
-      "win_rate_delta_v5_vs_v4": 3.9811,
-      "outperform_rate_delta_v5_vs_v4": 3.3063,
-      "v5_hit_share_vs_v4": 0.9123,
-      "v5_hit_share_vs_v4_pct": 91.2281,
+      "avg_return_delta_v5_vs_v4": 0.2926,
+      "avg_market_return_delta_v5_vs_v4": 0.1255,
+      "avg_alpha_delta_v5_vs_v4": 0.1671,
+      "win_rate_delta_v5_vs_v4": 3.9548,
+      "outperform_rate_delta_v5_vs_v4": 3.3271,
+      "v5_hit_share_vs_v4": 0.9153,
+      "v5_hit_share_vs_v4_pct": 91.5254,
       "v5_hit_count_reasonable": true,
-      "v5_win_rate_drop_pct": -3.9811,
+      "v5_win_rate_drop_pct": -3.9548,
       "v5_win_rate_not_collapsed": true,
       "v5_alpha_positive": true,
       "meets_v27_goal": true,
@@ -6095,19 +6255,19 @@
           "steady_v4_ma20_distance",
           "steady_v5_pullback_limit"
         ],
-        "hit_count": 52,
-        "sample_count": 52,
-        "avg_return_pct": 0.8063,
-        "win_rate_pct": 65.3846,
-        "avg_return_edge_vs_best_single_factor": 0.8951,
+        "hit_count": 54,
+        "sample_count": 54,
+        "avg_return_pct": 0.8774,
+        "win_rate_pct": 66.6667,
+        "avg_return_edge_vs_best_single_factor": 0.9248,
         "beats_constituent_single_factors": true,
         "best_single_factor": {
           "factor": "low_k_turn_up",
           "label": "KD 低檔翻揚",
           "positive_group_label": "低檔翻揚組",
-          "sample_count": 248,
-          "avg_return_pct": -0.0888,
-          "win_rate_pct": 54.0323
+          "sample_count": 255,
+          "avg_return_pct": -0.0474,
+          "win_rate_pct": 55.2941
         },
         "verdict": "優於單因子"
       },
@@ -6122,19 +6282,19 @@
         "factor_names": [
           "low_k_turn_up"
         ],
-        "hit_count": 248,
-        "sample_count": 248,
-        "avg_return_pct": -0.0888,
-        "win_rate_pct": 54.0323,
+        "hit_count": 255,
+        "sample_count": 255,
+        "avg_return_pct": -0.0474,
+        "win_rate_pct": 55.2941,
         "avg_return_edge_vs_best_single_factor": 0.0,
         "beats_constituent_single_factors": null,
         "best_single_factor": {
           "factor": "low_k_turn_up",
           "label": "KD 低檔翻揚",
           "positive_group_label": "低檔翻揚組",
-          "sample_count": 248,
-          "avg_return_pct": -0.0888,
-          "win_rate_pct": 54.0323
+          "sample_count": 255,
+          "avg_return_pct": -0.0474,
+          "win_rate_pct": 55.2941
         },
         "verdict": "單因子基準"
       },
@@ -6152,19 +6312,19 @@
           "steady_v4_ma20_distance",
           "steady_v5_pullback_limit"
         ],
-        "hit_count": 52,
-        "sample_count": 52,
-        "avg_return_pct": 0.8063,
-        "win_rate_pct": 65.3846,
-        "avg_return_edge_vs_best_single_factor": 0.8951,
+        "hit_count": 54,
+        "sample_count": 54,
+        "avg_return_pct": 0.8774,
+        "win_rate_pct": 66.6667,
+        "avg_return_edge_vs_best_single_factor": 0.9248,
         "beats_constituent_single_factors": true,
         "best_single_factor": {
           "factor": "low_k_turn_up",
           "label": "KD 低檔翻揚",
           "positive_group_label": "低檔翻揚組",
-          "sample_count": 248,
-          "avg_return_pct": -0.0888,
-          "win_rate_pct": 54.0323
+          "sample_count": 255,
+          "avg_return_pct": -0.0474,
+          "win_rate_pct": 55.2941
         },
         "verdict": "優於單因子"
       },
@@ -6184,15 +6344,15 @@
         "sample_count": 15,
         "avg_return_pct": 0.2589,
         "win_rate_pct": 60.0,
-        "avg_return_edge_vs_best_single_factor": -0.3301,
+        "avg_return_edge_vs_best_single_factor": -0.3239,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "volume_expand_after_shrink",
           "label": "量縮後放量",
           "positive_group_label": "量縮後放量組",
-          "sample_count": 372,
-          "avg_return_pct": 0.589,
-          "win_rate_pct": 56.9892
+          "sample_count": 373,
+          "avg_return_pct": 0.5828,
+          "win_rate_pct": 56.8365
         },
         "verdict": "未優於單因子"
       },
@@ -6208,19 +6368,19 @@
           "low_k_turn_up",
           "low_position_ma20"
         ],
-        "hit_count": 236,
-        "sample_count": 236,
-        "avg_return_pct": -0.1392,
-        "win_rate_pct": 54.661,
-        "avg_return_edge_vs_best_single_factor": -0.3522,
+        "hit_count": 243,
+        "sample_count": 243,
+        "avg_return_pct": -0.0942,
+        "win_rate_pct": 55.9671,
+        "avg_return_edge_vs_best_single_factor": -0.3141,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "low_position_ma20",
           "label": "低位因子",
           "positive_group_label": "低位組",
-          "sample_count": 1354,
-          "avg_return_pct": 0.213,
-          "win_rate_pct": 49.483
+          "sample_count": 1363,
+          "avg_return_pct": 0.2199,
+          "win_rate_pct": 49.8899
         },
         "verdict": "未優於單因子"
       },
@@ -6240,20 +6400,20 @@
         "sample_count": 15,
         "avg_return_pct": 0.2589,
         "win_rate_pct": 60.0,
-        "avg_return_edge_vs_best_single_factor": -0.3301,
+        "avg_return_edge_vs_best_single_factor": -0.3239,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "volume_expand_after_shrink",
           "label": "量縮後放量",
           "positive_group_label": "量縮後放量組",
-          "sample_count": 372,
-          "avg_return_pct": 0.589,
-          "win_rate_pct": 56.9892
+          "sample_count": 373,
+          "avg_return_pct": 0.5828,
+          "win_rate_pct": 56.8365
         },
         "verdict": "未優於單因子"
       },
-      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 115->57、平均報酬 0.2133%->0.5097%、勝率 50.4348%->61.4035%。",
-      "v5_summary": "steady_v5 只在 steady_v4 上加入回落深度限制，命中數 57->52、平均報酬 0.5097%->0.8063%、平均市場報酬 0.0891%->0.2229%、平均 alpha 0.4207%->0.5834%、勝率 61.4035%->65.3846%。"
+      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 121->59、平均報酬 0.2709%->0.5848%、勝率 52.8926%->62.7119%。",
+      "v5_summary": "steady_v5 只在 steady_v4 上加入回落深度限制，命中數 59->54、平均報酬 0.5848%->0.8774%、平均市場報酬 0.0525%->0.178%、平均 alpha 0.5323%->0.6994%、勝率 62.7119%->66.6667%。"
     }
   },
   "v2_summary": {
@@ -6297,15 +6457,15 @@
         "sample_count": 15,
         "avg_return_pct": 0.2589,
         "win_rate_pct": 60.0,
-        "avg_return_edge_vs_best_single_factor": -0.3301,
+        "avg_return_edge_vs_best_single_factor": -0.3239,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "volume_expand_after_shrink",
           "label": "量縮後放量",
           "positive_group_label": "量縮後放量組",
-          "sample_count": 372,
-          "avg_return_pct": 0.589,
-          "win_rate_pct": 56.9892
+          "sample_count": 373,
+          "avg_return_pct": 0.5828,
+          "win_rate_pct": 56.8365
         },
         "verdict": "未優於單因子"
       },
@@ -6321,19 +6481,19 @@
           "low_k_turn_up",
           "low_position_ma20"
         ],
-        "hit_count": 236,
-        "sample_count": 236,
-        "avg_return_pct": -0.1392,
-        "win_rate_pct": 54.661,
-        "avg_return_edge_vs_best_single_factor": -0.3522,
+        "hit_count": 243,
+        "sample_count": 243,
+        "avg_return_pct": -0.0942,
+        "win_rate_pct": 55.9671,
+        "avg_return_edge_vs_best_single_factor": -0.3141,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "low_position_ma20",
           "label": "低位因子",
           "positive_group_label": "低位組",
-          "sample_count": 1354,
-          "avg_return_pct": 0.213,
-          "win_rate_pct": 49.483
+          "sample_count": 1363,
+          "avg_return_pct": 0.2199,
+          "win_rate_pct": 49.8899
         },
         "verdict": "未優於單因子"
       },
@@ -6353,19 +6513,19 @@
         "sample_count": 15,
         "avg_return_pct": 0.2589,
         "win_rate_pct": 60.0,
-        "avg_return_edge_vs_best_single_factor": -0.3301,
+        "avg_return_edge_vs_best_single_factor": -0.3239,
         "beats_constituent_single_factors": false,
         "best_single_factor": {
           "factor": "volume_expand_after_shrink",
           "label": "量縮後放量",
           "positive_group_label": "量縮後放量組",
-          "sample_count": 372,
-          "avg_return_pct": 0.589,
-          "win_rate_pct": 56.9892
+          "sample_count": 373,
+          "avg_return_pct": 0.5828,
+          "win_rate_pct": 56.8365
         },
         "verdict": "未優於單因子"
       },
-      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 115->57、平均報酬 0.2133%->0.5097%、勝率 50.4348%->61.4035%。"
+      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 121->59、平均報酬 0.2709%->0.5848%、勝率 52.8926%->62.7119%。"
     }
   },
   "v24_summary": {
@@ -6383,7 +6543,7 @@
       "ma20_distance_pct_lt": 2.08,
       "close_return_ratio_threshold": 0.7,
       "meets_v24_goal": false,
-      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 115->57、平均報酬 0.2133%->0.5097%、勝率 50.4348%->61.4035%。"
+      "summary": "steady_v4 把 v23 signature 正式寫回策略，相較 steady_v2 命中數 121->59、平均報酬 0.2709%->0.5848%、勝率 52.8926%->62.7119%。"
     }
   },
   "v27_summary": {
@@ -6403,7 +6563,7 @@
         "win_rate_not_collapsed": true,
         "hit_count_reasonable": true
       },
-      "summary": "steady_v5 只在 steady_v4 上加入回落深度限制，命中數 57->52、平均報酬 0.5097%->0.8063%、平均市場報酬 0.0891%->0.2229%、平均 alpha 0.4207%->0.5834%、勝率 61.4035%->65.3846%。"
+      "summary": "steady_v5 只在 steady_v4 上加入回落深度限制，命中數 59->54、平均報酬 0.5848%->0.8774%、平均市場報酬 0.0525%->0.178%、平均 alpha 0.5323%->0.6994%、勝率 62.7119%->66.6667%。"
     }
   }
 }
