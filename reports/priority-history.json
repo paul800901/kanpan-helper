@@ -1,6 +1,6 @@
 {
   "report_version": "v12-priority-history",
-  "generated_at": "2026-10-20T08:40:58.394974+08:00",
+  "generated_at": "2026-10-21T08:39:40.321447+08:00",
   "evaluation_horizon": "next_available_report",
   "available_dates": [
     "2025-09-30",
@@ -311,7 +311,8 @@
     "2026-10-17",
     "2026-10-18",
     "2026-10-19",
-    "2026-10-20"
+    "2026-10-20",
+    "2026-10-21"
   ],
   "replay_days": [
     {
@@ -26092,9 +26093,9 @@
       "top1_avg_return": -1.8576,
       "top3_avg_return": -0.602,
       "top5_avg_return": -0.4795,
-      "is_trading_interval": false,
+      "is_trading_interval": true,
       "benchmark_return": {
-        "market_return": null,
+        "market_return": -1.1301,
         "random_selection_expected_return": -0.7676
       },
       "top1_avg_return_pct": -1.8576,
@@ -26121,45 +26122,129 @@
         "2892",
         "5880"
       ],
-      "next_report_date": null,
+      "next_report_date": "2026-10-21",
       "top1_returns": [
         {
           "priority_rank": 1,
           "symbol": "2891",
-          "return_pct": null
+          "return_pct": -2.4523
         }
       ],
       "top3_returns": [
         {
           "priority_rank": 1,
           "symbol": "2891",
-          "return_pct": null
+          "return_pct": -2.4523
         },
         {
           "priority_rank": 2,
           "symbol": "2886",
-          "return_pct": null
+          "return_pct": -1.2987
         },
         {
           "priority_rank": 3,
           "symbol": "2884",
-          "return_pct": null
+          "return_pct": -2.0263
         }
       ],
       "top5_returns": [
         {
           "priority_rank": 1,
           "symbol": "2891",
-          "return_pct": null
+          "return_pct": -2.4523
         },
         {
           "priority_rank": 2,
           "symbol": "2886",
-          "return_pct": null
+          "return_pct": -1.2987
         },
         {
           "priority_rank": 3,
           "symbol": "2884",
+          "return_pct": -2.0263
+        },
+        {
+          "priority_rank": 4,
+          "symbol": "2892",
+          "return_pct": -0.8516
+        },
+        {
+          "priority_rank": 5,
+          "symbol": "5880",
+          "return_pct": -2.139
+        }
+      ],
+      "top1_avg_return": -2.4523,
+      "top3_avg_return": -1.9258,
+      "top5_avg_return": -1.7536,
+      "is_trading_interval": false,
+      "benchmark_return": {
+        "market_return": null,
+        "random_selection_expected_return": -2.1063
+      },
+      "top1_avg_return_pct": -2.4523,
+      "top3_avg_return_pct": -1.9258,
+      "top5_avg_return_pct": -1.7536,
+      "all_avg_return_pct": -2.1063
+    },
+    {
+      "date": "2026-10-21",
+      "priority_file": "2026-10-21-priority.json",
+      "candidate_count": 13,
+      "top1_symbols": [
+        "5876"
+      ],
+      "top3_symbols": [
+        "5876",
+        "2880",
+        "2886"
+      ],
+      "top5_symbols": [
+        "5876",
+        "2880",
+        "2886",
+        "2892",
+        "2891"
+      ],
+      "next_report_date": null,
+      "top1_returns": [
+        {
+          "priority_rank": 1,
+          "symbol": "5876",
+          "return_pct": null
+        }
+      ],
+      "top3_returns": [
+        {
+          "priority_rank": 1,
+          "symbol": "5876",
+          "return_pct": null
+        },
+        {
+          "priority_rank": 2,
+          "symbol": "2880",
+          "return_pct": null
+        },
+        {
+          "priority_rank": 3,
+          "symbol": "2886",
+          "return_pct": null
+        }
+      ],
+      "top5_returns": [
+        {
+          "priority_rank": 1,
+          "symbol": "5876",
+          "return_pct": null
+        },
+        {
+          "priority_rank": 2,
+          "symbol": "2880",
+          "return_pct": null
+        },
+        {
+          "priority_rank": 3,
+          "symbol": "2886",
           "return_pct": null
         },
         {
@@ -26169,7 +26254,7 @@
         },
         {
           "priority_rank": 5,
-          "symbol": "5880",
+          "symbol": "2891",
           "return_pct": null
         }
       ],
@@ -26188,77 +26273,77 @@
     }
   ],
   "stats": {
-    "snapshot_count": 309,
-    "evaluated_snapshot_count": 228,
-    "candidate_samples": 4136,
-    "evaluated_candidate_samples": 4135,
-    "top1_avg_return": 0.2726,
-    "top3_avg_return": 0.3469,
-    "top5_avg_return": 0.2948,
+    "snapshot_count": 310,
+    "evaluated_snapshot_count": 229,
+    "candidate_samples": 4156,
+    "evaluated_candidate_samples": 4155,
+    "top1_avg_return": 0.2633,
+    "top3_avg_return": 0.3428,
+    "top5_avg_return": 0.2914,
     "benchmark_return": {
-      "market_avg_return": 0.2205,
-      "random_selection_expected_return": 0.3322,
+      "market_avg_return": 0.2146,
+      "random_selection_expected_return": 0.3274,
       "market_index": "TAIEX"
     },
     "validation_readiness": {
       "minimum_evaluated_days_required": 20,
-      "evaluated_days": 228,
+      "evaluated_days": 229,
       "is_sample_size_ready": true
     },
     "topn_vs_benchmark": {
-      "top1_minus_market": 0.0521,
-      "top3_minus_market": 0.1264,
-      "top5_minus_market": 0.0743,
-      "top1_minus_random": -0.0596,
-      "top3_minus_random": 0.0147,
-      "top5_minus_random": -0.0374
+      "top1_minus_market": 0.0487,
+      "top3_minus_market": 0.1282,
+      "top5_minus_market": 0.0768,
+      "top1_minus_random": -0.0641,
+      "top3_minus_random": 0.0154,
+      "top5_minus_random": -0.036
     },
     "stability": {
       "top1": {
-        "evaluated_days": 227,
-        "avg_return": 0.2726,
-        "return_std_dev": 2.9968,
-        "positive_day_ratio": 52.4229,
-        "outperform_market_ratio": 50.2203,
-        "outperform_random_ratio": 46.696
+        "evaluated_days": 228,
+        "avg_return": 0.2633,
+        "return_std_dev": 2.9935,
+        "positive_day_ratio": 52.193,
+        "outperform_market_ratio": 50.0,
+        "outperform_random_ratio": 46.4912
       },
       "top3": {
-        "evaluated_days": 227,
-        "avg_return": 0.347,
-        "return_std_dev": 2.1446,
-        "positive_day_ratio": 57.7093,
-        "outperform_market_ratio": 50.2203,
-        "outperform_random_ratio": 50.2203
+        "evaluated_days": 228,
+        "avg_return": 0.3428,
+        "return_std_dev": 2.1408,
+        "positive_day_ratio": 57.4561,
+        "outperform_market_ratio": 50.4386,
+        "outperform_random_ratio": 50.4386
       },
       "top5": {
-        "evaluated_days": 227,
-        "avg_return": 0.2959,
-        "return_std_dev": 1.9118,
-        "positive_day_ratio": 55.0661,
-        "outperform_market_ratio": 46.696,
-        "outperform_random_ratio": 45.815
+        "evaluated_days": 228,
+        "avg_return": 0.2925,
+        "return_std_dev": 1.9083,
+        "positive_day_ratio": 54.8246,
+        "outperform_market_ratio": 46.9298,
+        "outperform_random_ratio": 46.0526
       }
     },
     "top3_vs_all": {
-      "top1_sample_count": 227,
-      "top3_sample_count": 681,
-      "top5_sample_count": 1134,
-      "all_candidate_sample_count": 4135,
-      "top1_avg_return_pct": 0.2726,
-      "top3_avg_return_pct": 0.3469,
-      "top5_avg_return_pct": 0.2948,
-      "all_candidates_avg_return_pct": 0.3477,
-      "top1_win_rate_pct": 52.4229,
-      "top3_win_rate_pct": 50.9545,
-      "top5_win_rate_pct": 50.5291,
-      "all_candidates_win_rate_pct": 50.3507
+      "top1_sample_count": 228,
+      "top3_sample_count": 684,
+      "top5_sample_count": 1139,
+      "all_candidate_sample_count": 4155,
+      "top1_avg_return_pct": 0.2633,
+      "top3_avg_return_pct": 0.3428,
+      "top5_avg_return_pct": 0.2914,
+      "all_candidates_avg_return_pct": 0.3423,
+      "top1_win_rate_pct": 52.193,
+      "top3_win_rate_pct": 50.8772,
+      "top5_win_rate_pct": 50.4829,
+      "all_candidates_win_rate_pct": 50.1805
     },
     "hit_count_effect": [
       {
         "hit_count": 4,
-        "sample_count": 692,
-        "avg_return_pct": 0.5178,
-        "win_rate_pct": 52.1676
+        "sample_count": 712,
+        "avg_return_pct": 0.4817,
+        "win_rate_pct": 51.1236
       },
       {
         "hit_count": 3,
@@ -26282,21 +26367,21 @@
     "advice_effect": [
       {
         "advice": "可偏多觀察",
-        "sample_count": 499,
-        "avg_return_pct": 0.3822,
-        "win_rate_pct": 48.497
+        "sample_count": 506,
+        "avg_return_pct": 0.3669,
+        "win_rate_pct": 48.2213
       },
       {
         "advice": "先觀望",
-        "sample_count": 1925,
-        "avg_return_pct": 0.3426,
-        "win_rate_pct": 50.8571
+        "sample_count": 1929,
+        "avg_return_pct": 0.3401,
+        "win_rate_pct": 50.7517
       },
       {
         "advice": "強勢續看",
-        "sample_count": 462,
-        "avg_return_pct": 0.6884,
-        "win_rate_pct": 52.5974
+        "sample_count": 465,
+        "avg_return_pct": 0.6836,
+        "win_rate_pct": 52.4731
       },
       {
         "advice": "可留意",
@@ -26306,43 +26391,43 @@
       },
       {
         "advice": "暫不進場",
-        "sample_count": 468,
-        "avg_return_pct": 0.3287,
-        "win_rate_pct": 48.5043
+        "sample_count": 469,
+        "avg_return_pct": 0.3276,
+        "win_rate_pct": 48.4009
       },
       {
         "advice": "暫不考慮",
-        "sample_count": 710,
-        "avg_return_pct": 0.292,
-        "win_rate_pct": 49.8592
+        "sample_count": 715,
+        "avg_return_pct": 0.2807,
+        "win_rate_pct": 49.5105
       }
     ],
     "pilot_zone_effect": [
       {
         "bucket": "位於試單區",
-        "sample_count": 2640,
-        "avg_return_pct": 0.2129,
-        "win_rate_pct": 49.9242
+        "sample_count": 2649,
+        "avg_return_pct": 0.2078,
+        "win_rate_pct": 49.7546
       },
       {
         "bucket": "未在試單區",
-        "sample_count": 1495,
-        "avg_return_pct": 0.5855,
-        "win_rate_pct": 51.1037
+        "sample_count": 1506,
+        "avg_return_pct": 0.5788,
+        "win_rate_pct": 50.9296
       }
     ],
     "weak_block_filter_effect": [
       {
         "bucket": "非弱股",
-        "sample_count": 3107,
-        "avg_return_pct": 0.3761,
-        "win_rate_pct": 50.9817
+        "sample_count": 3121,
+        "avg_return_pct": 0.3716,
+        "win_rate_pct": 50.8491
       },
       {
         "bucket": "弱股封鎖",
-        "sample_count": 1028,
-        "avg_return_pct": 0.2617,
-        "win_rate_pct": 48.4436
+        "sample_count": 1034,
+        "avg_return_pct": 0.2537,
+        "win_rate_pct": 48.1625
       }
     ]
   }
